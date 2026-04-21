@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 
 const ADMIN_PASSWORD = "certuslex2026";
 
@@ -51,6 +52,9 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [correctedFile, setCorrectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const correctedFileRef = useRef<HTMLInputElement>(null);
   const [filter, setFilter] = useState<"all" | "pending_review" | "in_review" | "completed">("all");
 
   useEffect(() => {
@@ -84,14 +88,33 @@ export default function AdminPage() {
     setSaving(true);
     setEmailSent(false);
     setEmailError(null);
+    setUploadProgress(0);
 
+    // 1. Uploadaa korjattu asiakirja jos valittu
+    let correctedUrl: string | null = null;
+    if (correctedFile) {
+      const timestamp = Date.now();
+      const storageRef = ref(storage, `reviewed/${timestamp}_${correctedFile.name}`);
+      const uploadTask = uploadBytesResumable(storageRef, correctedFile);
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on("state_changed",
+          (snap) => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+          reject,
+          resolve
+        );
+      });
+      correctedUrl = await getDownloadURL(storageRef);
+    }
+
+    // 2. Tallenna Firestoreen
     await updateDoc(doc(db, "documents", selected.id), {
       review,
       status: "completed",
       reviewedAt: serverTimestamp(),
+      ...(correctedUrl ? { correctedUrl, correctedFileName: correctedFile!.name } : {}),
     });
 
-    // Lähetä sähköposti asiakkaalle jos sähköposti on tallennettu
+    // 3. Lähetä sähköposti asiakkaalle
     if (selected.userEmail) {
       try {
         const res = await fetch("/api/send-review", {
@@ -103,6 +126,8 @@ export default function AdminPage() {
             docId: selected.id,
             plan: selected.plan,
             review,
+            correctedUrl,
+            correctedFileName: correctedFile?.name ?? null,
           }),
         });
         if (res.ok) {
@@ -117,6 +142,7 @@ export default function AdminPage() {
     }
 
     setSaving(false);
+    setCorrectedFile(null);
     setSelected(null);
   }
 
@@ -217,6 +243,38 @@ export default function AdminPage() {
             />
           </div>
 
+          {/* Korjattu asiakirja upload */}
+          <div style={{ marginBottom: "1.5rem" }}>
+            <label style={{ fontSize: "0.78rem", fontWeight: 500, letterSpacing: "0.08em", display: "block", marginBottom: "0.6rem", color: "var(--navy)" }}>
+              KORJATTU ASIAKIRJA <span style={{ color: "var(--muted)", fontWeight: 400 }}>(valinnainen)</span>
+            </label>
+            <input
+              type="file"
+              ref={correctedFileRef}
+              accept=".pdf,.doc,.docx"
+              style={{ display: "none" }}
+              onChange={e => setCorrectedFile(e.target.files?.[0] ?? null)}
+            />
+            {!correctedFile ? (
+              <button
+                type="button"
+                onClick={() => correctedFileRef.current?.click()}
+                style={{ border: "1px dashed var(--cream2)", background: "#fff", padding: "0.7rem 1.2rem", fontSize: "0.84rem", color: "var(--muted)", cursor: "pointer", width: "100%" }}
+              >
+                + Lisää korjattu asiakirja (PDF, DOC, DOCX)
+              </button>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", background: "#EEF2F8", padding: "0.6rem 1rem" }}>
+                <span style={{ fontSize: "1.1rem" }}>📄</span>
+                <span style={{ fontSize: "0.85rem", color: "var(--navy)", flex: 1 }}>{correctedFile.name}</span>
+                {uploadProgress > 0 && uploadProgress < 100 && (
+                  <span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>{uploadProgress}%</span>
+                )}
+                <button onClick={() => setCorrectedFile(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: "0.9rem" }}>✕</button>
+              </div>
+            )}
+          </div>
+
           {emailError && (
             <div style={{ background: "#fff0f0", border: "1px solid var(--red)", padding: "0.7rem 1rem", marginBottom: "1rem", fontSize: "0.82rem", color: "var(--red)" }}>
               ⚠ Sähköpostin lähetys epäonnistui: {emailError}
@@ -234,7 +292,7 @@ export default function AdminPage() {
                 letterSpacing: "0.05em"
               }}
             >
-              {saving ? "Lähetetään..." : "Tallenna & lähetä lausunto ✓"}
+              {saving ? (uploadProgress > 0 && uploadProgress < 100 ? `Ladataan ${uploadProgress}%...` : "Lähetetään...") : "Tallenna & lähetä lausunto ✓"}
             </button>
             <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "1px solid var(--cream2)", color: "var(--navy)", padding: "0.9rem 1.5rem", cursor: "pointer", fontSize: "0.85rem" }}>
               Peruuta

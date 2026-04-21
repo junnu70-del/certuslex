@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 
 export async function POST(req: NextRequest) {
   try {
-    const { userEmail, fileName, docId, plan, review } = await req.json();
+    const { userEmail, fileName, docId, plan, review, correctedUrl, correctedFileName } = await req.json();
 
     if (!userEmail || !review) {
       return NextResponse.json({ error: "Puuttuvat kentät" }, { status: 400 });
@@ -57,6 +57,14 @@ export async function POST(req: NextRequest) {
               <p style="font-size:14px;color:#2C2416;line-height:1.75;white-space:pre-wrap;margin:0;">${review}</p>
             </div>
 
+            ${correctedUrl ? `
+            <div style="margin-bottom:20px;">
+              <a href="${correctedUrl}"
+                style="display:inline-block;background:#0F1F3D;color:#C8A44A;padding:10px 20px;font-size:13px;font-weight:600;text-decoration:none;letter-spacing:0.05em;">
+                ⬇ Lataa korjattu asiakirja (${correctedFileName ?? "asiakirja"})
+              </a>
+            </div>` : ""}
+
             <p style="font-size:13px;color:#7A6E60;margin:0 0 4px;">
               Mikäli teillä on kysyttävää lausunnosta, vastaamme mielellämme.
             </p>
@@ -86,7 +94,7 @@ export async function POST(req: NextRequest) {
       to: userEmail,
       subject: `CertusLex — Lausuntonne on valmis (${fileName ?? "asiakirja"})`,
       html: htmlBody,
-      text: `Hei,\n\nLausuntonne asiakirjalle "${fileName}" on valmis.\n\n---\n${review}\n---\n\nTerveisin,\nCertusLex-tiimi\ninfo@certuslex.fi`,
+      text: `Hei,\n\nLausuntonne asiakirjalle "${fileName}" on valmis.\n\n---\n${review}\n---\n${correctedUrl ? `\nKorjattu asiakirja: ${correctedUrl}\n` : ""}\nTerveisin,\nCertusLex-tiimi\ninfo@certuslex.fi`,
     });
 
     return NextResponse.json({ ok: true });
