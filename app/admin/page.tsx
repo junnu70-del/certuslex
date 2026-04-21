@@ -20,8 +20,11 @@ interface Document {
   userEmail?: string;
   status: "pending_review" | "in_review" | "completed";
   createdAt: { seconds: number } | null;
+  inReviewAt?: { seconds: number };
   review?: string;
   reviewedAt?: { seconds: number };
+  correctedFileName?: string;
+  correctedUrl?: string;
 }
 
 const statusLabel: Record<string, { text: string; color: string }> = {
@@ -79,7 +82,7 @@ export default function AdminPage() {
     setSelected(d);
     setReview(d.review ?? "");
     if (d.status === "pending_review") {
-      await updateDoc(doc(db, "documents", d.id), { status: "in_review" });
+      await updateDoc(doc(db, "documents", d.id), { status: "in_review", inReviewAt: serverTimestamp() });
     }
   }
 
@@ -301,6 +304,66 @@ export default function AdminPage() {
               <span style={{ fontSize: "0.82rem", color: "#2D6A4F" }}>✓ Sähköposti lähetetty</span>
             )}
           </div>
+
+          {/* Tapauskohtainen loki */}
+          <div style={{ marginTop: "2.5rem", paddingTop: "1.5rem", borderTop: "1px solid var(--cream2)" }}>
+            <p style={{ fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.1em", color: "var(--muted)", marginBottom: "1rem" }}>TAPAUSLOKI</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+              {[
+                {
+                  done: !!selected.createdAt,
+                  icon: "📥",
+                  label: "Asiakirja vastaanotettu",
+                  time: formatDate(selected.createdAt),
+                  sub: `${selected.plan}-paketti · ${selected.price} € · ${selected.deliveryTime} toimitusaika`,
+                },
+                {
+                  done: !!selected.inReviewAt || selected.status !== "pending_review",
+                  icon: "👁",
+                  label: "Avattu käsittelyyn",
+                  time: selected.inReviewAt ? formatDate(selected.inReviewAt) : (selected.status !== "pending_review" ? "—" : null),
+                  sub: selected.userEmail ?? "",
+                },
+                {
+                  done: !!selected.correctedUrl,
+                  icon: "📄",
+                  label: "Korjattu asiakirja ladattu",
+                  time: selected.correctedUrl ? "✓" : null,
+                  sub: selected.correctedFileName ?? "",
+                },
+                {
+                  done: !!selected.reviewedAt,
+                  icon: "✅",
+                  label: "Lausunto lähetetty",
+                  time: selected.reviewedAt ? formatDate(selected.reviewedAt) : null,
+                  sub: selected.userEmail ? `→ ${selected.userEmail}` : "",
+                },
+              ].map((entry, i) => (
+                entry.time !== null && (
+                  <div key={i} style={{ display: "flex", gap: "0.8rem", paddingBottom: "1rem", position: "relative" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}>
+                      <div style={{
+                        width: "28px", height: "28px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                        background: entry.done ? "var(--navy)" : "var(--cream2)", fontSize: "0.75rem", flexShrink: 0,
+                      }}>
+                        {entry.icon}
+                      </div>
+                      {i < 3 && <div style={{ width: "1px", background: "var(--cream2)", flex: 1, minHeight: "16px" }} />}
+                    </div>
+                    <div style={{ paddingTop: "3px", paddingBottom: "0.5rem" }}>
+                      <div style={{ fontSize: "0.82rem", fontWeight: 500, color: entry.done ? "var(--navy)" : "var(--muted)" }}>
+                        {entry.label}
+                      </div>
+                      <div style={{ fontSize: "0.73rem", color: "var(--muted)", marginTop: "0.1rem" }}>
+                        {entry.time} {entry.sub && <span style={{ marginLeft: "0.4rem" }}>{entry.sub}</span>}
+                      </div>
+                    </div>
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+
         </div>
       </div>
     );
