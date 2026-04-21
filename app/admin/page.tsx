@@ -16,6 +16,7 @@ interface Document {
   plan: string;
   price: string;
   deliveryTime: string;
+  userEmail?: string;
   status: "pending_review" | "in_review" | "completed";
   createdAt: { seconds: number } | null;
   review?: string;
@@ -48,6 +49,8 @@ export default function AdminPage() {
   const [selected, setSelected] = useState<Document | null>(null);
   const [review, setReview] = useState("");
   const [saving, setSaving] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending_review" | "in_review" | "completed">("all");
 
   useEffect(() => {
@@ -79,11 +82,40 @@ export default function AdminPage() {
   async function saveReview() {
     if (!selected) return;
     setSaving(true);
+    setEmailSent(false);
+    setEmailError(null);
+
     await updateDoc(doc(db, "documents", selected.id), {
       review,
       status: "completed",
       reviewedAt: serverTimestamp(),
     });
+
+    // Lähetä sähköposti asiakkaalle jos sähköposti on tallennettu
+    if (selected.userEmail) {
+      try {
+        const res = await fetch("/api/send-review", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userEmail: selected.userEmail,
+            fileName: selected.fileName,
+            docId: selected.id,
+            plan: selected.plan,
+            review,
+          }),
+        });
+        if (res.ok) {
+          setEmailSent(true);
+        } else {
+          const data = await res.json();
+          setEmailError(data.error ?? "Sähköpostin lähetys epäonnistui");
+        }
+      } catch {
+        setEmailError("Verkkovirhe sähköpostin lähetyksessä");
+      }
+    }
+
     setSaving(false);
     setSelected(null);
   }
@@ -149,7 +181,7 @@ export default function AdminPage() {
             <div style={{ fontSize: "0.78rem", fontWeight: 500, color: st.color }}>⬤ {st.text}</div>
           </div>
 
-          <div style={{ display: "flex", gap: "1rem", marginBottom: "2rem" }}>
+          <div style={{ display: "flex", gap: "1rem", marginBottom: "1.2rem", flexWrap: "wrap", alignItems: "center" }}>
             <a
               href={selected.storageUrl}
               target="_blank"
@@ -158,10 +190,16 @@ export default function AdminPage() {
             >
               ⬇ Avaa asiakirja
             </a>
-            <div style={{ fontSize: "0.78rem", color: "var(--muted)", alignSelf: "center" }}>
+            <div style={{ fontSize: "0.78rem", color: "var(--muted)" }}>
               Tilausnumero: <strong>{selected.id}</strong>
             </div>
           </div>
+
+          {selected.userEmail && (
+            <div style={{ background: "#EEF2F8", padding: "0.6rem 1rem", marginBottom: "1.5rem", fontSize: "0.8rem", color: "var(--navy)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              ✉️ Lausunto lähetetään: <strong>{selected.userEmail}</strong>
+            </div>
+          )}
 
           <div style={{ marginBottom: "1rem" }}>
             <label style={{ fontSize: "0.78rem", fontWeight: 500, letterSpacing: "0.08em", display: "block", marginBottom: "0.6rem", color: "var(--navy)" }}>
@@ -179,7 +217,13 @@ export default function AdminPage() {
             />
           </div>
 
-          <div style={{ display: "flex", gap: "1rem" }}>
+          {emailError && (
+            <div style={{ background: "#fff0f0", border: "1px solid var(--red)", padding: "0.7rem 1rem", marginBottom: "1rem", fontSize: "0.82rem", color: "var(--red)" }}>
+              ⚠ Sähköpostin lähetys epäonnistui: {emailError}
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
             <button
               onClick={saveReview}
               disabled={saving || !review.trim()}
@@ -190,11 +234,14 @@ export default function AdminPage() {
                 letterSpacing: "0.05em"
               }}
             >
-              {saving ? "Tallennetaan..." : "Tallenna lausunto ✓"}
+              {saving ? "Lähetetään..." : "Tallenna & lähetä lausunto ✓"}
             </button>
             <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "1px solid var(--cream2)", color: "var(--navy)", padding: "0.9rem 1.5rem", cursor: "pointer", fontSize: "0.85rem" }}>
               Peruuta
             </button>
+            {emailSent && (
+              <span style={{ fontSize: "0.82rem", color: "#2D6A4F" }}>✓ Sähköposti lähetetty</span>
+            )}
           </div>
         </div>
       </div>

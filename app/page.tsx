@@ -16,6 +16,7 @@ const planDetails: Record<string, { time: string; price: string }> = {
 export default function Home() {
   const [view, setView] = useState<View>("landing");
   const [file, setFile] = useState<File | null>(null);
+  const [userEmail, setUserEmail] = useState("");
   const [docType, setDocType] = useState<string | null>(null);
   const [plan, setPlan] = useState("Standard");
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -29,7 +30,7 @@ export default function Home() {
   }
 
   async function startProcessing() {
-    if (!file || !docType) return;
+    if (!file || !docType || !userEmail) return;
     setUploadError(null);
     goTo("processing");
 
@@ -66,6 +67,7 @@ export default function Home() {
         plan,
         price: planDetails[plan].price,
         deliveryTime: planDetails[plan].time,
+        userEmail,
         status: "pending_review",
         createdAt: serverTimestamp(),
       });
@@ -74,12 +76,14 @@ export default function Home() {
       goTo("result");
     } catch (err) {
       console.error("Upload failed:", err);
-      setUploadError("Tiedoston lähetys epäonnistui. Yritä uudelleen.");
+      const msg = err instanceof Error ? err.message : String(err);
+      setUploadError(`Virhe: ${msg}`);
       goTo("upload");
     }
   }
 
-  const canCheckout = file !== null && docType !== null;
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail);
+  const canCheckout = file !== null && docType !== null && emailValid;
   const { time, price } = planDetails[plan];
 
   if (view === "processing") {
@@ -147,6 +151,25 @@ export default function Home() {
               <button className="fi-rm" onClick={() => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}>✕</button>
             </div>
           )}
+
+          <div style={{ marginBottom: "1.5rem" }}>
+            <p style={{ fontSize: "0.8rem", fontWeight: 500, letterSpacing: "0.06em", marginBottom: "0.5rem" }}>SÄHKÖPOSTIOSOITE</p>
+            <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginBottom: "0.6rem" }}>Lausunto toimitetaan tähän osoitteeseen.</p>
+            <input
+              type="email"
+              value={userEmail}
+              onChange={e => setUserEmail(e.target.value)}
+              placeholder="nimi@esimerkki.fi"
+              style={{
+                width: "100%", border: `1px solid ${userEmail && !emailValid ? "var(--red)" : "var(--cream2)"}`,
+                padding: "0.7rem 0.9rem", fontSize: "0.9rem", outline: "none",
+                fontFamily: "var(--font-dm-sans), Arial, sans-serif", boxSizing: "border-box",
+              }}
+            />
+            {userEmail && !emailValid && (
+              <p style={{ color: "var(--red)", fontSize: "0.75rem", marginTop: "0.3rem" }}>Tarkista sähköpostiosoite</p>
+            )}
+          </div>
 
           <p style={{ fontSize: "0.8rem", fontWeight: 500, letterSpacing: "0.06em", marginBottom: "0.8rem" }}>ASIAKIRJATYYPPI</p>
           <div className="doc-types">
