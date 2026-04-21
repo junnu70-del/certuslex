@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef } from "react";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { storage, db } from "@/lib/firebase";
 
 type View = "landing" | "upload" | "processing" | "result";
 
@@ -12,24 +15,71 @@ const planDetails: Record<string, { time: string; price: string }> = {
 
 export default function Home() {
   const [view, setView] = useState<View>("landing");
-  const [hasFile, setHasFile] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
   const [docType, setDocType] = useState<string | null>(null);
   const [plan, setPlan] = useState("Standard");
-  const [step3Done, setStep3Done] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [docId, setDocId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function goTo(v: View) {
     setView(v);
     window.scrollTo(0, 0);
   }
 
-  function startProcessing() {
-    setStep3Done(false);
+  async function startProcessing() {
+    if (!file || !docType) return;
+    setUploadError(null);
     goTo("processing");
-    setTimeout(() => setStep3Done(true), 1200);
-    setTimeout(() => goTo("result"), 2800);
+
+    try {
+      // 1. Upload file to Firebase Storage
+      const timestamp = Date.now();
+      const storageRef = ref(storage, `documents/${timestamp}_${file.name}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            const progress = Math.round(
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+            );
+            setUploadProgress(progress);
+          },
+          reject,
+          resolve
+        );
+      });
+
+      const downloadURL = await getDownloadURL(storageRef);
+
+      // 2. Save metadata to Firestore
+      const docRef = await addDoc(collection(db, "documents"), {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        storageUrl: downloadURL,
+        storagePath: storageRef.fullPath,
+        docType,
+        plan,
+        price: planDetails[plan].price,
+        deliveryTime: planDetails[plan].time,
+        status: "pending_review",
+        createdAt: serverTimestamp(),
+      });
+
+      setDocId(docRef.id);
+      goTo("result");
+    } catch (err) {
+      console.error("Upload failed:", err);
+      setUploadError("Tiedoston lähetys epäonnistui. Yritä uudelleen.");
+      goTo("upload");
+    }
   }
 
-  const canCheckout = hasFile && docType !== null;
+  const canCheckout = file !== null && docType !== null;
   const { time, price } = planDetails[plan];
 
   if (view === "processing") {
@@ -37,12 +87,12 @@ export default function Home() {
       <div id="processing-view">
         <div className="proc-inner">
           <div className="proc-spinner" />
-          <h3>Analysoidaan asiakirjaa</h3>
-          <p>Tämä kestää hetken...</p>
+          <h3>Lähetetään asiakirjaa</h3>
+          <p>{uploadProgress < 100 ? `${uploadProgress}% ladattu...` : "Lähetetään juristille..."}</p>
           <div className="proc-steps">
-            <div className="ps done">Asiakirja vastaanotettu</div>
-            <div className="ps done">Pykäläviittaukset tunnistettu</div>
-            <div className={`ps${step3Done ? " done" : ""}`}>Lähetetään juristille</div>
+            <div className={`ps${uploadProgress > 0 ? " done" : ""}`}>Asiakirja vastaanotettu</div>
+            <div className={`ps${uploadProgress === 100 ? " done" : ""}`}>Tallennettu turvallisesti</div>
+            <div className={`ps${docId ? " done" : ""}`}>Lähetetty juristille</div>
           </div>
         </div>
       </div>
@@ -66,17 +116,35 @@ export default function Home() {
           <h2>Lähetä asiakirja</h2>
           <p className="sub">Juristi tarkastaa asiakirjasi ja toimittaa lausunnon valitun paketin mukaisessa ajassa.</p>
 
-          {!hasFile ? (
-            <div className="dropzone" onClick={() => setHasFile(true)}>
+          {uploadError && (
+            <div style={{ background: "#fff0f0", border: "1px solid var(--red)", padding: "0.8rem 1rem", marginBottom: "1rem", fontSize: "0.85rem", color: "var(--red)" }}>
+              {uploadError}
+            </div>
+          )}
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept=".pdf,.doc,.docx"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) setFile(f);
+            }}
+          />
+
+          {!file ? (
+            <div className="dropzone" onClick={() => fileInputRef.current?.click()}>
               <div className="dz-icon">📄</div>
               <div className="dz-text">Vedä asiakirja tähän tai</div>
-              <button className="dz-btn">Valitse tiedosto</button>
+              <button className="dz-btn" type="button">Valitse tiedosto</button>
+              <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.5rem" }}>PDF, DOC, DOCX</div>
             </div>
           ) : (
             <div className="file-sel">
               <span className="fi-icon">📄</span>
-              <span className="fi-name">valitus_hallinto_oikeus.pdf</span>
-              <button className="fi-rm" onClick={() => { setHasFile(false); setDocType(null); }}>✕</button>
+              <span className="fi-name">{file.name}</span>
+              <button className="fi-rm" onClick={() => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}>✕</button>
             </div>
           )}
 
@@ -114,7 +182,8 @@ export default function Home() {
 
           {canCheckout && (
             <div className="summary-box">
-              <div className="sb-row"><span>Asiakirja</span><span>{docType}</span></div>
+              <div className="sb-row"><span>Asiakirja</span><span>{file?.name}</span></div>
+              <div className="sb-row"><span>Tyyppi</span><span>{docType}</span></div>
               <div className="sb-row"><span>Paketti</span><span>{plan}</span></div>
               <div className="sb-row"><span>Toimitusaika</span><span>{time}</span></div>
               <div className="sb-row"><span>Yhteensä</span><span>{price} €</span></div>
@@ -143,34 +212,32 @@ export default function Home() {
         </nav>
         <div className="result-wrap">
           <div className="result-header">
-            <div className="rh-badge">LAUSUNTO</div>
+            <div className="rh-badge">VASTAANOTETTU</div>
             <div className="rh-info">
-              <h3>valitus_hallinto_oikeus.pdf</h3>
-              <p>Standard-paketti · Tarkastettu 20.4.2026</p>
+              <h3>{file?.name ?? "asiakirja"}</h3>
+              <p>{plan}-paketti · Lähetetty {new Date().toLocaleDateString("fi-FI")}</p>
             </div>
-            <div className="rh-status"><div className="dot-ok" />Valmis</div>
-          </div>
-
-          <div className="findings">
-            <h4>LÖYDÖKSET (5)</h4>
-            <div className="fi"><div className="fd err" /><div className="ft"><strong>VIRHE — s. 3:</strong> HLL 586/1996 § 51a ei ole olemassa. Tekoäly on keksinyt tämän viittauksen. <em>Korvaa: hallintolaki 49 § (oikaisupyyntöoikeus).</em></div></div>
-            <div className="fi"><div className="fd err" /><div className="ft"><strong>VIRHE — s. 5:</strong> JulkL 621/1999 § 12a ei ole olemassa. <em>Korvaa: JulkL 12 § 1 mom.</em></div></div>
-            <div className="fi"><div className="fd warn" /><div className="ft"><strong>HUOMIO — s. 2:</strong> Oikeuspaikan perustelu puutteellinen. Suositellaan lisäämään viittaus HLL 586/1996 12 §:ään.</div></div>
-            <div className="fi"><div className="fd ok" /><div className="ft"><strong>OK — Määräaika:</strong> Valitusaika laskettu oikein, 30 pv tiedoksisaannista.</div></div>
-            <div className="fi"><div className="fd ok" /><div className="ft"><strong>OK — Muutoksenhakupyyntö:</strong> Muotoiltu asianmukaisesti, vaatimukset esitetty selkeästi.</div></div>
+            <div className="rh-status"><div className="dot-ok" />Jonossa</div>
           </div>
 
           <div className="seal">
             <div className="seal-icon">⚖</div>
             <div className="seal-text">
-              <strong>Juristivarmistettu — CertusLex OTM-juristi</strong>
-              Olen tarkastanut asiakirjan pykäläviittaukset, argumentaation rakenteen ja oikeudellisen johdonmukaisuuden. Asiakirja voidaan jättää hallinto-oikeudelle, kun mainitut kaksi virheellistä pykäläviittausta on korjattu.
+              <strong>Asiakirja vastaanotettu — CertusLex</strong>
+              Asiakirjasi on tallennettu turvallisesti ja lähetetty OTM-juristille tarkastettavaksi. Saat lausunnon sähköpostitse {planDetails[plan].time} kuluessa.
             </div>
           </div>
 
+          {docId && (
+            <div style={{ fontSize: "0.78rem", color: "var(--muted)", marginBottom: "1.5rem" }}>
+              Tilausnumero: <strong>{docId}</strong>
+            </div>
+          )}
+
           <div className="result-actions">
-            <button className="btn-dl">⬇ Lataa PDF-lausunto</button>
-            <button className="btn-new" onClick={() => goTo("upload")}>Lähetä uusi asiakirja</button>
+            <button className="btn-new" onClick={() => { setFile(null); setDocType(null); setPlan("Standard"); goTo("upload"); }}>
+              Lähetä uusi asiakirja
+            </button>
           </div>
         </div>
       </div>
@@ -197,7 +264,6 @@ export default function Home() {
         <p className="hero-sub">CertusLex ratkaisee tekoälyasiakirjojen suurimman ongelman: hallusinoidut lakipykälät. Jokaisen asiakirjan tarkastaa oikea OTM-juristi ennen toimittamista.</p>
         <div className="hero-btns">
           <button className="btn-primary" onClick={() => goTo("upload")}>Lähetä asiakirja tarkastukseen</button>
-          <button className="btn-ghost" onClick={() => goTo("result")}>Katso esimerkkilausunto</button>
         </div>
         <div className="hero-stats">
           <div><div className="stat-n">98%</div><div className="stat-l">TARKKUUS</div></div>
