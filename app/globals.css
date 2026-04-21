@@ -166,7 +166,7 @@ h1 em { color: var(--gold); font-style: italic; }
   font-family: var(--font-cormorant), Georgia, serif;
   font-size: 3rem;
   font-weight: 700;
-  color: rgba(15, 31, 61, 0.25);
+  color: rgba(15, 31, 61, 0.4);
   line-height: 1;
   margin-bottom: 1rem;
 }
