@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { storage, db } from "@/lib/firebase";
@@ -367,7 +368,7 @@ export default function Home() {
         <div style={{ maxWidth: "1000px", margin: "0 auto", display: "grid", gridTemplateColumns: "340px 1fr", gap: "5rem", alignItems: "center" }}>
           <div style={{ position: "relative" }}>
             <div style={{ position: "absolute", inset: "-12px -12px 12px 12px", border: "1px solid rgba(200,164,74,.25)", zIndex: 0 }} />
-            <img src="/Risto.png" alt="Risto Kurki-Suonio" style={{ width: "100%", display: "block", position: "relative", zIndex: 1 }} />
+            <Image src="/Risto.png" alt="Risto Kurki-Suonio" width={398} height={567} style={{ width: "100%", height: "auto", display: "block", position: "relative", zIndex: 1 }} />
           </div>
           <div>
             <div style={{ fontSize: "0.72rem", letterSpacing: "0.14em", color: "#C8A44A", marginBottom: "1rem" }}>PALVELUN TAKANA</div>
