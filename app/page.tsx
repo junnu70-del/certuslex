@@ -363,8 +363,24 @@ export default function Home() {
         </div>
       </div>
 
+      <div className="trust-strip">
+        <p>"Jokainen asiakirja tarkastetaan oikean juristin toimesta — ei algoritmien."</p>
+        <div className="trust-items">
+          <div className="trust-item"><span>🔒</span><span>Tietoturvallinen käsittely</span></div>
+          <div className="trust-item"><span>⚖️</span><span>OTM-juristi jokaiseen toimeksiantoon</span></div>
+          <div className="trust-item"><span>✅</span><span>Viranomaiskelpoinen lopputulos</span></div>
+          <div className="trust-item"><span>🇫🇮</span><span>Suomen lainsäädäntö</span></div>
+        </div>
+      </div>
+
       <div className="footer">
-        <p>© 2026 CertusLex — DeepEnd Oy | Kaikki oikeudet pidätetään</p>
+        <div className="footer-logo">Certus<span>Lex</span></div>
+        <p>© 2026 CertusLex — DeepEnd Oy</p>
+        <div className="footer-links">
+          <a href="#hinnoittelu">Hinnoittelu</a>
+          <a href="#">Tietosuoja</a>
+          <a href="mailto:info@certuslex.fi">info@certuslex.fi</a>
+        </div>
       </div>
     </div>
   );
