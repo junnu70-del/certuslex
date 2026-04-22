@@ -363,31 +363,34 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="jurist-section">
-        <div className="jurist-inner">
-          <div className="jurist-img-wrap">
-            <img src="/Risto.png" alt="Risto Kurki-Suonio" className="jurist-img" />
+      <div style={{ background: "#fff", borderTop: "1px solid #EDE8DE", borderBottom: "1px solid #EDE8DE", padding: "6rem 3rem" }}>
+        <div style={{ maxWidth: "1000px", margin: "0 auto", display: "grid", gridTemplateColumns: "340px 1fr", gap: "5rem", alignItems: "center" }}>
+          <div style={{ position: "relative" }}>
+            <div style={{ position: "absolute", inset: "-12px -12px 12px 12px", border: "1px solid rgba(200,164,74,.25)", zIndex: 0 }} />
+            <img src="/Risto.png" alt="Risto Kurki-Suonio" style={{ width: "100%", display: "block", position: "relative", zIndex: 1 }} />
           </div>
-          <div className="jurist-bio">
-            <div className="section-label" style={{ textAlign: "left" }}>PALVELUN TAKANA</div>
-            <h2 className="jurist-name">Risto Kurki-Suonio</h2>
-            <div className="jurist-title">OTM · Osakas, CertusLex</div>
-            <div className="jurist-divider" />
-            <p className="jurist-text">
+          <div>
+            <div style={{ fontSize: "0.72rem", letterSpacing: "0.14em", color: "#C8A44A", marginBottom: "1rem" }}>PALVELUN TAKANA</div>
+            <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "2.4rem", fontWeight: 700, color: "#0F1F3D", letterSpacing: "-0.02em", marginBottom: "0.3rem" }}>Risto Kurki-Suonio</h2>
+            <div style={{ fontSize: "0.82rem", letterSpacing: "0.08em", color: "#C8A44A", fontWeight: 500, marginBottom: "1.5rem" }}>OTM · Osakas, CertusLex</div>
+            <div style={{ width: "40px", height: "2px", background: "#C8A44A", marginBottom: "1.5rem" }} />
+            <p style={{ fontSize: "0.9rem", color: "#4A4035", lineHeight: 1.8, marginBottom: "1rem" }}>
               Risto Kurki-Suonion oikeudellinen ja liikkeenjohdollinen kokemus ulottuu vuosikymmenien ajalle.
               Helsingin yliopistossa oikeustieteen opinnot suorittanut Risto on toiminut johtotehtävissä useissa
               suomalaisissa ja kansainvälisissä yhtiöissä — muun muassa Lars Krogius AB Oy:n hallituksen
               puheenjohtajana sekä Bauhaus Suomi Oy:n johtoryhmässä.
             </p>
-            <p className="jurist-text">
+            <p style={{ fontSize: "0.9rem", color: "#4A4035", lineHeight: 1.8, marginBottom: "1.8rem" }}>
               CertusLexissä Riston rooli on varmistaa, että palvelun juridinen laatu vastaa korkeinta
               ammattistandardia — tekoälyn nopeus yhdistettynä juristin vastuuseen.
             </p>
-            <div className="jurist-credentials">
-              <div className="jc-item"><span className="jc-dot" />Helsingin yliopisto, OTM</div>
-              <div className="jc-item"><span className="jc-dot" />Lars Krogius AB Oy, hallituksen pj.</div>
-              <div className="jc-item"><span className="jc-dot" />Bauhaus Suomi Oy, johtoryhmä</div>
-              <div className="jc-item"><span className="jc-dot" />Tilgi Group</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {["Helsingin yliopisto, OTM", "Lars Krogius AB Oy, hallituksen pj.", "Bauhaus Suomi Oy, johtoryhmä", "Tilgi Group"].map(item => (
+                <div key={item} style={{ display: "flex", alignItems: "center", gap: "0.6rem", fontSize: "0.82rem", color: "#8A8070" }}>
+                  <span style={{ width: "6px", height: "6px", background: "#C8A44A", borderRadius: "50%", flexShrink: 0, display: "inline-block" }} />
+                  {item}
+                </div>
+              ))}
             </div>
           </div>
         </div>
