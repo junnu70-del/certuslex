@@ -59,20 +59,21 @@ nav {
 .hero-bg {
   position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(200,164,74,.14) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 10% 80%, rgba(200,164,74,.08) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(200,164,74,.12) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 10% 80%, rgba(200,164,74,.07) 0%, transparent 50%),
     repeating-linear-gradient(
-      0deg,
+      -45deg,
       transparent,
-      transparent 80px,
-      rgba(200,164,74,.025) 80px,
-      rgba(200,164,74,.025) 81px
+      transparent 28px,
+      rgba(200,164,74,.045) 28px,
+      rgba(200,164,74,.045) 29px
     );
   pointer-events: none;
 }
 .gold-line {
-  position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-  background: linear-gradient(180deg, var(--gold) 0%, rgba(200,164,74,.4) 60%, transparent 100%);
+  position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+  background: #C8A44A;
+  z-index: 10;
 }
 #landing nav { background: transparent; border-color: rgba(200,164,74,.15); }
 #landing .logo { color: #fff; }
