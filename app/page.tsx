@@ -363,6 +363,36 @@ export default function Home() {
         </div>
       </div>
 
+      <div className="jurist-section">
+        <div className="jurist-inner">
+          <div className="jurist-img-wrap">
+            <img src="/Risto.png" alt="Risto Kurki-Suonio" className="jurist-img" />
+          </div>
+          <div className="jurist-bio">
+            <div className="section-label" style={{ textAlign: "left" }}>PALVELUN TAKANA</div>
+            <h2 className="jurist-name">Risto Kurki-Suonio</h2>
+            <div className="jurist-title">OTM · Osakas, CertusLex</div>
+            <div className="jurist-divider" />
+            <p className="jurist-text">
+              Risto Kurki-Suonion oikeudellinen ja liikkeenjohdollinen kokemus ulottuu vuosikymmenien ajalle.
+              Helsingin yliopistossa oikeustieteen opinnot suorittanut Risto on toiminut johtotehtävissä useissa
+              suomalaisissa ja kansainvälisissä yhtiöissä — muun muassa Lars Krogius AB Oy:n hallituksen
+              puheenjohtajana sekä Bauhaus Suomi Oy:n johtoryhmässä.
+            </p>
+            <p className="jurist-text">
+              CertusLexissä Riston rooli on varmistaa, että palvelun juridinen laatu vastaa korkeinta
+              ammattistandardia — tekoälyn nopeus yhdistettynä juristin vastuuseen.
+            </p>
+            <div className="jurist-credentials">
+              <div className="jc-item"><span className="jc-dot" />Helsingin yliopisto, OTM</div>
+              <div className="jc-item"><span className="jc-dot" />Lars Krogius AB Oy, hallituksen pj.</div>
+              <div className="jc-item"><span className="jc-dot" />Bauhaus Suomi Oy, johtoryhmä</div>
+              <div className="jc-item"><span className="jc-dot" />Tilgi Group</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="trust-strip">
         <p>"Jokainen asiakirja tarkastetaan oikean juristin toimesta — ei algoritmien."</p>
         <div className="trust-items">
