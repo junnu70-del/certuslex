@@ -272,14 +272,15 @@ export default function Home() {
   return (
     <div id="landing">
       <div className="hero-bg" />
-      {/* Vasemman reunan kultalinja */}
-      <div className="gold-line" />
-      {/* Oikean reunan ohut kultalinja */}
-      <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "1px", background: "rgba(200,164,74,.25)", zIndex: 2 }} />
-      {/* Yläreuna kultaraide */}
-      <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: "1px", background: "linear-gradient(90deg, var(--gold) 0%, rgba(200,164,74,.3) 40%, transparent 100%)", zIndex: 2 }} />
-      {/* Geometrinen koristeviiva vasemmalla */}
-      <div style={{ position: "absolute", left: "12px", top: 0, bottom: 0, width: "1px", background: "rgba(200,164,74,.1)", zIndex: 1 }} />
+
+      {/* ── RAIDAT ── */}
+      {/* Paksu kultalinja vasemmalla */}
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "5px", background: "#C8A44A", zIndex: 10, pointerEvents: "none" }} />
+      {/* Ohut sisäraita vasemmalla */}
+      <div style={{ position: "absolute", left: "16px", top: 0, bottom: 0, width: "1px", background: "rgba(200,164,74,0.3)", zIndex: 10, pointerEvents: "none" }} />
+      {/* Ohut raita oikealla */}
+      <div style={{ position: "absolute", right: "16px", top: 0, bottom: 0, width: "1px", background: "rgba(200,164,74,0.15)", zIndex: 10, pointerEvents: "none" }} />
+
       <nav>
         <div className="logo">Certus<span>Lex</span></div>
         <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
@@ -304,7 +305,7 @@ export default function Home() {
       </div>
 
       {/* Kultainen erotinviiva hero/prosessi-rajalla */}
-      <div style={{ height: "1px", background: "linear-gradient(90deg, transparent 0%, rgba(200,164,74,.5) 20%, var(--gold) 50%, rgba(200,164,74,.5) 80%, transparent 100%)" }} />
+      <div style={{ height: "2px", background: "linear-gradient(90deg, #C8A44A 0%, #C8A44A 60%, transparent 100%)" }} />
 
       <div className="section" style={{ background: "var(--cream)" }}>
         <div className="section-label">PROSESSI</div>
@@ -329,7 +330,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div style={{ height: "1px", background: "linear-gradient(90deg, transparent 0%, rgba(200,164,74,.4) 20%, var(--gold) 50%, rgba(200,164,74,.4) 80%, transparent 100%)" }} />
+      <div style={{ height: "2px", background: "linear-gradient(90deg, #C8A44A 0%, #C8A44A 60%, transparent 100%)" }} />
 
       <div className="pricing-section" id="hinnoittelu">
         <div className="section-label">HINNOITTELU</div>
