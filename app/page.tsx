@@ -269,25 +269,25 @@ export default function Home() {
   }
 
   // Landing
-  return (
-    <div id="landing">
-      {/* Radiaaliset taustavalon häilyt */}
-      <div className="hero-bg" />
+  // SVG diagonal stripe as data URI background
+  const stripeStyle: React.CSSProperties = {
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Cline x1='0' y1='30' x2='30' y2='0' stroke='%23C8A44A' stroke-width='1' stroke-opacity='0.13'/%3E%3C/svg%3E")`,
+    backgroundSize: "30px 30px",
+    backgroundRepeat: "repeat",
+  };
 
-      {/* SVG-diagonaaliraidat — mockupin tyyli */}
-      <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1 }} preserveAspectRatio="none">
-        <defs>
-          <pattern id="diagStripe" patternUnits="userSpaceOnUse" width="32" height="32" patternTransform="rotate(-45 0 0)">
-            <line x1="0" y1="0" x2="0" y2="32" stroke="#C8A44A" strokeWidth="0.8" strokeOpacity="0.12" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#diagStripe)" />
-      </svg>
+  return (
+    <div id="landing" style={{ position: "relative", overflow: "hidden", background: "#0F1F3D", ...stripeStyle }}>
+      {/* Radiaaliset valon häilyt päälle */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1,
+        background: "radial-gradient(ellipse 60% 50% at 80% 20%, rgba(200,164,74,.18) 0%, transparent 60%), radial-gradient(ellipse 40% 40% at 10% 80%, rgba(15,31,61,0.95) 0%, transparent 70%)"
+      }} />
 
       {/* Paksu kultalinja vasemmalla */}
-      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "5px", background: "#C8A44A", zIndex: 10, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "5px", background: "#C8A44A", zIndex: 20, pointerEvents: "none" }} />
       {/* Ohut sisäraita vasemmalla */}
-      <div style={{ position: "absolute", left: "18px", top: 0, bottom: 0, width: "1px", background: "rgba(200,164,74,0.25)", zIndex: 10, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", left: "18px", top: 0, bottom: 0, width: "1px", background: "rgba(200,164,74,0.3)", zIndex: 20, pointerEvents: "none" }} />
 
       <nav>
         <div className="logo">Certus<span>Lex</span></div>
