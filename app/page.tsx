@@ -271,15 +271,23 @@ export default function Home() {
   // Landing
   return (
     <div id="landing">
+      {/* Radiaaliset taustavalon häilyt */}
       <div className="hero-bg" />
 
-      {/* ── RAIDAT ── */}
+      {/* SVG-diagonaaliraidat — mockupin tyyli */}
+      <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1 }} preserveAspectRatio="none">
+        <defs>
+          <pattern id="diagStripe" patternUnits="userSpaceOnUse" width="32" height="32" patternTransform="rotate(-45 0 0)">
+            <line x1="0" y1="0" x2="0" y2="32" stroke="#C8A44A" strokeWidth="0.8" strokeOpacity="0.12" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#diagStripe)" />
+      </svg>
+
       {/* Paksu kultalinja vasemmalla */}
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "5px", background: "#C8A44A", zIndex: 10, pointerEvents: "none" }} />
       {/* Ohut sisäraita vasemmalla */}
-      <div style={{ position: "absolute", left: "16px", top: 0, bottom: 0, width: "1px", background: "rgba(200,164,74,0.3)", zIndex: 10, pointerEvents: "none" }} />
-      {/* Ohut raita oikealla */}
-      <div style={{ position: "absolute", right: "16px", top: 0, bottom: 0, width: "1px", background: "rgba(200,164,74,0.15)", zIndex: 10, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", left: "18px", top: 0, bottom: 0, width: "1px", background: "rgba(200,164,74,0.25)", zIndex: 10, pointerEvents: "none" }} />
 
       <nav>
         <div className="logo">Certus<span>Lex</span></div>
