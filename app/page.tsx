@@ -74,6 +74,22 @@ export default function Home() {
       });
 
       setDocId(docRef.id);
+
+      // Lähetä tilausvahvistus sähköpostitse
+      await fetch("/api/send-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userEmail,
+          fileName: file.name,
+          docId: docRef.id,
+          plan,
+          price: planDetails[plan].price,
+          deliveryTime: planDetails[plan].time,
+          docType,
+        }),
+      });
+
       goTo("result");
     } catch (err) {
       console.error("Upload failed:", err);
@@ -253,8 +269,16 @@ export default function Home() {
           </div>
 
           {docId && (
-            <div style={{ fontSize: "0.78rem", color: "var(--muted)", marginBottom: "1.5rem" }}>
-              Tilausnumero: <strong>{docId}</strong>
+            <div style={{ marginBottom: "1.5rem" }}>
+              <div style={{ fontSize: "0.78rem", color: "var(--muted)", marginBottom: "1rem" }}>
+                Tilausnumero: <strong>{docId}</strong>
+              </div>
+              <a
+                href={`/tilaus/${docId}`}
+                style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "var(--navy)", color: "var(--gold)", padding: "0.75rem 1.5rem", fontSize: "0.85rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.04em" }}
+              >
+                Seuraa tilauksen etenemistä →
+              </a>
             </div>
           )}
 
