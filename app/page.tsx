@@ -317,7 +317,7 @@ export default function Home() {
         <div className="logo">Certus<span>Lex</span></div>
         <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
           <a href="#hinnoittelu" style={{ color: "var(--light)", fontSize: "0.85rem", textDecoration: "none" }}>Hinnoittelu</a>
-          <a href="#" style={{ color: "var(--light)", fontSize: "0.85rem", textDecoration: "none" }}>Juristit</a>
+          <a href="/tarjouskone" style={{ color: "var(--gold)", fontSize: "0.85rem", textDecoration: "none", fontWeight: 500 }}>Tarjouskone</a>
           <button className="nav-cta" onClick={() => goTo("upload")}>Lähetä asiakirja →</button>
         </div>
       </nav>
@@ -358,6 +358,52 @@ export default function Home() {
             <div className="step-num">03</div>
             <h3>Saat lausunnon</h3>
             <p>Saat kirjallisen lausunnon ja korjatun asiakirjan. Valmis toimitettavaksi viranomaiselle.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── KAKSI PALVELUA ── */}
+      <div style={{ background: "#0F1F3D", padding: "5rem 3rem", borderTop: "1px solid rgba(200,164,74,.15)" }}>
+        <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+            <div style={{ fontSize: "0.72rem", letterSpacing: "0.14em", color: "#C8A44A", marginBottom: "0.8rem" }}>ALUSTA</div>
+            <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "clamp(1.8rem, 3vw, 2.6rem)", fontWeight: 700, color: "#fff" }}>Kaksi palvelua. Yksi ekosysteemi.</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+            {/* Juridinen tarkastus */}
+            <div style={{ background: "#0A1828", border: "1px solid rgba(200,164,74,.2)", padding: "2.5rem", position: "relative" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "#C8A44A" }} />
+              <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>⚖️</div>
+              <div style={{ fontSize: "0.7rem", letterSpacing: "0.12em", color: "#C8A44A", marginBottom: "0.5rem" }}>NYKYINEN PALVELU</div>
+              <h3 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.6rem", fontWeight: 700, color: "#fff", marginBottom: "0.8rem" }}>Juridinen tarkastus</h3>
+              <p style={{ fontSize: "0.85rem", color: "#8899AA", lineHeight: 1.7, marginBottom: "1.5rem" }}>Lähetät tekoälyn kirjoittaman asiakirjan — OTM-juristi tarkastaa pykäläviittaukset, argumentaation ja oikeudellisen johdonmukaisuuden.</p>
+              <div style={{ fontSize: "0.78rem", color: "#556678", marginBottom: "1.5rem" }}>
+                <div style={{ marginBottom: "0.3rem" }}>✓ Juristi tarkastaa jokaisen asiakirjan</div>
+                <div style={{ marginBottom: "0.3rem" }}>✓ Viranomaiskelpoinen lopputulos</div>
+                <div>✓ 12–48h toimitusaika</div>
+              </div>
+              <button onClick={() => goTo("upload")} style={{ background: "transparent", border: "1px solid rgba(200,164,74,.4)", color: "#C8A44A", padding: "0.7rem 1.4rem", fontSize: "0.82rem", cursor: "pointer", letterSpacing: "0.05em" }}>
+                Lähetä asiakirja →
+              </button>
+            </div>
+
+            {/* Tarjouskone */}
+            <div style={{ background: "#0A1828", border: "1px solid rgba(200,164,74,.5)", padding: "2.5rem", position: "relative" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "linear-gradient(90deg, #C8A44A, #E8C06A)" }} />
+              <div style={{ position: "absolute", top: "1rem", right: "1rem", background: "#C8A44A", color: "#0F1F3D", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em", padding: "0.2rem 0.6rem" }}>UUSI</div>
+              <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>🤖</div>
+              <div style={{ fontSize: "0.7rem", letterSpacing: "0.12em", color: "#C8A44A", marginBottom: "0.5rem" }}>AI-PALVELU</div>
+              <h3 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.6rem", fontWeight: 700, color: "#fff", marginBottom: "0.8rem" }}>Tarjouskone</h3>
+              <p style={{ fontSize: "0.85rem", color: "#8899AA", lineHeight: 1.7, marginBottom: "1.5rem" }}>Annat speksit — AI rakentaa ammattimaisen tarjouksen. Yritystietosi, hinnoittelusi ja brändisi valmiina pohjassa. Valmis PDF minuuteissa.</p>
+              <div style={{ fontSize: "0.78rem", color: "#556678", marginBottom: "1.5rem" }}>
+                <div style={{ marginBottom: "0.3rem" }}>✓ AI kirjoittaa tarjouksen spekseistä</div>
+                <div style={{ marginBottom: "0.3rem" }}>✓ Yritysprofiili tallentuu kerran</div>
+                <div>✓ Kilpailutukset juristin tarkastukseen</div>
+              </div>
+              <a href="/tarjouskone" style={{ display: "inline-block", background: "#C8A44A", color: "#0F1F3D", padding: "0.7rem 1.4rem", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.05em" }}>
+                Kokeile Tarjouskone →
+              </a>
+            </div>
           </div>
         </div>
       </div>
