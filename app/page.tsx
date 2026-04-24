@@ -433,7 +433,7 @@ export default function Home() {
         <p>© 2026 CertusLex — DeepEnd Oy</p>
         <div className="footer-links">
           <a href="#hinnoittelu">Hinnoittelu</a>
-          <a href="#">Tietosuoja</a>
+          <a href="/tietosuoja">Tietosuoja</a>
           <a href="mailto:info@certuslex.fi">info@certuslex.fi</a>
         </div>
       </div>

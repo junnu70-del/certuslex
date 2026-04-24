@@ -18,6 +18,9 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "CertusLex — Juristivarmistettu asiakirja",
   description: "Tekoälyn kirjoittama. Juristin vahvistama. Viranomaiskelpoinen.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
