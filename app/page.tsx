@@ -324,7 +324,7 @@ export default function Home() {
 
       <div className="hero">
         <div className="hero-tag">JURISTIVARMISTETTU ASIAKIRJATARKASTUS</div>
-        <h1>Tiedätkö, onko asiakirjasi<br /><em>oikeellinen?</em></h1>
+        <h1>Tiedätkö, onko asiakirjasi<br /><em>kunnossa?</em></h1>
         <p className="hero-sub">CertusLex tarkistuttaa asiakirjasi OTM-juristilla. Saat varmuuden siitä, että lakisisältö, viittaukset ja pykälät ovat oikein — ennen kuin asiakirja aiheuttaa ongelmia.<br /><span style={{ fontSize: "0.9em", opacity: 0.8 }}>Erityisen hyödyllinen tekoälyllä laadittujen asiakirjojen tarkistamiseen.</span></p>
         <div className="hero-btns">
           <button className="btn-primary" onClick={() => goTo("upload")}>Lähetä asiakirja tarkastukseen</button>
