@@ -45,6 +45,7 @@ export default function TarjouskoneePage() {
   const [sentQuoteUrl, setSentQuoteUrl] = useState("");
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [userId, setUserId] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
 
   // Lataa yritysprofiili automaattisesti kirjautuneelle käyttäjälle
@@ -52,6 +53,7 @@ export default function TarjouskoneePage() {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) return;
       setUserEmail(u.email ?? "");
+      setUserId(u.uid);
       try {
         const snap = await getDoc(doc(db, "companies", u.uid));
         if (snap.exists()) {
@@ -112,7 +114,7 @@ export default function TarjouskoneePage() {
       const res = await fetch("/api/send-quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quoteHtml: quote, company, project, clientEmail }),
+        body: JSON.stringify({ quoteHtml: quote, company, project, clientEmail, senderUid: userId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Virhe");
@@ -137,7 +139,10 @@ export default function TarjouskoneePage() {
         </Link>
         <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
           {userEmail ? (
-            <Link href="/profiili" style={{ fontSize: "0.82rem", color: "#C8A44A", textDecoration: "none", fontWeight: 500 }}>⚙️ Yritysprofiili</Link>
+            <>
+              <Link href="/tarjoukset" style={{ fontSize: "0.82rem", color: "#0F1F3D", textDecoration: "none", fontWeight: 500 }}>📋 Arkisto</Link>
+              <Link href="/profiili" style={{ fontSize: "0.82rem", color: "#C8A44A", textDecoration: "none", fontWeight: 500 }}>⚙️ Yritysprofiili</Link>
+            </>
           ) : (
             <Link href="/kirjaudu" style={{ fontSize: "0.82rem", color: "#8A8070", textDecoration: "none" }}>Kirjaudu →</Link>
           )}

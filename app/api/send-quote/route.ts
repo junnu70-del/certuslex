@@ -19,7 +19,7 @@ function getAdminDb() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { quoteHtml, company, project, clientEmail, clientName } = await req.json();
+    const { quoteHtml, company, project, clientEmail, clientName, senderUid } = await req.json();
 
     if (!quoteHtml || !clientEmail) {
       return NextResponse.json({ error: "Puuttuvat kentät" }, { status: 400 });
@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
       clientEmail,
       clientName: clientName || project.clientName,
       senderEmail: company.email,
+      senderUid: senderUid ?? null,
       token,
       status: "sent",
       comments: [],
