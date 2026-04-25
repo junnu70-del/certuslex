@@ -66,7 +66,7 @@ export default function TarjouskoneePage() {
   const stepNum = { company: 1, project: 2, specs: 3, generating: 3, result: 3 }[step];
 
   return (
-    <div style={{ background: "#F7F4EE", minHeight: "100vh" }}>
+    <div style={{ background: step === "result" ? "#fff" : "#F7F4EE", minHeight: "100vh" }}>
       {/* Nav */}
       <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.2rem 3rem", borderBottom: "1px solid #EDE8DE", background: "#fff" }}>
         <Link href="/" style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.8rem", fontWeight: 700, textDecoration: "none", color: "#0F1F3D", letterSpacing: "-0.02em" }}>
@@ -234,7 +234,7 @@ export default function TarjouskoneePage() {
 
             {/* Quote content */}
             <div
-              style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "2.5rem", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif" }}
+              style={{ background: "#fff", padding: "2.5rem 0", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif" }}
               dangerouslySetInnerHTML={{ __html: quote }}
             />
           </div>
