@@ -15,10 +15,10 @@ function getAdminDb() {
   return getFirestore();
 }
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const token = req.nextUrl.searchParams.get("token");
-    const { id } = params;
+    const { id } = await params;
 
     if (!token) return NextResponse.json({ error: "Token puuttuu" }, { status: 400 });
 
