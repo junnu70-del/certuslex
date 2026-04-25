@@ -9,26 +9,25 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface CompanyProfile {
-  name: string;
-  businessId: string;
-  address: string;
-  city: string;
-  zip: string;
-  phone: string;
-  email: string;
-  invoiceEmail: string;
-  iban: string;
-  website: string;
-  contact: string;
-  hourlyRate: string;
-  paymentTerms: string;
-  logoUrl: string;
+  name: string; businessId: string; address: string; city: string; zip: string;
+  phone: string; email: string; invoiceEmail: string; iban: string; website: string;
+  contact: string; hourlyRate: string; paymentTerms: string; logoUrl: string;
 }
 
 const empty: CompanyProfile = {
   name: "", businessId: "", address: "", city: "", zip: "",
   phone: "", email: "", invoiceEmail: "", iban: "", website: "",
   contact: "", hourlyRate: "", paymentTerms: "14 päivää netto", logoUrl: "",
+};
+
+const INP: React.CSSProperties = {
+  width: "100%", border: "1px solid #EDE8DE", padding: "0.7rem 0.9rem",
+  fontSize: "0.9rem", outline: "none", boxSizing: "border-box",
+  fontFamily: "inherit", background: "#fff",
+};
+const LBL: React.CSSProperties = {
+  display: "block", fontSize: "0.72rem", fontWeight: 700,
+  letterSpacing: "0.08em", color: "#0F1F3D", marginBottom: "0.4rem",
 };
 
 export default function ProfiiliPage() {
@@ -79,27 +78,8 @@ export default function ProfiiliPage() {
     }
   }
 
-  const set = (key: keyof CompanyProfile) => (v: string) =>
-    setProfile(p => ({ ...p, [key]: v }));
-
-  const inp: React.CSSProperties = {
-    width: "100%", border: "1px solid #EDE8DE", padding: "0.7rem 0.9rem",
-    fontSize: "0.9rem", outline: "none", boxSizing: "border-box",
-    fontFamily: "inherit", background: "#fff",
-  };
-  const lbl: React.CSSProperties = {
-    display: "block", fontSize: "0.72rem", fontWeight: 700,
-    letterSpacing: "0.08em", color: "#0F1F3D", marginBottom: "0.4rem",
-  };
-  function Field({ label, k, placeholder, type = "text" }: { label: string; k: keyof CompanyProfile; placeholder?: string; type?: string }) {
-    return (
-      <div style={{ marginBottom: "1.1rem" }}>
-        <label style={lbl}>{label}</label>
-        <input type={type} value={profile[k]} onChange={e => set(k)(e.target.value)}
-          placeholder={placeholder} style={inp} />
-      </div>
-    );
-  }
+  const upd = (k: keyof CompanyProfile) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setProfile(p => ({ ...p, [k]: e.target.value }));
 
   if (loading) return (
     <div style={{ background: "#F7F4EE", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -138,9 +118,7 @@ export default function ProfiiliPage() {
             {profile.logoUrl ? (
               <img src={profile.logoUrl} alt="Logo" style={{ height: "60px", maxWidth: "180px", objectFit: "contain", border: "1px solid #EDE8DE", padding: "0.5rem" }} />
             ) : (
-              <div style={{ width: "120px", height: "60px", border: "2px dashed #EDE8DE", display: "flex", alignItems: "center", justifyContent: "center", color: "#8A8070", fontSize: "0.75rem" }}>
-                Ei logoa
-              </div>
+              <div style={{ width: "120px", height: "60px", border: "2px dashed #EDE8DE", display: "flex", alignItems: "center", justifyContent: "center", color: "#8A8070", fontSize: "0.75rem" }}>Ei logoa</div>
             )}
             <div>
               <button onClick={() => fileRef.current?.click()} disabled={logoUploading}
@@ -162,38 +140,76 @@ export default function ProfiiliPage() {
         {/* Perustiedot */}
         <div style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "2rem", marginBottom: "1.5rem" }}>
           <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 1.5rem" }}>PERUSTIEDOT</p>
-          <Field label="YRITYKSEN NIMI *" k="name" placeholder="Esimerkki Oy" />
-          <Field label="Y-TUNNUS" k="businessId" placeholder="1234567-8" />
-          <Field label="YHTEYSHENKILÖ *" k="contact" placeholder="Matti Meikäläinen" />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-            <Field label="PUHELIN" k="phone" placeholder="+358 40 123 4567" />
-            <Field label="SÄHKÖPOSTI *" k="email" placeholder="info@yritys.fi" type="email" />
+          <div style={{ marginBottom: "1.1rem" }}>
+            <label style={LBL}>YRITYKSEN NIMI *</label>
+            <input value={profile.name} onChange={upd("name")} placeholder="Esimerkki Oy" style={INP} />
           </div>
-          <Field label="LASKUTUSSÄHKÖPOSTI" k="invoiceEmail" placeholder="laskutus@yritys.fi" type="email" />
-          <Field label="VERKKOSIVUSTO" k="website" placeholder="https://www.yritys.fi" />
+          <div style={{ marginBottom: "1.1rem" }}>
+            <label style={LBL}>Y-TUNNUS</label>
+            <input value={profile.businessId} onChange={upd("businessId")} placeholder="1234567-8" style={INP} />
+          </div>
+          <div style={{ marginBottom: "1.1rem" }}>
+            <label style={LBL}>YHTEYSHENKILÖ *</label>
+            <input value={profile.contact} onChange={upd("contact")} placeholder="Matti Meikäläinen" style={INP} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.1rem" }}>
+            <div>
+              <label style={LBL}>PUHELIN</label>
+              <input value={profile.phone} onChange={upd("phone")} placeholder="+358 40 123 4567" style={INP} />
+            </div>
+            <div>
+              <label style={LBL}>SÄHKÖPOSTI *</label>
+              <input type="email" value={profile.email} onChange={upd("email")} placeholder="info@yritys.fi" style={INP} />
+            </div>
+          </div>
+          <div style={{ marginBottom: "1.1rem" }}>
+            <label style={LBL}>LASKUTUSSÄHKÖPOSTI</label>
+            <input type="email" value={profile.invoiceEmail} onChange={upd("invoiceEmail")} placeholder="laskutus@yritys.fi" style={INP} />
+          </div>
+          <div style={{ marginBottom: "1.1rem" }}>
+            <label style={LBL}>VERKKOSIVUSTO</label>
+            <input value={profile.website} onChange={upd("website")} placeholder="https://www.yritys.fi" style={INP} />
+          </div>
         </div>
 
         {/* Osoite */}
         <div style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "2rem", marginBottom: "1.5rem" }}>
           <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 1.5rem" }}>OSOITETIEDOT</p>
-          <Field label="KATUOSOITE" k="address" placeholder="Esimerkkikatu 1" />
+          <div style={{ marginBottom: "1.1rem" }}>
+            <label style={LBL}>KATUOSOITE</label>
+            <input value={profile.address} onChange={upd("address")} placeholder="Esimerkkikatu 1" style={INP} />
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "1rem" }}>
-            <Field label="POSTINUMERO" k="zip" placeholder="00100" />
-            <Field label="KAUPUNKI" k="city" placeholder="Helsinki" />
+            <div>
+              <label style={LBL}>POSTINUMERO</label>
+              <input value={profile.zip} onChange={upd("zip")} placeholder="00100" style={INP} />
+            </div>
+            <div>
+              <label style={LBL}>KAUPUNKI</label>
+              <input value={profile.city} onChange={upd("city")} placeholder="Helsinki" style={INP} />
+            </div>
           </div>
         </div>
 
         {/* Maksu */}
         <div style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "2rem", marginBottom: "2rem" }}>
           <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 1.5rem" }}>MAKSUTIEDOT JA HINNOITTELU</p>
-          <Field label="IBAN-TILINUMERO" k="iban" placeholder="FI12 3456 7890 1234 56" />
+          <div style={{ marginBottom: "1.1rem" }}>
+            <label style={LBL}>IBAN-TILINUMERO</label>
+            <input value={profile.iban} onChange={upd("iban")} placeholder="FI12 3456 7890 1234 56" style={INP} />
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-            <Field label="TUNTIHINTA (€/h)" k="hourlyRate" placeholder="85" />
-            <Field label="MAKSUEHDOT" k="paymentTerms" placeholder="14 päivää netto" />
+            <div>
+              <label style={LBL}>TUNTIHINTA (€/h)</label>
+              <input value={profile.hourlyRate} onChange={upd("hourlyRate")} placeholder="85" style={INP} />
+            </div>
+            <div>
+              <label style={LBL}>MAKSUEHDOT</label>
+              <input value={profile.paymentTerms} onChange={upd("paymentTerms")} placeholder="14 päivää netto" style={INP} />
+            </div>
           </div>
         </div>
 
-        {/* Tallenna */}
         <button onClick={handleSave} disabled={saving}
           style={{ width: "100%", background: saving ? "#EDE8DE" : saved ? "#166534" : "#C8A44A", color: saving ? "#8A8070" : "#0F1F3D", border: "none", padding: "1rem", fontSize: "1rem", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", letterSpacing: "0.05em", transition: "background 0.3s" }}>
           {saving ? "Tallennetaan..." : saved ? "✅ Tallennettu!" : "Tallenna yritystiedot →"}
@@ -205,7 +221,6 @@ export default function ProfiiliPage() {
           </p>
         )}
       </div>
-
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
