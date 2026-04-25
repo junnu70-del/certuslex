@@ -3,6 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 
+// Määritelty komponentin ULKOPUOLELLA — ei re-mounttaa joka renderillä
+function Input({ label, value, onChange, placeholder, type = "text" }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
+}) {
+  return (
+    <div style={{ marginBottom: "1.2rem" }}>
+      <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.08em", color: "#0F1F3D", marginBottom: "0.4rem" }}>{label}</label>
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        style={{ width: "100%", border: "1px solid #EDE8DE", padding: "0.7rem 0.9rem", fontSize: "0.9rem", outline: "none", fontFamily: "inherit", boxSizing: "border-box" as const, background: "#fff" }} />
+    </div>
+  );
+}
+
 type Step = "company" | "project" | "specs" | "generating" | "result";
 
 interface CompanyInfo {
@@ -45,17 +58,10 @@ export default function TarjouskoneePage() {
   }
 
   function copyToClipboard() {
-    navigator.clipboard.writeText(quote);
+    const tmp = document.createElement("div");
+    tmp.innerHTML = quote;
+    navigator.clipboard.writeText(tmp.innerText);
   }
-
-  // ── INPUT HELPER ──
-  const Input = ({ label, value, onChange, placeholder, type = "text" }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) => (
-    <div style={{ marginBottom: "1.2rem" }}>
-      <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.08em", color: "#0F1F3D", marginBottom: "0.4rem" }}>{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        style={{ width: "100%", border: "1px solid #EDE8DE", padding: "0.7rem 0.9rem", fontSize: "0.9rem", outline: "none", fontFamily: "inherit", boxSizing: "border-box", background: "#fff" }} />
-    </div>
-  );
 
   const stepNum = { company: 1, project: 2, specs: 3, generating: 3, result: 3 }[step];
 
@@ -227,9 +233,10 @@ export default function TarjouskoneePage() {
             </div>
 
             {/* Quote content */}
-            <div style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "2.5rem", whiteSpace: "pre-wrap", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif" }}>
-              {quote}
-            </div>
+            <div
+              style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "2.5rem", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif" }}
+              dangerouslySetInnerHTML={{ __html: quote }}
+            />
           </div>
         )}
       </div>
