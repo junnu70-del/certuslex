@@ -115,7 +115,7 @@ export default function TarjouskoneePage() {
         </div>
       )}
 
-      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "3rem 2rem 5rem" }}>
+      <div style={{ maxWidth: "680px", margin: "0 auto", padding: step === "result" ? "3rem 2rem 0" : "3rem 2rem 5rem" }}>
 
         {/* ── STEP 1: YRITYSTIEDOT ── */}
         {step === "company" && (
@@ -277,7 +277,7 @@ export default function TarjouskoneePage() {
 
             {/* Quote content */}
             <div
-              style={{ background: "#fff", padding: "2.5rem 0", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif" }}
+              style={{ background: "#fff", padding: "2.5rem 0 6rem", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif" }}
               dangerouslySetInnerHTML={{ __html: quote }}
             />
           </div>
