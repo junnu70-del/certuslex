@@ -16,7 +16,7 @@ function Input({ label, value, onChange, placeholder, type = "text" }: {
   );
 }
 
-type Step = "company" | "project" | "specs" | "generating" | "result";
+type Step = "company" | "project" | "specs" | "generating" | "result" | "send";
 
 interface CompanyInfo {
   name: string; businessId: string; address: string;
@@ -37,6 +37,9 @@ export default function TarjouskoneePage() {
   const [specs, setSpecs] = useState("");
   const [quote, setQuote] = useState("");
   const [error, setError] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sentQuoteUrl, setSentQuoteUrl] = useState("");
 
   async function generateQuote() {
     setStep("generating");
@@ -63,7 +66,28 @@ export default function TarjouskoneePage() {
     navigator.clipboard.writeText(tmp.innerText);
   }
 
-  const stepNum = { company: 1, project: 2, specs: 3, generating: 3, result: 3 }[step];
+  async function sendQuoteToClient() {
+    if (!clientEmail) return;
+    setSending(true);
+    setError("");
+    try {
+      const res = await fetch("/api/send-quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quoteHtml: quote, company, project, clientEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Virhe");
+      setSentQuoteUrl(`https://certuslex.fi/tarjous/${data.quoteId}?token=${data.token}`);
+      setStep("send");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Virhe");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const stepNum = { company: 1, project: 2, specs: 3, generating: 3, result: 3, send: 3 }[step];
 
   return (
     <div style={{ background: step === "result" ? "#fff" : "#F7F4EE", minHeight: "100vh" }}>
@@ -227,9 +251,28 @@ export default function TarjouskoneePage() {
               <button onClick={() => { setStep("specs"); setQuote(""); }} style={{ background: "transparent", border: "1px solid #EDE8DE", color: "#8A8070", padding: "0.8rem 1.4rem", fontSize: "0.82rem", cursor: "pointer" }}>
                 🔄 Generoi uudelleen
               </button>
-              <Link href="/" style={{ display: "inline-flex", alignItems: "center", background: "rgba(200,164,74,.1)", border: "1px solid rgba(200,164,74,.3)", color: "#C8A44A", padding: "0.8rem 1.4rem", fontSize: "0.82rem", textDecoration: "none", fontWeight: 500 }}>
-                ⚖️ Lähetä juristille →
-              </Link>
+            </div>
+
+            {/* Lähetä asiakkaalle */}
+            <div style={{ background: "#FAF7F2", border: "1px solid rgba(200,164,74,.4)", padding: "1.5rem 2rem", marginBottom: "1.5rem" }}>
+              <p style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 0.8rem" }}>📨 LÄHETÄ ASIAKKAALLE</p>
+              <p style={{ fontSize: "0.82rem", color: "#4A4035", margin: "0 0 1rem" }}>Asiakas saa sähköpostiin linkin josta voi kommentoida tai allekirjoittaa tarjouksen sähköisesti.</p>
+              <div style={{ display: "flex", gap: "0.8rem", alignItems: "flex-start" }}>
+                <input
+                  value={clientEmail}
+                  onChange={e => setClientEmail(e.target.value)}
+                  placeholder={`${project.clientName.toLowerCase().replace(/\s+/g, "")}@yritys.fi`}
+                  type="email"
+                  style={{ flex: 1, border: "1px solid #EDE8DE", padding: "0.7rem 0.9rem", fontSize: "0.9rem", outline: "none", boxSizing: "border-box" as const, background: "#fff" }}
+                />
+                <button
+                  onClick={sendQuoteToClient}
+                  disabled={sending || !clientEmail}
+                  style={{ background: !clientEmail || sending ? "#EDE8DE" : "#C8A44A", color: !clientEmail || sending ? "#8A8070" : "#0F1F3D", border: "none", padding: "0.7rem 1.4rem", fontSize: "0.85rem", fontWeight: 700, cursor: !clientEmail || sending ? "not-allowed" : "pointer", whiteSpace: "nowrap" as const }}>
+                  {sending ? "Lähetetään..." : "Lähetä →"}
+                </button>
+              </div>
+              {error && <p style={{ color: "#9b2335", fontSize: "0.82rem", margin: "0.5rem 0 0" }}>{error}</p>}
             </div>
 
             {/* Quote content */}
@@ -237,6 +280,30 @@ export default function TarjouskoneePage() {
               style={{ background: "#fff", padding: "2.5rem 0", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif" }}
               dangerouslySetInnerHTML={{ __html: quote }}
             />
+          </div>
+        )}
+
+        {/* ── SEND SUCCESS ── */}
+        {step === "send" && (
+          <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
+            <div style={{ fontSize: "3.5rem", marginBottom: "1rem" }}>📨</div>
+            <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "2rem", color: "#0F1F3D", marginBottom: "0.5rem" }}>Tarjous lähetetty!</h2>
+            <p style={{ color: "#8A8070", fontSize: "0.9rem", marginBottom: "2rem" }}>
+              Sähköposti lähetetty osoitteeseen <strong style={{ color: "#0F1F3D" }}>{clientEmail}</strong>.<br/>
+              Asiakas voi kommentoida tai allekirjoittaa tarjouksen linkistä.
+            </p>
+            <div style={{ background: "#FAF7F2", border: "1px solid #EDE8DE", padding: "1rem 1.5rem", marginBottom: "2rem", fontSize: "0.8rem", color: "#4A4035", textAlign: "left" }}>
+              <p style={{ margin: "0 0 0.4rem", fontWeight: 600 }}>Tarjouslinkki (voit jakaa myös suoraan):</p>
+              <a href={sentQuoteUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#C8A44A", wordBreak: "break-all" as const, fontSize: "0.75rem" }}>{sentQuoteUrl}</a>
+            </div>
+            <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+              <button onClick={() => { setStep("result"); setError(""); }} style={{ background: "transparent", border: "1px solid #EDE8DE", color: "#8A8070", padding: "0.8rem 1.5rem", cursor: "pointer", fontSize: "0.85rem" }}>
+                ← Palaa tarjoukseen
+              </button>
+              <button onClick={() => { setStep("specs"); setQuote(""); setClientEmail(""); setSentQuoteUrl(""); }} style={{ background: "#0F1F3D", color: "#C8A44A", border: "none", padding: "0.8rem 1.5rem", cursor: "pointer", fontSize: "0.85rem", fontWeight: 600 }}>
+                🔄 Tee uusi tarjous
+              </button>
+            </div>
           </div>
         )}
       </div>
