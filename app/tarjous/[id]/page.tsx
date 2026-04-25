@@ -145,24 +145,24 @@ export default function TarjousPage() {
         {/* Tarjoussivu */}
         {view === "quote" && (
           <>
-            {/* Tarjousdokumentti */}
-            <div style={{ background: "#fff", padding: "2.5rem", marginBottom: "1.5rem", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif" }}
+            {/* Tarjousdokumentti — extra paddingBottom jotta sticky-palkki ei peitä */}
+            <div style={{ background: "#fff", padding: "2.5rem", paddingBottom: "7rem", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif" }}
               dangerouslySetInnerHTML={{ __html: quote.quoteHtml }} />
-
-            {/* Toimintopainikkeet */}
-            {!isSigned && (
-              <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-                <button onClick={() => setView("comment")}
-                  style={{ flex: 1, minWidth: "200px", background: "transparent", border: "2px solid #0F1F3D", color: "#0F1F3D", padding: "1rem", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", letterSpacing: "0.03em" }}>
-                  💬 Kommentoi tarjousta
-                </button>
-                <button onClick={() => setView("sign")}
-                  style={{ flex: 1, minWidth: "200px", background: "#0F1F3D", border: "none", color: "#C8A44A", padding: "1rem", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", letterSpacing: "0.03em" }}>
-                  ✍️ Hyväksy ja allekirjoita
-                </button>
-              </div>
-            )}
           </>
+        )}
+
+        {/* Sticky toimintopalkki — vain quote-näkymässä */}
+        {view === "quote" && !isSigned && (
+          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#0F1F3D", borderTop: "3px solid #C8A44A", padding: "1rem 1.5rem", display: "flex", gap: "1rem", zIndex: 100, justifyContent: "center" }}>
+            <button onClick={() => setView("comment")}
+              style={{ flex: 1, maxWidth: "300px", background: "transparent", border: "2px solid #C8A44A", color: "#C8A44A", padding: "0.85rem", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", letterSpacing: "0.03em" }}>
+              💬 Kommentoi tarjousta
+            </button>
+            <button onClick={() => setView("sign")}
+              style={{ flex: 1, maxWidth: "300px", background: "#C8A44A", border: "none", color: "#0F1F3D", padding: "0.85rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer", letterSpacing: "0.03em" }}>
+              ✍️ Hyväksy ja allekirjoita
+            </button>
+          </div>
         )}
 
         {/* Kommentointilomake */}
