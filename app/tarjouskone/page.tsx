@@ -45,6 +45,7 @@ export default function TarjouskoneePage() {
   const [sentQuoteUrl, setSentQuoteUrl] = useState("");
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
 
   // Lataa yritysprofiili automaattisesti kirjautuneelle käyttäjälle
   useEffect(() => {
@@ -65,6 +66,7 @@ export default function TarjouskoneePage() {
             hourlyRate: p.hourlyRate ?? "",
             paymentTerms: p.paymentTerms ?? "14 päivää netto",
           });
+          setLogoUrl(p.logoUrl ?? "");
           setProfileLoaded(true);
         }
       } catch { /* ei profiilia */ }
@@ -83,7 +85,12 @@ export default function TarjouskoneePage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Virhe");
-      setQuote(data.quote);
+      const logoHtml = logoUrl
+        ? `<div style="text-align:right;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:2px solid #C8A44A;">
+            <img src="${logoUrl}" alt="Logo" style="max-height:70px;max-width:220px;object-fit:contain;" />
+           </div>`
+        : "";
+      setQuote(logoHtml + data.quote);
       setStep("result");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Tuntematon virhe");
@@ -323,7 +330,7 @@ export default function TarjouskoneePage() {
 
             {/* Quote content */}
             <div
-              style={{ background: "#fff", padding: "2.5rem 0 6rem", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif" }}
+              style={{ background: "#fff", padding: "2.5rem 2rem 10rem", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif", marginLeft: "-2rem", marginRight: "-2rem" }}
               dangerouslySetInnerHTML={{ __html: quote }}
             />
           </div>
