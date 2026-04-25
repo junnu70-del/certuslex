@@ -16,10 +16,10 @@ function getAdminDb() {
   return getFirestore();
 }
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest) {
   try {
     const { token, signerName, signerEmail } = await req.json();
-    const { id } = await params;
+    const id = req.nextUrl.pathname.split("/").at(-2)!;
 
     if (!token || !signerName) {
       return NextResponse.json({ error: "Puuttuvat kentät" }, { status: 400 });
