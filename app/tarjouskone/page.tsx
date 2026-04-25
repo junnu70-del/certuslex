@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 // Määritelty komponentin ULKOPUOLELLA — ei re-mounttaa joka renderillä
 function Input({ label, value, onChange, placeholder, type = "text" }: {
@@ -40,6 +43,34 @@ export default function TarjouskoneePage() {
   const [clientEmail, setClientEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [sentQuoteUrl, setSentQuoteUrl] = useState("");
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+
+  // Lataa yritysprofiili automaattisesti kirjautuneelle käyttäjälle
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      if (!u) return;
+      setUserEmail(u.email ?? "");
+      try {
+        const snap = await getDoc(doc(db, "companies", u.uid));
+        if (snap.exists()) {
+          const p = snap.data();
+          setCompany({
+            name: p.name ?? "",
+            businessId: p.businessId ?? "",
+            address: `${p.address ?? ""}${p.zip ? ", " + p.zip : ""}${p.city ? " " + p.city : ""}`.trim(),
+            contact: p.contact ?? "",
+            phone: p.phone ?? "",
+            email: p.email ?? "",
+            hourlyRate: p.hourlyRate ?? "",
+            paymentTerms: p.paymentTerms ?? "14 päivää netto",
+          });
+          setProfileLoaded(true);
+        }
+      } catch { /* ei profiilia */ }
+    });
+    return () => unsub();
+  }, []);
 
   async function generateQuote() {
     setStep("generating");
@@ -97,8 +128,23 @@ export default function TarjouskoneePage() {
           Certus<span style={{ color: "#C8A44A" }}>Lex</span>
           <span style={{ fontSize: "0.9rem", fontWeight: 400, color: "#C8A44A", marginLeft: "0.5rem", fontFamily: "inherit" }}>/ Tarjouskone</span>
         </Link>
-        <Link href="/" style={{ fontSize: "0.82rem", color: "#8A8070", textDecoration: "none" }}>← Etusivu</Link>
+        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+          {userEmail ? (
+            <Link href="/profiili" style={{ fontSize: "0.82rem", color: "#C8A44A", textDecoration: "none", fontWeight: 500 }}>⚙️ Yritysprofiili</Link>
+          ) : (
+            <Link href="/kirjaudu" style={{ fontSize: "0.82rem", color: "#8A8070", textDecoration: "none" }}>Kirjaudu →</Link>
+          )}
+          <Link href="/" style={{ fontSize: "0.82rem", color: "#8A8070", textDecoration: "none" }}>← Etusivu</Link>
+        </div>
       </nav>
+
+      {/* Profiili ladattu -ilmoitus */}
+      {profileLoaded && step === "company" && (
+        <div style={{ background: "#f0fdf4", borderBottom: "1px solid #86efac", padding: "0.6rem 3rem", fontSize: "0.82rem", color: "#166534", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>✅ Yritystiedot ladattu automaattisesti profiilista</span>
+          <Link href="/profiili" style={{ color: "#166534", fontWeight: 600, textDecoration: "none" }}>Muokkaa →</Link>
+        </div>
+      )}
 
       {/* Progress bar */}
       {step !== "result" && (
