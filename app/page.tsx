@@ -323,16 +323,16 @@ export default function Home() {
       </nav>
 
       <div className="hero">
-        <div className="hero-tag">JURISTIVARMISTETTU AI-ASIAKIRJA</div>
-        <h1>Tekoälyn kirjoittama.<br /><em>Juristin vahvistama.</em><br />Viranomaiskelpoinen.</h1>
-        <p className="hero-sub">CertusLex ratkaisee tekoälyasiakirjojen suurimman ongelman: hallusinoidut lakipykälät. Jokaisen asiakirjan tarkastaa oikea OTM-juristi ennen toimittamista.</p>
+        <div className="hero-tag">JURISTIVARMISTETTU ASIAKIRJATARKASTUS</div>
+        <h1>Tiedätkö, onko asiakirjasi<br /><em>oikeellinen?</em></h1>
+        <p className="hero-sub">CertusLex tarkistuttaa asiakirjasi OTM-juristilla. Saat varmuuden siitä, että lakisisältö, viittaukset ja pykälät ovat oikein — ennen kuin asiakirja aiheuttaa ongelmia.<br /><span style={{ fontSize: "0.9em", opacity: 0.8 }}>Erityisen hyödyllinen tekoälyllä laadittujen asiakirjojen tarkistamiseen.</span></p>
         <div className="hero-btns">
           <button className="btn-primary" onClick={() => goTo("upload")}>Lähetä asiakirja tarkastukseen</button>
         </div>
         <div className="hero-stats">
-          <div><div className="stat-n">98%</div><div className="stat-l">TARKKUUS</div></div>
-          <div><div className="stat-n">24h</div><div className="stat-l">TOIMITUSAIKA</div></div>
-          <div><div className="stat-n">49€</div><div className="stat-l">ALK. HINTA</div></div>
+          <div><div className="stat-n">✓</div><div className="stat-l">JURISTIN TARKASTAMA</div></div>
+          <div><div className="stat-n">✓</div><div className="stat-l">PYKÄLÄT OIKEIN</div></div>
+          <div><div className="stat-n">✓</div><div className="stat-l">MIELENRAUHA</div></div>
         </div>
       </div>
 
