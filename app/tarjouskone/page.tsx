@@ -4,9 +4,8 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { auth, db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 
 // Määritelty komponentin ULKOPUOLELLA — ei re-mounttaa joka renderillä
 function Input({ label, value, onChange, placeholder, type = "text" }: {
@@ -59,21 +58,26 @@ export default function TarjouskoneePage() {
       setUserEmail(u.email ?? "");
       setUserId(u.uid);
       try {
-        const snap = await getDoc(doc(db, "companies", u.uid));
-        if (snap.exists()) {
-          const p = snap.data();
-          setCompany({
-            name: p.name ?? "",
-            businessId: p.businessId ?? "",
-            address: `${p.address ?? ""}${p.zip ? ", " + p.zip : ""}${p.city ? " " + p.city : ""}`.trim(),
-            contact: p.contact ?? "",
-            phone: p.phone ?? "",
-            email: p.email ?? "",
-            hourlyRate: p.hourlyRate ?? "",
-            paymentTerms: p.paymentTerms ?? "14 päivää netto",
-          });
-          setLogoUrl(p.logoUrl ?? "");
-          setProfileLoaded(true);
+        const token = await u.getIdToken();
+        const res = await fetch("/api/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const p = await res.json();
+          if (p && p.name) {
+            setCompany({
+              name: p.name ?? "",
+              businessId: p.businessId ?? "",
+              address: `${p.address ?? ""}${p.zip ? ", " + p.zip : ""}${p.city ? " " + p.city : ""}`.trim(),
+              contact: p.contact ?? "",
+              phone: p.phone ?? "",
+              email: p.email ?? "",
+              hourlyRate: p.hourlyRate ?? "",
+              paymentTerms: p.paymentTerms ?? "14 päivää netto",
+            });
+            setLogoUrl(p.logoUrl ?? "");
+            setProfileLoaded(true);
+          }
         }
       } catch { /* ei profiilia */ }
     });

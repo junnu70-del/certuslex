@@ -3,9 +3,8 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from "react";
-import { auth, db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -15,7 +14,7 @@ interface Quote {
   clientName?: string;
   clientEmail: string;
   status: "sent" | "commented" | "signed";
-  createdAt: { seconds: number; nanoseconds: number } | Date;
+  createdAt: string | null;
   comments: { author?: string; text?: string; createdAt?: unknown }[];
   senderEmail: string;
 }
@@ -28,8 +27,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string; bg: string }>
 
 function formatDate(ts: Quote["createdAt"]): string {
   if (!ts) return "—";
-  const d = ts instanceof Date ? ts : new Date((ts as { seconds: number }).seconds * 1000);
-  return d.toLocaleDateString("fi-FI", { day: "numeric", month: "numeric", year: "numeric" });
+  return new Date(ts).toLocaleDateString("fi-FI", { day: "numeric", month: "numeric", year: "numeric" });
 }
 
 export default function TarjouksetPage() {
@@ -45,14 +43,14 @@ export default function TarjouksetPage() {
       if (!u) { router.push("/kirjaudu"); return; }
       setUser(u);
       try {
-        const q = query(
-          collection(db, "quotes"),
-          where("senderEmail", "==", u.email),
-          orderBy("createdAt", "desc")
-        );
-        const snap = await getDocs(q);
-        const data: Quote[] = snap.docs.map(d => ({ id: d.id, ...d.data() } as Quote));
-        setQuotes(data);
+        const token = await u.getIdToken();
+        const res = await fetch("/api/quotes", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setQuotes(data.quotes ?? []);
+        }
       } catch (err) {
         console.error(err);
       } finally {
