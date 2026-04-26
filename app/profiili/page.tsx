@@ -7,6 +7,7 @@ import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { t, type Lang } from "@/lib/translations";
 
 interface CompanyProfile {
   name: string; businessId: string; address: string; city: string; zip: string;
@@ -32,6 +33,7 @@ const LBL: React.CSSProperties = {
 
 export default function ProfiiliPage() {
   const router = useRouter();
+  const [lang, setLang] = useState<Lang>("fi");
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<CompanyProfile>(empty);
   const [loading, setLoading] = useState(true);
@@ -41,6 +43,19 @@ export default function ProfiiliPage() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoError, setLogoError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const T = t[lang].profiili;
+
+  useEffect(() => {
+    const saved = localStorage.getItem("certuslex_lang") as Lang | null;
+    if (saved === "en" || saved === "fi") setLang(saved);
+  }, []);
+
+  function toggleLang() {
+    const next: Lang = lang === "fi" ? "en" : "fi";
+    setLang(next);
+    localStorage.setItem("certuslex_lang", next);
+  }
 
   useEffect(() => {
     if (!auth) { router.push("/kirjaudu"); return; }
@@ -90,7 +105,7 @@ export default function ProfiiliPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("Save error:", msg);
-      setSaveError("Tallennus epäonnistui: " + msg);
+      setSaveError((lang === "en" ? "Save failed: " : "Tallennus epäonnistui: ") + msg);
     } finally {
       setSaving(false);
     }
@@ -101,15 +116,13 @@ export default function ProfiiliPage() {
     if (!file || !user) return;
     setLogoError("");
 
-    // Tarkista tiedoston koko (max 500 KB base64-tallennusta varten)
     if (file.size > 500 * 1024) {
-      setLogoError("Logo on liian suuri — max 500 KB");
+      setLogoError(lang === "en" ? "Logo too large — max 500 KB" : "Logo on liian suuri — max 500 KB");
       return;
     }
 
     setLogoUploading(true);
     try {
-      // Tallennetaan base64:na suoraan Firestoreen — ei erillistä Storage-konfiguraatiota
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
@@ -119,7 +132,7 @@ export default function ProfiiliPage() {
       setProfile(p => ({ ...p, logoUrl: dataUrl }));
     } catch (err) {
       console.error("Logo upload error:", err);
-      setLogoError("Logon lataus epäonnistui — yritä uudelleen");
+      setLogoError(lang === "en" ? "Logo upload failed — try again" : "Logon lataus epäonnistui — yritä uudelleen");
     } finally {
       setLogoUploading(false);
     }
@@ -140,44 +153,48 @@ export default function ProfiiliPage() {
       <nav style={{ background: "#0F1F3D", padding: "1rem 2rem", borderLeft: "4px solid #C8A44A", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Link href="/" style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.6rem", fontWeight: 700, color: "#fff", textDecoration: "none" }}>
           Certus<span style={{ color: "#C8A44A" }}>Lex</span>
-          <span style={{ fontSize: "0.85rem", color: "#C8A44A", marginLeft: "0.5rem" }}>/ Yritysprofiili</span>
+          <span style={{ fontSize: "0.85rem", color: "#C8A44A", marginLeft: "0.5rem" }}>/ {lang === "en" ? "Company Profile" : "Yritysprofiili"}</span>
         </Link>
         <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-          <Link href="/tarjouskone" style={{ color: "#C8A44A", fontSize: "0.82rem", textDecoration: "none" }}>Tarjouskone →</Link>
+          <Link href="/tarjouskone" style={{ color: "#C8A44A", fontSize: "0.82rem", textDecoration: "none" }}>{t[lang].nav.quoteTool} →</Link>
           <button onClick={() => signOut(auth).then(() => router.push("/"))}
             style={{ background: "transparent", border: "1px solid #C8A44A", color: "#C8A44A", padding: "0.4rem 0.9rem", fontSize: "0.78rem", cursor: "pointer" }}>
-            Kirjaudu ulos
+            {t[lang].nav.logout}
+          </button>
+          <button onClick={toggleLang}
+            style={{ background: "none", border: "1px solid rgba(200,164,74,.4)", color: "#C8A44A", fontSize: "0.75rem", cursor: "pointer", padding: "0.25rem 0.6rem", borderRadius: "3px" }}>
+            {lang === "fi" ? "🇬🇧 EN" : "🇫🇮 FI"}
           </button>
         </div>
       </nav>
 
       <div style={{ maxWidth: "700px", margin: "0 auto", padding: "3rem 1.5rem 6rem" }}>
         <div style={{ borderLeft: "4px solid #C8A44A", paddingLeft: "1.2rem", marginBottom: "2.5rem" }}>
-          <div style={{ fontSize: "0.7rem", letterSpacing: "0.14em", color: "#C8A44A", marginBottom: "0.3rem" }}>YRITYSPROFIILI</div>
-          <h1 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "2rem", fontWeight: 700, color: "#0F1F3D", margin: 0 }}>Yrityksen tiedot</h1>
-          <p style={{ fontSize: "0.85rem", color: "#8A8070", margin: "0.3rem 0 0" }}>Täytä tiedot kerran — ne täyttyvät automaattisesti jokaiseen tarjoukseen.</p>
+          <div style={{ fontSize: "0.7rem", letterSpacing: "0.14em", color: "#C8A44A", marginBottom: "0.3rem" }}>{lang === "en" ? "COMPANY PROFILE" : "YRITYSPROFIILI"}</div>
+          <h1 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "2rem", fontWeight: 700, color: "#0F1F3D", margin: 0 }}>{T.title}</h1>
+          <p style={{ fontSize: "0.85rem", color: "#8A8070", margin: "0.3rem 0 0" }}>{T.subtitle}</p>
         </div>
 
         {/* Logo */}
         <div style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "2rem", marginBottom: "1.5rem" }}>
-          <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 1rem" }}>YRITYKSEN LOGO</p>
+          <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 1rem" }}>{T.logo}</p>
           <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
             {profile.logoUrl ? (
               <img src={profile.logoUrl} alt="Logo" style={{ height: "60px", maxWidth: "180px", objectFit: "contain", border: "1px solid #EDE8DE", padding: "0.5rem" }} />
             ) : (
-              <div style={{ width: "120px", height: "60px", border: "2px dashed #EDE8DE", display: "flex", alignItems: "center", justifyContent: "center", color: "#8A8070", fontSize: "0.75rem" }}>Ei logoa</div>
+              <div style={{ width: "120px", height: "60px", border: "2px dashed #EDE8DE", display: "flex", alignItems: "center", justifyContent: "center", color: "#8A8070", fontSize: "0.75rem" }}>{lang === "en" ? "No logo" : "Ei logoa"}</div>
             )}
             <div>
               <button onClick={() => fileRef.current?.click()} disabled={logoUploading}
                 style={{ background: "#0F1F3D", color: "#C8A44A", border: "none", padding: "0.6rem 1.2rem", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer", display: "block", marginBottom: "0.5rem" }}>
-                {logoUploading ? "Ladataan..." : profile.logoUrl ? "Vaihda logo" : "Lataa logo"}
+                {logoUploading ? (lang === "en" ? "Uploading..." : "Ladataan...") : profile.logoUrl ? T.changeLogo : T.uploadLogo}
               </button>
-              <p style={{ fontSize: "0.75rem", color: "#8A8070", margin: 0 }}>PNG, JPG tai SVG — max 500 KB</p>
+              <p style={{ fontSize: "0.75rem", color: "#8A8070", margin: 0 }}>{T.logoDesc}</p>
               {logoError && <p style={{ fontSize: "0.75rem", color: "#9b2335", margin: "0.4rem 0 0" }}>{logoError}</p>}
               {profile.logoUrl && (
                 <button onClick={() => setProfile(p => ({ ...p, logoUrl: "" }))}
                   style={{ background: "none", border: "none", color: "#9b2335", fontSize: "0.75rem", cursor: "pointer", padding: "0.3rem 0", marginTop: "0.3rem" }}>
-                  Poista logo
+                  {T.removeLogo}
                 </button>
               )}
             </div>
@@ -187,73 +204,73 @@ export default function ProfiiliPage() {
 
         {/* Perustiedot */}
         <div style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "2rem", marginBottom: "1.5rem" }}>
-          <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 1.5rem" }}>PERUSTIEDOT</p>
+          <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 1.5rem" }}>{T.basics}</p>
           <div style={{ marginBottom: "1.1rem" }}>
-            <label style={LBL}>YRITYKSEN NIMI *</label>
-            <input value={profile.name} onChange={upd("name")} placeholder="Esimerkki Oy" style={INP} />
+            <label style={LBL}>{T.companyName}</label>
+            <input value={profile.name} onChange={upd("name")} placeholder={lang === "en" ? "Example Ltd" : "Esimerkki Oy"} style={INP} />
           </div>
           <div style={{ marginBottom: "1.1rem" }}>
-            <label style={LBL}>Y-TUNNUS</label>
+            <label style={LBL}>{T.businessId}</label>
             <input value={profile.businessId} onChange={upd("businessId")} placeholder="1234567-8" style={INP} />
           </div>
           <div style={{ marginBottom: "1.1rem" }}>
-            <label style={LBL}>YHTEYSHENKILÖ *</label>
-            <input value={profile.contact} onChange={upd("contact")} placeholder="Matti Meikäläinen" style={INP} />
+            <label style={LBL}>{T.contact}</label>
+            <input value={profile.contact} onChange={upd("contact")} placeholder={lang === "en" ? "Jane Smith" : "Matti Meikäläinen"} style={INP} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.1rem" }}>
             <div>
-              <label style={LBL}>PUHELIN</label>
+              <label style={LBL}>{T.phone}</label>
               <input value={profile.phone} onChange={upd("phone")} placeholder="+358 40 123 4567" style={INP} />
             </div>
             <div>
-              <label style={LBL}>SÄHKÖPOSTI *</label>
-              <input type="email" value={profile.email} onChange={upd("email")} placeholder="info@yritys.fi" style={INP} />
+              <label style={LBL}>{T.email}</label>
+              <input type="email" value={profile.email} onChange={upd("email")} placeholder="info@company.fi" style={INP} />
             </div>
           </div>
           <div style={{ marginBottom: "1.1rem" }}>
-            <label style={LBL}>LASKUTUSSÄHKÖPOSTI</label>
-            <input type="email" value={profile.invoiceEmail} onChange={upd("invoiceEmail")} placeholder="laskutus@yritys.fi" style={INP} />
+            <label style={LBL}>{T.invoiceEmail}</label>
+            <input type="email" value={profile.invoiceEmail} onChange={upd("invoiceEmail")} placeholder={lang === "en" ? "invoicing@company.fi" : "laskutus@yritys.fi"} style={INP} />
           </div>
           <div style={{ marginBottom: "1.1rem" }}>
-            <label style={LBL}>VERKKOSIVUSTO</label>
-            <input value={profile.website} onChange={upd("website")} placeholder="https://www.yritys.fi" style={INP} />
+            <label style={LBL}>{T.website}</label>
+            <input value={profile.website} onChange={upd("website")} placeholder="https://www.company.fi" style={INP} />
           </div>
         </div>
 
         {/* Osoite */}
         <div style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "2rem", marginBottom: "1.5rem" }}>
-          <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 1.5rem" }}>OSOITETIEDOT</p>
+          <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 1.5rem" }}>{T.address}</p>
           <div style={{ marginBottom: "1.1rem" }}>
-            <label style={LBL}>KATUOSOITE</label>
-            <input value={profile.address} onChange={upd("address")} placeholder="Esimerkkikatu 1" style={INP} />
+            <label style={LBL}>{T.street}</label>
+            <input value={profile.address} onChange={upd("address")} placeholder={lang === "en" ? "Example Street 1" : "Esimerkkikatu 1"} style={INP} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "1rem" }}>
             <div>
-              <label style={LBL}>POSTINUMERO</label>
+              <label style={LBL}>{T.zip}</label>
               <input value={profile.zip} onChange={upd("zip")} placeholder="00100" style={INP} />
             </div>
             <div>
-              <label style={LBL}>KAUPUNKI</label>
-              <input value={profile.city} onChange={upd("city")} placeholder="Helsinki" style={INP} />
+              <label style={LBL}>{T.city}</label>
+              <input value={profile.city} onChange={upd("city")} placeholder={lang === "en" ? "Helsinki" : "Helsinki"} style={INP} />
             </div>
           </div>
         </div>
 
         {/* Maksu */}
         <div style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "2rem", marginBottom: "2rem" }}>
-          <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 1.5rem" }}>MAKSUTIEDOT JA HINNOITTELU</p>
+          <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 1.5rem" }}>{T.payment}</p>
           <div style={{ marginBottom: "1.1rem" }}>
-            <label style={LBL}>IBAN-TILINUMERO</label>
+            <label style={LBL}>{T.iban}</label>
             <input value={profile.iban} onChange={upd("iban")} placeholder="FI12 3456 7890 1234 56" style={INP} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
             <div>
-              <label style={LBL}>TUNTIHINTA (€/h)</label>
+              <label style={LBL}>{T.hourlyRate}</label>
               <input value={profile.hourlyRate} onChange={upd("hourlyRate")} placeholder="85" style={INP} />
             </div>
             <div>
-              <label style={LBL}>MAKSUEHDOT</label>
-              <input value={profile.paymentTerms} onChange={upd("paymentTerms")} placeholder="14 päivää netto" style={INP} />
+              <label style={LBL}>{T.paymentTerms}</label>
+              <input value={profile.paymentTerms} onChange={upd("paymentTerms")} placeholder={lang === "en" ? "14 days net" : "14 päivää netto"} style={INP} />
             </div>
           </div>
         </div>
@@ -266,12 +283,12 @@ export default function ProfiiliPage() {
 
         <button onClick={handleSave} disabled={saving}
           style={{ width: "100%", background: saving ? "#EDE8DE" : saved ? "#166534" : "#C8A44A", color: saving ? "#8A8070" : "#0F1F3D", border: "none", padding: "1rem", fontSize: "1rem", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", letterSpacing: "0.05em", transition: "background 0.3s" }}>
-          {saving ? "Tallennetaan..." : saved ? "✅ Tallennettu!" : "Tallenna yritystiedot →"}
+          {saving ? T.saving : saved ? T.saved : T.save}
         </button>
 
         {user && (
           <p style={{ fontSize: "0.75rem", color: "#8A8070", textAlign: "center", marginTop: "1rem" }}>
-            Tili: {user.email}
+            {user.email}
           </p>
         )}
       </div>

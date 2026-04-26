@@ -179,4 +179,7 @@ export const t = {
   },
 } as const;
 
+export const PROJECT_TYPES_FI = ["Rakennusurakka", "IT-projekti", "Konsultointi", "Suunnittelutyö", "Huolto & ylläpito", "Toimitus & asennus", "Muu"];
+export const PROJECT_TYPES_EN = ["Construction contract", "IT project", "Consulting", "Design work", "Maintenance & support", "Delivery & installation", "Other"];
+
 export type Translations = typeof t.fi;
