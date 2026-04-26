@@ -31,33 +31,39 @@ export async function GET(req: NextRequest) {
 
     const db = getAdminDb();
 
-    // Ensisijaisesti haetaan senderUid:llä (luotettava, ei riipu company.email vs auth.email)
+    // Haetaan ilman orderBy — ei vaadi composite-indeksiä
+    // Järjestetään createdAt:n mukaan JavaScriptillä
     let snap = await db.collection("quotes")
       .where("senderUid", "==", uid)
-      .orderBy("createdAt", "desc")
       .get();
 
-    // Fallback: vanhat tarjoukset joissa ei ole senderUid — haetaan sähköpostilla
+    // Fallback: vanhat tarjoukset joissa ei ole senderUid
     if (snap.empty && decoded.email) {
       snap = await db.collection("quotes")
         .where("senderEmail", "==", decoded.email)
-        .orderBy("createdAt", "desc")
         .get();
     }
 
-    const quotes = snap.docs.map(d => {
-      const data = d.data();
-      return {
-        id: d.id,
-        project: data.project ?? {},
-        clientName: data.clientName ?? "",
-        clientEmail: data.clientEmail ?? "",
-        status: data.status ?? "sent",
-        createdAt: data.createdAt?.toDate?.()?.toISOString() ?? null,
-        comments: data.comments ?? [],
-        senderEmail: data.senderEmail ?? "",
-      };
-    });
+    const quotes = snap.docs
+      .map(d => {
+        const data = d.data();
+        return {
+          id: d.id,
+          project: data.project ?? {},
+          clientName: data.clientName ?? "",
+          clientEmail: data.clientEmail ?? "",
+          status: data.status ?? "sent",
+          createdAt: data.createdAt?.toDate?.()?.toISOString() ?? null,
+          comments: data.comments ?? [],
+          senderEmail: data.senderEmail ?? "",
+        };
+      })
+      // Järjestetään uusimmat ensin JavaScriptillä
+      .sort((a, b) => {
+        if (!a.createdAt) return 1;
+        if (!b.createdAt) return -1;
+        return b.createdAt.localeCompare(a.createdAt);
+      });
 
     return NextResponse.json({ quotes });
   } catch (err) {
