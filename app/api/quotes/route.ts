@@ -27,14 +27,23 @@ export async function GET(req: NextRequest) {
   try {
     getAdminDb();
     const decoded = await getAuth().verifyIdToken(token);
-    const email = decoded.email;
-    if (!email) return NextResponse.json({ error: "Sähköposti puuttuu" }, { status: 401 });
+    const uid = decoded.uid;
 
     const db = getAdminDb();
-    const snap = await db.collection("quotes")
-      .where("senderEmail", "==", email)
+
+    // Ensisijaisesti haetaan senderUid:llä (luotettava, ei riipu company.email vs auth.email)
+    let snap = await db.collection("quotes")
+      .where("senderUid", "==", uid)
       .orderBy("createdAt", "desc")
       .get();
+
+    // Fallback: vanhat tarjoukset joissa ei ole senderUid — haetaan sähköpostilla
+    if (snap.empty && decoded.email) {
+      snap = await db.collection("quotes")
+        .where("senderEmail", "==", decoded.email)
+        .orderBy("createdAt", "desc")
+        .get();
+    }
 
     const quotes = snap.docs.map(d => {
       const data = d.data();

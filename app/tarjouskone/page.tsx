@@ -156,7 +156,7 @@ export default function TarjouskoneePage() {
       const res = await fetch("/api/send-quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quoteHtml: quote, company, project, clientEmail, senderUid: userId }),
+        body: JSON.stringify({ quoteHtml: quote, company, project, clientEmail, senderUid: userId, senderAuthEmail: userEmail }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Virhe");
