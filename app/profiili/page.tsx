@@ -3,9 +3,8 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
-import { auth, db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -49,11 +48,19 @@ export default function ProfiiliPage() {
       if (!u) { router.push("/kirjaudu"); return; }
       setUser(u);
       try {
-        const snap = await getDoc(doc(db, "companies", u.uid));
-        if (snap.exists()) setProfile(snap.data() as CompanyProfile);
-        else setProfile({ ...empty, email: u.email ?? "" });
+        const token = await u.getIdToken();
+        const res = await fetch("/api/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Object.keys(data).length > 0) setProfile(data as CompanyProfile);
+          else setProfile({ ...empty, email: u.email ?? "" });
+        } else {
+          setProfile({ ...empty, email: u.email ?? "" });
+        }
       } catch (err) {
-        console.error("Firestore error:", err);
+        console.error("Profile load error:", err);
         setProfile({ ...empty, email: u.email ?? "" });
       } finally {
         setLoading(false);
@@ -67,8 +74,17 @@ export default function ProfiiliPage() {
     setSaving(true);
     setSaveError("");
     try {
-      if (!db) throw new Error("Tietokantayhteys ei ole käytössä — päivitä sivu");
-      await setDoc(doc(db, "companies", user.uid), profile);
+      const token = await user.getIdToken();
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(profile),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Tuntematon virhe");
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err: unknown) {
