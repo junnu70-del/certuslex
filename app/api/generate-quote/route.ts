@@ -81,7 +81,11 @@ Dokumentin rakenne:
 3. Vastaanottajan tiedot (asiakas)
 4. Projektin tiivistelmä
 5. Tekninen erittely
-6. Hintalaskelma HTML-taulukkona (työ, materiaalit, muut, ALV 25,5%, yhteensä)
+6. Hintalaskelma HTML-taulukkona (työ, materiaalit, muut, ALV 25,5%, yhteensä). Taulukon tyylit:
+   - Otsikkorivi: background:#0F1F3D, color:#C8A44A, font-weight:bold
+   - Datarivit: vuorotellen background:#fff ja background:#F7F4EE, color:#2C2416
+   - ALV-rivi: background:#F7F4EE, color:#2C2416, font-style:italic
+   - YHTEENSÄ ALV sisältyy -rivi: background:#0F1F3D, color:#C8A44A, font-weight:bold, font-size:1.05em — KAIKKI teksti tällä rivillä PAKOSTI color:#C8A44A
 7. Toimitusaikataulu taulukkona
 8. Maksuehdot ja maksuaikataulu
 9. Takuuehdot
