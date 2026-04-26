@@ -146,6 +146,15 @@ export default function TarjousPage() {
         {view === "quote" && (
           <>
             {/* Tarjousdokumentti — extra paddingBottom jotta sticky-palkki ei peitä */}
+            <style>{`
+              td[style*="background:#0F1F3D"],td[style*="background: #0F1F3D"],
+              th[style*="background:#0F1F3D"],th[style*="background: #0F1F3D"],
+              tr[style*="background:#0F1F3D"] td, tr[style*="background:#0F1F3D"] th,
+              td[style*="background-color:#0F1F3D"],td[style*="background-color: #0F1F3D"],
+              th[style*="background-color:#0F1F3D"],th[style*="background-color: #0F1F3D"] {
+                color: #C8A44A !important;
+              }
+            `}</style>
             <div style={{ background: "#fff", padding: "2.5rem", paddingBottom: "7rem", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif" }}
               dangerouslySetInnerHTML={{ __html: quote.quoteHtml }} />
           </>
