@@ -111,7 +111,9 @@ export default function HinnoitteluPage() {
         </Link>
         <div style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
           <Link href="/tarjouskone" style={{ color: "#C8A44A", fontSize: "0.82rem", textDecoration: "none" }}>Tarjouskone</Link>
+          <Link href="/ohjeet" style={{ color: "#fff", fontSize: "0.82rem", textDecoration: "none", opacity: 0.75 }}>Ohjeet</Link>
           <Link href="/kirjaudu" style={{ color: "#fff", fontSize: "0.82rem", textDecoration: "none", opacity: 0.75 }}>Kirjaudu</Link>
+          <Link href="/en/pricing" style={{ color: "#fff", fontSize: "0.75rem", textDecoration: "none", opacity: 0.5 }}>🇬🇧 EN</Link>
         </div>
       </nav>
 

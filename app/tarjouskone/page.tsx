@@ -233,7 +233,8 @@ export default function TarjouskoneePage() {
               <Link href="/kirjaudu" style={{ fontSize: "0.82rem", color: "#8A8070", textDecoration: "none" }}>Kirjaudu →</Link>
             </>
           )}
-          <Link href="/" style={{ fontSize: "0.82rem", color: "#8A8070", textDecoration: "none" }}>← Etusivu</Link>
+          <Link href="/ohjeet" style={{ fontSize: "0.82rem", color: "#8A8070", textDecoration: "none" }}>Ohjeet</Link>
+          <Link href="/en/help" style={{ fontSize: "0.75rem", color: "#8A8070", textDecoration: "none", opacity: 0.6 }}>🇬🇧 EN</Link>
         </div>
       </nav>
 
