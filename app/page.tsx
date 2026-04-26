@@ -400,9 +400,14 @@ export default function Home() {
                 <div style={{ marginBottom: "0.3rem" }}>✓ Yritysprofiili tallentuu kerran</div>
                 <div>✓ Kilpailutukset juristin tarkastukseen</div>
               </div>
-              <a href="/tarjouskone" style={{ display: "inline-block", background: "#C8A44A", color: "#0F1F3D", padding: "0.7rem 1.4rem", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.05em" }}>
-                Kokeile Tarjouskone →
-              </a>
+              <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+                <a href="/hinnoittelu" style={{ display: "inline-block", background: "#C8A44A", color: "#0F1F3D", padding: "0.7rem 1.4rem", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.05em" }}>
+                  Aloita kokeilu →
+                </a>
+                <a href="/tarjouskone" style={{ display: "inline-block", background: "transparent", border: "1px solid rgba(200,164,74,.4)", color: "#C8A44A", padding: "0.7rem 1.4rem", fontSize: "0.82rem", textDecoration: "none", letterSpacing: "0.05em" }}>
+                  Kokeile demo
+                </a>
+              </div>
             </div>
           </div>
         </div>

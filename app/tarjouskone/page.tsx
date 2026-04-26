@@ -163,7 +163,10 @@ export default function TarjouskoneePage() {
               <Link href="/profiili" style={{ fontSize: "0.82rem", color: "#C8A44A", textDecoration: "none", fontWeight: 500 }}>⚙️ Yritysprofiili</Link>
             </>
           ) : (
-            <Link href="/kirjaudu" style={{ fontSize: "0.82rem", color: "#8A8070", textDecoration: "none" }}>Kirjaudu →</Link>
+            <>
+              <Link href="/hinnoittelu" style={{ fontSize: "0.82rem", color: "#C8A44A", textDecoration: "none", fontWeight: 600 }}>Hinnoittelu</Link>
+              <Link href="/kirjaudu" style={{ fontSize: "0.82rem", color: "#8A8070", textDecoration: "none" }}>Kirjaudu →</Link>
+            </>
           )}
           <Link href="/" style={{ fontSize: "0.82rem", color: "#8A8070", textDecoration: "none" }}>← Etusivu</Link>
         </div>

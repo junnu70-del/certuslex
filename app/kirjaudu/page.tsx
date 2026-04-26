@@ -1,17 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+
+const PLAN_NAMES: Record<string, string> = {
+  starter: "Starter — 49 €/kk",
+  pro: "Pro — 99 €/kk",
+  yritys: "Yritys — 249 €/kk",
+};
 
 export default function KirjauduPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const searchParams = useSearchParams();
+  const planId = searchParams.get("plan");
+  const isTrial = searchParams.get("trial") === "1";
+  const [mode, setMode] = useState<"login" | "register">(planId ? "register" : "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
@@ -64,6 +73,18 @@ export default function KirjauduPage() {
 
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "3rem 1rem" }}>
         <div style={{ width: "100%", maxWidth: "420px" }}>
+
+          {/* Plan banner */}
+          {planId && isTrial && PLAN_NAMES[planId] && (
+            <div style={{ background: "#0F1F3D", borderLeft: "4px solid #C8A44A", padding: "1rem 1.2rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "0.8rem" }}>
+              <span style={{ fontSize: "1.2rem" }}>🎉</span>
+              <div>
+                <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#C8A44A", margin: "0 0 0.2rem" }}>VALITSIT PAKETIN</p>
+                <p style={{ fontSize: "0.88rem", color: "#fff", margin: "0 0 0.2rem", fontWeight: 600 }}>{PLAN_NAMES[planId]}</p>
+                <p style={{ fontSize: "0.75rem", color: "#B0A898", margin: 0 }}>30 päivää ilmaiseksi — ei luottokorttia</p>
+              </div>
+            </div>
+          )}
 
           {/* Toggle */}
           <div style={{ display: "flex", marginBottom: "2rem", border: "1px solid #EDE8DE", background: "#fff" }}>
