@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 interface QuoteData {
   quoteHtml: string;
@@ -21,6 +23,7 @@ export default function TarjousPage() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
+  const isOwner = searchParams.get("owner") === "1";
 
   const [quote, setQuote] = useState<QuoteData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,25 +42,49 @@ export default function TarjousPage() {
   const [agreed, setAgreed] = useState(false);
   const [signedAt, setSignedAt] = useState("");
 
+  function applyColorFix(html: string): string {
+    return html
+      .replace(/style="([^"]*)background(-color)?:\s*#0[Ff]1[Ff]3[Dd]([^"]*)"/g,
+        (_: string, b: string, _bc: string, a: string) => `style="${b}background-color:#0F1F3D;color:#C8A44A;${a}"`)
+      .replace(/style="([^"]*)background(-color)?:\s*rgb\(15,\s*31,\s*61\)([^"]*)"/g,
+        (_: string, b: string, _bc: string, a: string) => `style="${b}background-color:#0F1F3D;color:#C8A44A;${a}"`);
+  }
+
   useEffect(() => {
-    if (!id || !token) { setError("Virheellinen linkki"); setLoading(false); return; }
+    if (!id) { setError("Virheellinen linkki"); setLoading(false); return; }
+
+    // Omistajan näkymä — käytetään Firebase Auth -tokenia
+    if (isOwner) {
+      if (!auth) { setError("Kirjautuminen vaaditaan"); setLoading(false); return; }
+      const unsub = onAuthStateChanged(auth, async (u) => {
+        if (!u) { setError("Kirjaudu sisään nähdäksesi tarjouksen"); setLoading(false); return; }
+        try {
+          const idToken = await u.getIdToken();
+          const res = await fetch(`/api/quote-owner/${id}`, {
+            headers: { Authorization: `Bearer ${idToken}` },
+          });
+          const d = await res.json();
+          if (d.error) { setError(d.error); return; }
+          if (d.quoteHtml) d.quoteHtml = applyColorFix(d.quoteHtml);
+          setQuote(d);
+        } catch { setError("Tarjousta ei voitu ladata"); }
+        finally { setLoading(false); }
+      });
+      return () => unsub();
+    }
+
+    // Asiakkaan näkymä — käytetään URL-tokenia
+    if (!token) { setError("Virheellinen linkki"); setLoading(false); return; }
     fetch(`/api/quote/${id}?token=${token}`)
       .then(r => r.json())
       .then(d => {
         if (d.error) { setError(d.error); return; }
-        // Korjaa tummat solut: lisää color:#C8A44A kaikkiin #0F1F3D-taustaväreihin
-        if (d.quoteHtml) {
-          d.quoteHtml = d.quoteHtml
-            .replace(/style="([^"]*)background(-color)?:\s*#0[Ff]1[Ff]3[Dd]([^"]*)"/g,
-              (_: string, b: string, _bc: string, a: string) => `style="${b}background-color:#0F1F3D;color:#C8A44A;${a}"`)
-            .replace(/style="([^"]*)background(-color)?:\s*rgb\(15,\s*31,\s*61\)([^"]*)"/g,
-              (_: string, b: string, _bc: string, a: string) => `style="${b}background-color:#0F1F3D;color:#C8A44A;${a}"`);
-        }
+        if (d.quoteHtml) d.quoteHtml = applyColorFix(d.quoteHtml);
         setQuote(d);
       })
       .catch(() => setError("Tarjousta ei voitu ladata"))
       .finally(() => setLoading(false));
-  }, [id, token]);
+  }, [id, token, isOwner]);
 
   async function submitComment() {
     if (!commentMessage.trim()) return;
