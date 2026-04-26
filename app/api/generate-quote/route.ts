@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
+// Allow up to 20 MB body for base64-encoded attachments
+export const config = { api: { bodyParser: { sizeLimit: "20mb" } } };
+
 function getApiKey(): string {
   // Kokeile ensin normaalin env:n kautta
   if (process.env.ANTHROPIC_API_KEY) return process.env.ANTHROPIC_API_KEY;
@@ -15,9 +18,20 @@ function getApiKey(): string {
   return "";
 }
 
+interface Attachment {
+  base64: string;
+  mimeType: string;
+  name: string;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { company, project, specs } = await req.json();
+    const { company, project, specs, attachment } = await req.json() as {
+      company: Record<string, string>;
+      project: Record<string, string>;
+      specs: string;
+      attachment?: Attachment;
+    };
 
     const apiKey = getApiKey();
     if (!apiKey) {
@@ -80,6 +94,39 @@ TÄRKEÄÄ:
 - Käytä järkeviä arvioita numeroille jos tarkkoja ei ole annettu, merkitse arviot tekstillä "(arvio)"
 - Tee dokumentista A4-tulostuskelpoinen, padding 40px`;
 
+    // Build message content — text only or multimodal with attachment
+    type ContentBlock =
+      | { type: "text"; text: string }
+      | { type: "image"; source: { type: "base64"; media_type: string; data: string } }
+      | { type: "document"; source: { type: "base64"; media_type: string; data: string }; title?: string };
+
+    let messageContent: string | ContentBlock[];
+
+    if (attachment?.base64) {
+      const isImage = attachment.mimeType.startsWith("image/");
+      const attachmentBlock: ContentBlock = isImage
+        ? {
+            type: "image",
+            source: { type: "base64", media_type: attachment.mimeType, data: attachment.base64 },
+          }
+        : {
+            type: "document",
+            source: { type: "base64", media_type: "application/pdf", data: attachment.base64 },
+            title: attachment.name,
+          };
+      messageContent = [
+        { type: "text", text: prompt + "\n\nLiitetty asiakirja: Analysoi se huolellisesti ja hyödynnä kaikki siitä löytyvä tieto (mitat, materiaalit, työvaiheet, hinnat jne.) tarjouksen laadinnassa." },
+        attachmentBlock,
+      ];
+    } else {
+      messageContent = prompt;
+    }
+
+    // Use a model that supports documents & vision when attachment present
+    const model = attachment?.base64
+      ? "claude-opus-4-5-20251101"
+      : "claude-haiku-4-5-20251001";
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -88,9 +135,9 @@ TÄRKEÄÄ:
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model,
         max_tokens: 8000,
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content: messageContent }],
       }),
     });
 

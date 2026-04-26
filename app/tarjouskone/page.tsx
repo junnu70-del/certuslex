@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -47,6 +47,8 @@ export default function TarjouskoneePage() {
   const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [attachment, setAttachment] = useState<{ name: string; size: number; base64: string; mimeType: string } | null>(null);
+  const attachRef = useRef<HTMLInputElement>(null);
 
   // Lataa yritysprofiili automaattisesti kirjautuneelle käyttäjälle
   useEffect(() => {
@@ -83,7 +85,7 @@ export default function TarjouskoneePage() {
       const res = await fetch("/api/generate-quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ company, project, specs }),
+        body: JSON.stringify({ company, project, specs, attachment }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Virhe");
@@ -98,6 +100,23 @@ export default function TarjouskoneePage() {
       setError(e instanceof Error ? e.message : "Tuntematon virhe");
       setStep("specs");
     }
+  }
+
+  function handleAttachmentSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+      setError("Tiedosto on liian suuri (max 15 Mt)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setAttachment({ name: file.name, size: file.size, base64: dataUrl.split(",")[1], mimeType: file.type });
+    };
+    reader.readAsDataURL(file);
+    // reset input so same file can be re-selected
+    e.target.value = "";
   }
 
   function copyToClipboard() {
@@ -266,6 +285,36 @@ export default function TarjouskoneePage() {
                 style={{ width: "100%", border: "1px solid #EDE8DE", padding: "0.8rem", fontSize: "0.88rem", outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.6, boxSizing: "border-box" }} />
             </div>
 
+            {/* Tiedostoliite */}
+            <div style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "1.5rem 2rem", marginBottom: "1rem" }}>
+              <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 0.8rem" }}>📎 LIITÄ ASIAKIRJA TAI PIIRUSTUS <span style={{ color: "#8A8070", fontWeight: 400, letterSpacing: 0 }}>(valinnainen)</span></p>
+              <p style={{ fontSize: "0.8rem", color: "#8A8070", margin: "0 0 1rem" }}>AI lukee liitteen ja hyödyntää sitä tarjouslaskennassa — piirustukset, rakennelaskelmat, tarjouspyynnöt, materiaalilistat.</p>
+
+              {attachment ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", background: "#F0FDF4", border: "1px solid #86EFAC", padding: "0.8rem 1rem" }}>
+                  <span style={{ fontSize: "1.4rem" }}>
+                    {attachment.mimeType.startsWith("image/") ? "🖼️" : "📄"}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#166534", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{attachment.name}</div>
+                    <div style={{ fontSize: "0.72rem", color: "#4ADE80" }}>
+                      {(attachment.size / 1024).toFixed(0)} kt — {attachment.mimeType.startsWith("image/") ? "Kuva (vision)" : "Dokumentti (PDF)"}
+                    </div>
+                  </div>
+                  <button onClick={() => setAttachment(null)}
+                    style={{ background: "none", border: "none", color: "#9b2335", cursor: "pointer", fontSize: "1.2rem", padding: "0.2rem 0.4rem", lineHeight: 1 }}>
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => attachRef.current?.click()}
+                  style={{ display: "flex", alignItems: "center", gap: "0.6rem", background: "transparent", border: "2px dashed #C8A44A", color: "#0F1F3D", padding: "0.8rem 1.4rem", fontSize: "0.83rem", fontWeight: 600, cursor: "pointer", width: "100%", justifyContent: "center" }}>
+                  <span style={{ fontSize: "1.1rem" }}>📎</span> Valitse tiedosto (PDF, PNG, JPG — max 15 Mt)
+                </button>
+              )}
+              <input ref={attachRef} type="file" accept="application/pdf,image/png,image/jpeg,image/jpg,image/webp" style={{ display: "none" }} onChange={handleAttachmentSelect} />
+            </div>
+
             <div style={{ background: "rgba(200,164,74,.08)", border: "1px solid rgba(200,164,74,.3)", padding: "1rem 1.2rem", marginBottom: "1.5rem", fontSize: "0.82rem", color: "#4A4035" }}>
               💡 <strong>Vinkki:</strong> Liitä mukaan tarjouspyyntö, materiaalilista, tuntiarvio tai muu laskentapohja — AI osaa hyödyntää kaiken annetun tiedon.
             </div>
@@ -285,7 +334,7 @@ export default function TarjouskoneePage() {
           <div style={{ textAlign: "center", padding: "5rem 2rem" }}>
             <div style={{ width: "60px", height: "60px", border: "3px solid #EDE8DE", borderTopColor: "#C8A44A", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 2rem" }} />
             <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.8rem", color: "#0F1F3D", marginBottom: "0.5rem" }}>AI rakentaa tarjousta...</h2>
-            <p style={{ color: "#8A8070", fontSize: "0.9rem" }}>Analysoidaan speksit ja laaditaan ammattimainen tarjous. Kestää noin 15–30 sekuntia.</p>
+            <p style={{ color: "#8A8070", fontSize: "0.9rem" }}>{attachment ? "Analysoidaan speksit ja liitetty asiakirja — kestää hetken enemmän." : "Analysoidaan speksit ja laaditaan ammattimainen tarjous. Kestää noin 15–30 sekuntia."}</p>
           </div>
         )}
 
