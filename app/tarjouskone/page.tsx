@@ -107,17 +107,20 @@ export default function TarjouskoneePage() {
             <img src="${logoUrl}" alt="Logo" style="max-height:70px;max-width:220px;object-fit:contain;" />
            </div>`
         : "";
-      // CSS-injektio: pakottaa tekstin näkyviin tummissa soluissa
-      const cssfix = `<style>
-        td[style*="background:#0F1F3D"],td[style*="background: #0F1F3D"],
-        th[style*="background:#0F1F3D"],th[style*="background: #0F1F3D"],
-        tr[style*="background:#0F1F3D"] td, tr[style*="background:#0F1F3D"] th,
-        td[style*="background-color:#0F1F3D"],td[style*="background-color: #0F1F3D"],
-        th[style*="background-color:#0F1F3D"],th[style*="background-color: #0F1F3D"] {
-          color: #C8A44A !important;
-        }
-      </style>`;
-      setQuote(cssfix + logoHtml + data.quote);
+      // Korjaa tummat solut suoraan HTML-merkkijonosta — lisää color:#C8A44A kaikkiin tummiin taustaväreihin
+      function fixDarkCells(html: string): string {
+        // Korvaa kaikki style-attribuutit joissa on tumma taustaväri (#0F1F3D tai rgb-vastine)
+        return html.replace(
+          /style="([^"]*)background(-color)?:\s*#0[Ff]1[Ff]3[Dd]([^"]*)"/g,
+          (_, before, _bc, after) =>
+            `style="${before}background-color:#0F1F3D;color:#C8A44A;${after}"`
+        ).replace(
+          /style="([^"]*)background(-color)?:\s*rgb\(15,\s*31,\s*61\)([^"]*)"/g,
+          (_, before, _bc, after) =>
+            `style="${before}background-color:#0F1F3D;color:#C8A44A;${after}"`
+        );
+      }
+      setQuote(logoHtml + fixDarkCells(data.quote));
       setStep("result");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Tuntematon virhe");

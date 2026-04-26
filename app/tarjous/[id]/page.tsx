@@ -44,8 +44,16 @@ export default function TarjousPage() {
     fetch(`/api/quote/${id}?token=${token}`)
       .then(r => r.json())
       .then(d => {
-        if (d.error) setError(d.error);
-        else setQuote(d);
+        if (d.error) { setError(d.error); return; }
+        // Korjaa tummat solut: lisää color:#C8A44A kaikkiin #0F1F3D-taustaväreihin
+        if (d.quoteHtml) {
+          d.quoteHtml = d.quoteHtml
+            .replace(/style="([^"]*)background(-color)?:\s*#0[Ff]1[Ff]3[Dd]([^"]*)"/g,
+              (_: string, b: string, _bc: string, a: string) => `style="${b}background-color:#0F1F3D;color:#C8A44A;${a}"`)
+            .replace(/style="([^"]*)background(-color)?:\s*rgb\(15,\s*31,\s*61\)([^"]*)"/g,
+              (_: string, b: string, _bc: string, a: string) => `style="${b}background-color:#0F1F3D;color:#C8A44A;${a}"`);
+        }
+        setQuote(d);
       })
       .catch(() => setError("Tarjousta ei voitu ladata"))
       .finally(() => setLoading(false));
@@ -146,15 +154,6 @@ export default function TarjousPage() {
         {view === "quote" && (
           <>
             {/* Tarjousdokumentti — extra paddingBottom jotta sticky-palkki ei peitä */}
-            <style>{`
-              td[style*="background:#0F1F3D"],td[style*="background: #0F1F3D"],
-              th[style*="background:#0F1F3D"],th[style*="background: #0F1F3D"],
-              tr[style*="background:#0F1F3D"] td, tr[style*="background:#0F1F3D"] th,
-              td[style*="background-color:#0F1F3D"],td[style*="background-color: #0F1F3D"],
-              th[style*="background-color:#0F1F3D"],th[style*="background-color: #0F1F3D"] {
-                color: #C8A44A !important;
-              }
-            `}</style>
             <div style={{ background: "#fff", padding: "2.5rem", paddingBottom: "7rem", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif" }}
               dangerouslySetInnerHTML={{ __html: quote.quoteHtml }} />
           </>
