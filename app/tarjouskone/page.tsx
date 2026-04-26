@@ -39,6 +39,8 @@ export default function TarjouskoneePage() {
   const [company, setCompany] = useState<CompanyInfo>({ name: "", businessId: "", address: "", contact: "", phone: "", email: "", hourlyRate: "", paymentTerms: "14 päivää netto" });
   const [project, setProject] = useState<ProjectInfo>({ clientName: "", projectName: "", type: "", startDate: "", validUntil: "" });
   const [specs, setSpecs] = useState("");
+  const [margin, setMargin] = useState("");
+  const [extraInstructions, setExtraInstructions] = useState("");
   const [quote, setQuote] = useState("");
   const [error, setError] = useState("");
   const [clientEmail, setClientEmail] = useState("");
@@ -91,7 +93,12 @@ export default function TarjouskoneePage() {
       const res = await fetch("/api/generate-quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ company, project, specs, attachment }),
+        body: JSON.stringify({
+          company, project, attachment,
+          specs: specs
+            + (margin ? `\n\nKATEPROSENTTI: Lisää kustannuksiin ${margin}% kate/marginaali.` : "")
+            + (extraInstructions ? `\n\nLISÄOHJEET: ${extraInstructions}` : ""),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Virhe");
@@ -292,6 +299,36 @@ export default function TarjouskoneePage() {
               <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.08em", color: "#0F1F3D", marginBottom: "0.4rem" }}>PROJEKTIN KUVAUS JA SPEKSIT *</label>
               <textarea value={specs} onChange={e => setSpecs(e.target.value)} rows={10} placeholder={`Kuvaile tarkasti mitä projekti sisältää. Esimerkiksi:\n\n- Materiaalit: teräsputki DN100, paksuus 3mm, pituus 50m\n- Työvaiheet: kaivuutyöt, putkiasennus, täyttö\n- Arvioitu työmäärä: 3 henkilöä × 5 päivää\n- Erityisvaatimukset: työ tehdään liikenteen seassa, tarvitaan luvat\n- Lisäpalvelut: käyttöönotto ja testaus sisältyy hintaan\n- Hintataso: materiaalit n. 8 000 €, työ n. 12 000 €`}
                 style={{ width: "100%", border: "1px solid #EDE8DE", padding: "0.8rem", fontSize: "0.88rem", outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.6, boxSizing: "border-box" }} />
+            </div>
+
+            {/* Kate ja lisäohjeet */}
+            <div style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "1.5rem 2rem", marginBottom: "1rem" }}>
+              <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 1rem" }}>
+                ⚙️ HINNOITTELUASETUKSET <span style={{ color: "#8A8070", fontWeight: 400, letterSpacing: 0 }}>(valinnainen)</span>
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: "1rem", alignItems: "start" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.08em", color: "#0F1F3D", marginBottom: "0.4rem" }}>KATE %</label>
+                  <input
+                    type="number"
+                    value={margin}
+                    onChange={e => setMargin(e.target.value)}
+                    placeholder="esim. 20"
+                    min="0" max="200"
+                    style={{ width: "100%", border: "1px solid #EDE8DE", padding: "0.7rem 0.9rem", fontSize: "0.9rem", outline: "none", fontFamily: "inherit", boxSizing: "border-box" as const, background: "#fff" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.08em", color: "#0F1F3D", marginBottom: "0.4rem" }}>LISÄOHJEET AI:LLE</label>
+                  <input
+                    type="text"
+                    value={extraInstructions}
+                    onChange={e => setExtraInstructions(e.target.value)}
+                    placeholder="esim. Korosta toimitusaikaa, lisää takuuehto 2 v, käytä konservatiivisia arvioita"
+                    style={{ width: "100%", border: "1px solid #EDE8DE", padding: "0.7rem 0.9rem", fontSize: "0.9rem", outline: "none", fontFamily: "inherit", boxSizing: "border-box" as const, background: "#fff" }}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Tiedostoliite */}
