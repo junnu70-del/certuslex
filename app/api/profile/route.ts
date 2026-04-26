@@ -3,7 +3,7 @@ import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 
-function getAdmin() {
+function getAdminDb() {
   if (!getApps().length) {
     initializeApp({
       credential: cert({
@@ -13,7 +13,7 @@ function getAdmin() {
       }),
     });
   }
-  return { db: getFirestore(), auth: getAuth() };
+  return getFirestore();
 }
 
 async function verifyToken(req: NextRequest): Promise<string | null> {
@@ -21,8 +21,9 @@ async function verifyToken(req: NextRequest): Promise<string | null> {
   if (!authHeader?.startsWith("Bearer ")) return null;
   const token = authHeader.slice(7);
   try {
-    const { auth } = getAdmin();
-    const decoded = await auth.verifyIdToken(token);
+    // Varmistetaan että admin on alustettu ennen getAuth()
+    getAdminDb();
+    const decoded = await getAuth().verifyIdToken(token);
     return decoded.uid;
   } catch {
     return null;
@@ -35,13 +36,13 @@ export async function GET(req: NextRequest) {
   if (!uid) return NextResponse.json({ error: "Ei kirjautunut" }, { status: 401 });
 
   try {
-    const { db } = getAdmin();
+    const db = getAdminDb();
     const snap = await db.collection("companies").doc(uid).get();
     if (!snap.exists) return NextResponse.json({});
     return NextResponse.json(snap.data());
   } catch (err) {
     console.error("Profile GET error:", err);
-    return NextResponse.json({ error: "Tietokantavirhe" }, { status: 500 });
+    return NextResponse.json({ error: "Tietokantavirhe: " + String(err) }, { status: 500 });
   }
 }
 
@@ -52,11 +53,17 @@ export async function POST(req: NextRequest) {
 
   try {
     const profile = await req.json();
-    const { db } = getAdmin();
-    await db.collection("companies").doc(uid).set(profile, { merge: true });
+
+    // Suodatetaan undefined-arvot pois — Firestore ei hyväksy niitä
+    const clean = Object.fromEntries(
+      Object.entries(profile).filter(([, v]) => v !== undefined && v !== null)
+    );
+
+    const db = getAdminDb();
+    await db.collection("companies").doc(uid).set(clean, { merge: true });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Profile POST error:", err);
-    return NextResponse.json({ error: "Tallennus epäonnistui: " + String(err) }, { status: 500 });
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
