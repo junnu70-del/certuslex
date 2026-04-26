@@ -10,6 +10,7 @@ import Link from "next/link";
 
 interface Quote {
   id: string;
+  token: string;
   project: { projectName?: string; clientName?: string };
   clientName?: string;
   clientEmail: string;
@@ -177,7 +178,7 @@ export default function TarjouksetPage() {
                     )}
                   </div>
                   <div>
-                    <a href={`/tarjous/${q.id}`} target="_blank" rel="noopener noreferrer"
+                    <a href={`/tarjous/${q.id}?token=${q.token}`} target="_blank" rel="noopener noreferrer"
                       style={{ fontSize: "0.8rem", color: "#C8A44A", textDecoration: "none", fontWeight: 600, whiteSpace: "nowrap" }}>
                       Avaa →
                     </a>

@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
         const data = d.data();
         return {
           id: d.id,
+          token: data.token ?? "",
           project: data.project ?? {},
           clientName: data.clientName ?? "",
           clientEmail: data.clientEmail ?? "",
