@@ -1,5 +1,8 @@
 "use client";
 
+// Ei staattista esirenderöintiä — Firebase vaatii selaimen ympäristön
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect, useRef } from "react";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";

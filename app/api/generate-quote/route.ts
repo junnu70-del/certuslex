@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
-// Allow up to 20 MB body for base64-encoded attachments
-export const config = { api: { bodyParser: { sizeLimit: "20mb" } } };
+// Suurten liitteiden (base64) tuki — App Router käyttää tätä
+export const maxDuration = 60; // sekuntia, pitkä AI-kutsu liitteen kanssa
 
 function getApiKey(): string {
   // Kokeile ensin normaalin env:n kautta
