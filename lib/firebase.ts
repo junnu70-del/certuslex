@@ -12,23 +12,20 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? "",
 };
 
-// Wrap in try/catch: build-aikana env-muuttujat voivat puuttua (SSR).
-// Kaikki Firebase-kutsut tapahtuvat vain selaimessa (useEffect/event handlers),
-// joten null-arvot build-aikana eivät haittaa.
-let _app: FirebaseApp | undefined;
-let _db: Firestore | undefined;
-let _storage: FirebaseStorage | undefined;
-let _auth: Auth | undefined;
+// Firebase vaatii selaimen — typeof window === 'undefined' tarkoittaa SSR/build-ympäristöä.
+// Node.js-buildissa (Vercel static generation) Firebase EI alusteta koskaan.
+// Selaimessa alustus tapahtuu normaalisti ensimmäisen importin yhteydessä.
 
-try {
-  _app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-  _db = getFirestore(_app);
-  _storage = getStorage(_app);
-  _auth = getAuth(_app);
-} catch {
-  // SSR/build ilman ympäristömuuttujia — alustetaan selaimessa
+let db: Firestore = null as unknown as Firestore;
+let storage: FirebaseStorage = null as unknown as FirebaseStorage;
+let auth: Auth = null as unknown as Auth;
+
+if (typeof window !== "undefined") {
+  const app: FirebaseApp =
+    getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  db = getFirestore(app);
+  storage = getStorage(app);
+  auth = getAuth(app);
 }
 
-export const db = _db as Firestore;
-export const storage = _storage as FirebaseStorage;
-export const auth = _auth as Auth;
+export { db, storage, auth };
