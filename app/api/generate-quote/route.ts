@@ -155,8 +155,12 @@ TÄRKEÄÄ:
       messageContent = prompt;
     }
 
-    // claude-3-5-haiku tukee tekstiä, kuvia ja PDF:ää
-    const model = "claude-3-5-haiku-20241022";
+    // Tekstipohjainen → haiku (nopea), kuva/PDF → sonnet (vision-tuki)
+    const model =
+      !attachment?.base64 ? "claude-haiku-4-5-20251001"
+      : attachment.mimeType.startsWith("image/") || attachment.mimeType === "application/pdf"
+        ? "claude-sonnet-4-5-20250929"
+        : "claude-haiku-4-5-20251001";
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
