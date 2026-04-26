@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect, useRef } from "react";
 import { auth, db, storage } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
