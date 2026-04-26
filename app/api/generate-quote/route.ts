@@ -155,12 +155,12 @@ TÄRKEÄÄ:
       messageContent = prompt;
     }
 
-    // Excel-liitteen kanssa riittää haiku (teksti), muut vaativat opuksen (vision/document)
+    // Tekstipohjainen → haiku (nopea), kuva/PDF → sonnet (vision-tuki)
     const model =
-      !attachment?.base64 ? "claude-haiku-4-5-20251001"
-      : attachment.mimeType.includes("spreadsheet") || attachment.mimeType.includes("excel") || attachment.mimeType === "text/csv" || attachment.name?.match(/\.(xlsx|xls|csv)$/i)
-        ? "claude-haiku-4-5-20251001"
-        : "claude-opus-4-5-20251101";
+      !attachment?.base64 ? "claude-3-5-haiku-20241022"
+      : attachment.mimeType.startsWith("image/") || attachment.mimeType === "application/pdf"
+        ? "claude-3-5-sonnet-20241022"
+        : "claude-3-5-haiku-20241022";
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
