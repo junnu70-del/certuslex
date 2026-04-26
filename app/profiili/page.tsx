@@ -38,6 +38,7 @@ export default function ProfiiliPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoError, setLogoError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -64,10 +65,16 @@ export default function ProfiiliPage() {
   async function handleSave() {
     if (!user) return;
     setSaving(true);
+    setSaveError("");
     try {
+      if (!db) throw new Error("Tietokantayhteys ei ole käytössä — päivitä sivu");
       await setDoc(doc(db, "companies", user.uid), profile);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("Save error:", msg);
+      setSaveError("Tallennus epäonnistui: " + msg);
     } finally {
       setSaving(false);
     }
@@ -234,6 +241,12 @@ export default function ProfiiliPage() {
             </div>
           </div>
         </div>
+
+        {saveError && (
+          <div style={{ background: "#fff0f0", border: "1px solid #f5c6cb", padding: "0.8rem 1rem", marginBottom: "1rem", fontSize: "0.85rem", color: "#9b2335" }}>
+            ⚠️ {saveError}
+          </div>
+        )}
 
         <button onClick={handleSave} disabled={saving}
           style={{ width: "100%", background: saving ? "#EDE8DE" : saved ? "#166534" : "#C8A44A", color: saving ? "#8A8070" : "#0F1F3D", border: "none", padding: "1rem", fontSize: "1rem", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", letterSpacing: "0.05em", transition: "background 0.3s" }}>
