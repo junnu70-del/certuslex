@@ -3,10 +3,9 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
-import { auth, db, storage } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -40,6 +39,7 @@ export default function ProfiiliPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -76,12 +76,27 @@ export default function ProfiiliPage() {
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    setLogoError("");
+
+    // Tarkista tiedoston koko (max 500 KB base64-tallennusta varten)
+    if (file.size > 500 * 1024) {
+      setLogoError("Logo on liian suuri — max 500 KB");
+      return;
+    }
+
     setLogoUploading(true);
     try {
-      const storageRef = ref(storage, `logos/${user.uid}/${file.name}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      setProfile(p => ({ ...p, logoUrl: url }));
+      // Tallennetaan base64:na suoraan Firestoreen — ei erillistä Storage-konfiguraatiota
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      setProfile(p => ({ ...p, logoUrl: dataUrl }));
+    } catch (err) {
+      console.error("Logo upload error:", err);
+      setLogoError("Logon lataus epäonnistui — yritä uudelleen");
     } finally {
       setLogoUploading(false);
     }
@@ -134,7 +149,8 @@ export default function ProfiiliPage() {
                 style={{ background: "#0F1F3D", color: "#C8A44A", border: "none", padding: "0.6rem 1.2rem", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer", display: "block", marginBottom: "0.5rem" }}>
                 {logoUploading ? "Ladataan..." : profile.logoUrl ? "Vaihda logo" : "Lataa logo"}
               </button>
-              <p style={{ fontSize: "0.75rem", color: "#8A8070", margin: 0 }}>PNG tai SVG, suositeltu 300×100 px</p>
+              <p style={{ fontSize: "0.75rem", color: "#8A8070", margin: 0 }}>PNG, JPG tai SVG — max 500 KB</p>
+              {logoError && <p style={{ fontSize: "0.75rem", color: "#9b2335", margin: "0.4rem 0 0" }}>{logoError}</p>}
               {profile.logoUrl && (
                 <button onClick={() => setProfile(p => ({ ...p, logoUrl: "" }))}
                   style={{ background: "none", border: "none", color: "#9b2335", fontSize: "0.75rem", cursor: "pointer", padding: "0.3rem 0", marginTop: "0.3rem" }}>
