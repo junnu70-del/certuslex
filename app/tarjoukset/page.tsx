@@ -40,6 +40,7 @@ export default function TarjouksetPage() {
   const [filter, setFilter] = useState<"all" | "sent" | "commented" | "signed">("all");
 
   useEffect(() => {
+    if (!auth) { router.push("/kirjaudu"); return; }
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) { router.push("/kirjaudu"); return; }
       setUser(u);

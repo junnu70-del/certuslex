@@ -43,13 +43,20 @@ export default function ProfiiliPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (!auth) { router.push("/kirjaudu"); return; }
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) { router.push("/kirjaudu"); return; }
       setUser(u);
-      const snap = await getDoc(doc(db, "companies", u.uid));
-      if (snap.exists()) setProfile(snap.data() as CompanyProfile);
-      else setProfile({ ...empty, email: u.email ?? "" });
-      setLoading(false);
+      try {
+        const snap = await getDoc(doc(db, "companies", u.uid));
+        if (snap.exists()) setProfile(snap.data() as CompanyProfile);
+        else setProfile({ ...empty, email: u.email ?? "" });
+      } catch (err) {
+        console.error("Firestore error:", err);
+        setProfile({ ...empty, email: u.email ?? "" });
+      } finally {
+        setLoading(false);
+      }
     });
     return () => unsub();
   }, [router]);
