@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import * as XLSX from "xlsx";
 
 // Suurten liitteiden (base64) tuki — App Router käyttää tätä
 export const maxDuration = 60; // sekuntia, pitkä AI-kutsu liitteen kanssa
@@ -94,6 +95,29 @@ TÄRKEÄÄ:
 - Käytä järkeviä arvioita numeroille jos tarkkoja ei ole annettu, merkitse arviot tekstillä "(arvio)"
 - Tee dokumentista A4-tulostuskelpoinen, padding 40px`;
 
+    // Parsitaan Excel/CSV tekstiksi — Claude ei tue niitä natiivisti
+    function parseExcelToText(base64: string, fileName: string): string {
+      const buffer = Buffer.from(base64, "base64");
+      const workbook = XLSX.read(buffer, { type: "buffer" });
+      const lines: string[] = [`=== Liitetiedosto: ${fileName} ===`];
+      for (const sheetName of workbook.SheetNames) {
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+        if (rows.length === 0) continue;
+        lines.push(`\n--- Taulukko: ${sheetName} ---`);
+        // Otsikkorivi
+        const headers = Object.keys(rows[0]);
+        lines.push(headers.join(" | "));
+        lines.push(headers.map(() => "---").join(" | "));
+        // Datarivit (max 200 riviä)
+        for (const row of rows.slice(0, 200)) {
+          lines.push(headers.map(h => String(row[h] ?? "")).join(" | "));
+        }
+        if (rows.length > 200) lines.push(`... ja ${rows.length - 200} riviä lisää`);
+      }
+      return lines.join("\n");
+    }
+
     // Build message content — text only or multimodal with attachment
     type ContentBlock =
       | { type: "text"; text: string }
@@ -103,29 +127,36 @@ TÄRKEÄÄ:
     let messageContent: string | ContentBlock[];
 
     if (attachment?.base64) {
-      const isImage = attachment.mimeType.startsWith("image/");
-      const attachmentBlock: ContentBlock = isImage
-        ? {
-            type: "image",
-            source: { type: "base64", media_type: attachment.mimeType, data: attachment.base64 },
-          }
-        : {
-            type: "document",
-            source: { type: "base64", media_type: "application/pdf", data: attachment.base64 },
-            title: attachment.name,
-          };
-      messageContent = [
-        { type: "text", text: prompt + "\n\nLiitetty asiakirja: Analysoi se huolellisesti ja hyödynnä kaikki siitä löytyvä tieto (mitat, materiaalit, työvaiheet, hinnat jne.) tarjouksen laadinnassa." },
-        attachmentBlock,
-      ];
+      const mime = attachment.mimeType;
+      const isImage = mime.startsWith("image/");
+      const isExcel = mime.includes("spreadsheet") || mime.includes("excel") || mime === "text/csv" || attachment.name.match(/\.(xlsx|xls|csv)$/i);
+
+      if (isExcel) {
+        // Excel/CSV → teksti joka lisätään promptiin
+        const excelText = parseExcelToText(attachment.base64, attachment.name);
+        messageContent = prompt + `\n\nLIITETTY TAULUKKO (Excel/CSV):\nAnalysoi alla oleva taulukko ja hyödynnä kaikki hinnat, määrät, materiaalit ja työvaiheet tarjouksen laadinnassa.\n\n${excelText}`;
+      } else if (isImage) {
+        messageContent = [
+          { type: "text", text: prompt + "\n\nLiitetty kuva/piirustus: Analysoi se huolellisesti ja hyödynnä kaikki löytyvä tieto tarjouksen laadinnassa." },
+          { type: "image", source: { type: "base64", media_type: mime, data: attachment.base64 } },
+        ];
+      } else {
+        // PDF tai muu dokumentti
+        messageContent = [
+          { type: "text", text: prompt + "\n\nLiitetty asiakirja: Analysoi se huolellisesti ja hyödynnä kaikki siitä löytyvä tieto (mitat, materiaalit, työvaiheet, hinnat jne.) tarjouksen laadinnassa." },
+          { type: "document", source: { type: "base64", media_type: "application/pdf", data: attachment.base64 }, title: attachment.name },
+        ];
+      }
     } else {
       messageContent = prompt;
     }
 
-    // Use a model that supports documents & vision when attachment present
-    const model = attachment?.base64
-      ? "claude-opus-4-5-20251101"
-      : "claude-haiku-4-5-20251001";
+    // Excel-liitteen kanssa riittää haiku (teksti), muut vaativat opuksen (vision/document)
+    const model =
+      !attachment?.base64 ? "claude-haiku-4-5-20251001"
+      : attachment.mimeType.includes("spreadsheet") || attachment.mimeType.includes("excel") || attachment.mimeType === "text/csv" || attachment.name?.match(/\.(xlsx|xls|csv)$/i)
+        ? "claude-haiku-4-5-20251001"
+        : "claude-opus-4-5-20251101";
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

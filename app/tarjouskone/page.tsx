@@ -296,12 +296,12 @@ export default function TarjouskoneePage() {
               {attachment ? (
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem", background: "#F0FDF4", border: "1px solid #86EFAC", padding: "0.8rem 1rem" }}>
                   <span style={{ fontSize: "1.4rem" }}>
-                    {attachment.mimeType.startsWith("image/") ? "🖼️" : "📄"}
+                    {attachment.mimeType.startsWith("image/") ? "🖼️" : (attachment.mimeType.includes("sheet") || attachment.mimeType.includes("excel") || attachment.name.match(/\.(xlsx|xls|csv)$/i)) ? "📊" : "📄"}
                   </span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#166534", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{attachment.name}</div>
                     <div style={{ fontSize: "0.72rem", color: "#4ADE80" }}>
-                      {(attachment.size / 1024).toFixed(0)} kt — {attachment.mimeType.startsWith("image/") ? "Kuva (vision)" : "Dokumentti (PDF)"}
+                      {(attachment.size / 1024).toFixed(0)} kt — {attachment.mimeType.startsWith("image/") ? "Kuva (vision)" : (attachment.mimeType.includes("sheet") || attachment.mimeType.includes("excel") || attachment.name.match(/\.(xlsx|xls|csv)$/i)) ? "Excel/CSV → muunnetaan tekstiksi" : "PDF-dokumentti"}
                     </div>
                   </div>
                   <button onClick={() => setAttachment(null)}
@@ -312,10 +312,10 @@ export default function TarjouskoneePage() {
               ) : (
                 <button onClick={() => attachRef.current?.click()}
                   style={{ display: "flex", alignItems: "center", gap: "0.6rem", background: "transparent", border: "2px dashed #C8A44A", color: "#0F1F3D", padding: "0.8rem 1.4rem", fontSize: "0.83rem", fontWeight: 600, cursor: "pointer", width: "100%", justifyContent: "center" }}>
-                  <span style={{ fontSize: "1.1rem" }}>📎</span> Valitse tiedosto (PDF, PNG, JPG — max 15 Mt)
+                  <span style={{ fontSize: "1.1rem" }}>📎</span> Valitse tiedosto (PDF, Excel, CSV, PNG, JPG — max 15 Mt)
                 </button>
               )}
-              <input ref={attachRef} type="file" accept="application/pdf,image/png,image/jpeg,image/jpg,image/webp" style={{ display: "none" }} onChange={handleAttachmentSelect} />
+              <input ref={attachRef} type="file" accept="application/pdf,image/png,image/jpeg,image/jpg,image/webp,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,.xlsx,.xls,.csv" style={{ display: "none" }} onChange={handleAttachmentSelect} />
             </div>
 
             <div style={{ background: "rgba(200,164,74,.08)", border: "1px solid rgba(200,164,74,.3)", padding: "1rem 1.2rem", marginBottom: "1.5rem", fontSize: "0.82rem", color: "#4A4035" }}>
