@@ -50,6 +50,8 @@ export default function TarjouskoneePage() {
   const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
+  const [isExpired, setIsExpired] = useState(false);
   const [attachment, setAttachment] = useState<{ name: string; size: number; base64: string; mimeType: string } | null>(null);
   const attachRef = useRef<HTMLInputElement>(null);
 
@@ -80,6 +82,9 @@ export default function TarjouskoneePage() {
             setLogoUrl(p.logoUrl ?? "");
             setProfileLoaded(true);
           }
+          // Trial-tila aina mukana
+          if (p.trialDaysLeft !== undefined) setTrialDaysLeft(p.trialDaysLeft);
+          if (p.isExpired !== undefined) setIsExpired(p.isExpired);
         }
       } catch { /* ei profiilia */ }
     });
@@ -174,8 +179,42 @@ export default function TarjouskoneePage() {
 
   const stepNum = { company: 1, project: 2, specs: 3, generating: 3, result: 3, send: 3 }[step];
 
+  // Paywall — trial vanhentunut
+  if (isExpired) return (
+    <div style={{ background: "#F7F4EE", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+      <div style={{ background: "#fff", border: "2px solid #C8A44A", padding: "3rem 3.5rem", maxWidth: "480px", textAlign: "center" }}>
+        <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>⏰</div>
+        <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.14em", color: "#C8A44A", marginBottom: "0.8rem" }}>ILMAINEN KOKEILU PÄÄTTYNYT</p>
+        <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.8rem", fontWeight: 700, color: "#0F1F3D", margin: "0 0 1rem" }}>
+          Jatka tilaamalla paketti
+        </h2>
+        <p style={{ fontSize: "0.88rem", color: "#8A8070", margin: "0 0 2rem", lineHeight: 1.6 }}>
+          30 päivän ilmainen kokeilu on päättynyt. Valitse paketti jatkaaksesi ammattimaaisten tarjousten luomista.
+        </p>
+        <Link href="/hinnoittelu"
+          style={{ display: "inline-block", background: "#C8A44A", color: "#0F1F3D", padding: "0.9rem 2.5rem", fontSize: "0.95rem", fontWeight: 700, textDecoration: "none", letterSpacing: "0.05em" }}>
+          Katso paketit →
+        </Link>
+        <p style={{ fontSize: "0.75rem", color: "#8A8070", marginTop: "1.5rem" }}>
+          Kysymyksiä? <a href="mailto:info@certuslex.fi" style={{ color: "#C8A44A" }}>info@certuslex.fi</a>
+        </p>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ background: step === "result" ? "#fff" : "#F7F4EE", minHeight: "100vh" }}>
+      {/* Trial-banneri */}
+      {userEmail && trialDaysLeft !== null && trialDaysLeft <= 7 && !isExpired && (
+        <div style={{ background: trialDaysLeft <= 3 ? "#fff0f0" : "#FFF8E7", borderBottom: `2px solid ${trialDaysLeft <= 3 ? "#f5c6cb" : "#C8A44A"}`, padding: "0.6rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.82rem" }}>
+          <span style={{ color: trialDaysLeft <= 3 ? "#9b2335" : "#7A4F00", fontWeight: 600 }}>
+            {trialDaysLeft <= 3 ? "⚠️" : "⏳"} Ilmainen kokeilu päättyy {trialDaysLeft === 0 ? "tänään" : `${trialDaysLeft} päivän kuluttua`}
+          </span>
+          <Link href="/hinnoittelu" style={{ color: "#C8A44A", fontWeight: 700, textDecoration: "none", fontSize: "0.78rem" }}>
+            Valitse paketti →
+          </Link>
+        </div>
+      )}
       {/* Nav */}
       <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.2rem 3rem", borderBottom: "1px solid #EDE8DE", background: "#fff" }}>
         <Link href="/" style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.8rem", fontWeight: 700, textDecoration: "none", color: "#0F1F3D", letterSpacing: "-0.02em" }}>

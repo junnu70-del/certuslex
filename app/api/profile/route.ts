@@ -30,16 +30,40 @@ async function verifyToken(req: NextRequest): Promise<string | null> {
   }
 }
 
-// GET /api/profile — hae yritysprofiili
+// GET /api/profile — hae yritysprofiili, käynnistä trial automaattisesti
 export async function GET(req: NextRequest) {
   const uid = await verifyToken(req);
   if (!uid) return NextResponse.json({ error: "Ei kirjautunut" }, { status: 401 });
 
   try {
     const db = getAdminDb();
-    const snap = await db.collection("companies").doc(uid).get();
-    if (!snap.exists) return NextResponse.json({});
-    return NextResponse.json(snap.data());
+    const ref = db.collection("companies").doc(uid);
+    const snap = await ref.get();
+    const data = snap.exists ? (snap.data() ?? {}) : {};
+
+    // Käynnistä 30 pv trial automaattisesti ensimmäisellä kirjautumisella
+    if (!data.trialStartedAt) {
+      const now = new Date();
+      const trialEnds = new Date(now);
+      trialEnds.setDate(trialEnds.getDate() + 30);
+      await ref.set({
+        trialStartedAt: now.toISOString(),
+        trialEndsAt: trialEnds.toISOString(),
+        subscriptionStatus: "trial",
+        plan: "pro",
+      }, { merge: true });
+      data.trialStartedAt = now.toISOString();
+      data.trialEndsAt = trialEnds.toISOString();
+      data.subscriptionStatus = "trial";
+      data.plan = "pro";
+    }
+
+    // Laske jäljellä olevat trial-päivät
+    const trialEndsAt = new Date(data.trialEndsAt);
+    const daysLeft = Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    const isExpired = data.subscriptionStatus !== "active" && daysLeft <= 0;
+
+    return NextResponse.json({ ...data, trialDaysLeft: Math.max(0, daysLeft), isExpired });
   } catch (err) {
     console.error("Profile GET error:", err);
     return NextResponse.json({ error: "Tietokantavirhe: " + String(err) }, { status: 500 });
