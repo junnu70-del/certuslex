@@ -1,7 +1,7 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
-import { getAuth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
+import { getAuth, type Auth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "",
@@ -12,13 +12,23 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? "",
 };
 
-let app: FirebaseApp;
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApps()[0];
+// Wrap in try/catch: build-aikana env-muuttujat voivat puuttua (SSR).
+// Kaikki Firebase-kutsut tapahtuvat vain selaimessa (useEffect/event handlers),
+// joten null-arvot build-aikana eivät haittaa.
+let _app: FirebaseApp | undefined;
+let _db: Firestore | undefined;
+let _storage: FirebaseStorage | undefined;
+let _auth: Auth | undefined;
+
+try {
+  _app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  _db = getFirestore(_app);
+  _storage = getStorage(_app);
+  _auth = getAuth(_app);
+} catch {
+  // SSR/build ilman ympäristömuuttujia — alustetaan selaimessa
 }
 
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-export const auth = getAuth(app);
+export const db = _db as Firestore;
+export const storage = _storage as FirebaseStorage;
+export const auth = _auth as Auth;
