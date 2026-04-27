@@ -562,13 +562,13 @@ input[type=text]:focus, input[type=password]:focus { border-color: var(--border2
     </div>
 
     <div class="card section-gap">
-      <div class="card-title">Litterointi — Firebase Function URL</div>
+      <div class="card-title">Litterointi — API-osoite</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
-        Litterointi tapahtuu Firebase Cloud Functionin kautta (Whisper + GPT-4o-mini).<br>
-        Saat URL:n kun funktio on deploy'attu.
+        Litterointi tapahtuu certuslex.fi:n kautta (Whisper + Claude).<br>
+        Oletusarvo <strong style="color:var(--text)">/api/transcribe</strong> on oikea — älä muuta ellei erikseen toisin ohjeisteta.
       </div>
-      <div class="meta-label" style="margin-bottom:5px">Function URL</div>
-      <input type="text" id="set-fnurl" placeholder="https://transcribeaudio-xxxx-ew.a.run.app">
+      <div class="meta-label" style="margin-bottom:5px">API URL</div>
+      <input type="text" id="set-fnurl" placeholder="/api/transcribe">
       <div style="margin-top:8px;display:flex;gap:8px">
         <button class="btn btn-ghost btn-sm" onclick="testFunctionUrl()">Testaa yhteys</button>
         <button class="btn btn-primary btn-sm" onclick="saveFunctionUrl()">Tallenna</button>
@@ -824,7 +824,7 @@ function genNewId() {
 
 function startSession() {
   if (!state.settings.fnurl) {
-    toast('Lisää Firebase Function URL ensin asetuksiin', true);
+    toast('Lisää API URL ensin asetuksiin', true);
     showScreen('screen-settings');
     return;
   }
@@ -982,7 +982,7 @@ async function startProcessing() {
     setStep('step-audio', 'done');
     document.getElementById('procProgress').style.width = '33%';
 
-    // Step 2: Whisper + GPT-4o-mini via Firebase Function
+    // Step 2: Whisper + Claude via /api/transcribe
     setStep('step-gemini', 'active');
     const result = await callTranscribeFunction(base64, mime);
     setStep('step-gemini', 'done');
@@ -1006,7 +1006,7 @@ async function startProcessing() {
 
 async function callTranscribeFunction(audioBase64, mimeType) {
   const fnUrl = state.settings.fnurl;
-  if (!fnUrl) throw new Error('Firebase Function URL puuttuu. Lisää se asetuksiin.');
+  if (!fnUrl) throw new Error('API URL puuttuu. Lisää se asetuksiin.');
 
   const s = state.currentSession || {};
   const payload = {
