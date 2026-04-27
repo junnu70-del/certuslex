@@ -2,10 +2,23 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { getApp } from "firebase/app";
-import "@/lib/firebase"; // Varmistaa Firebase-alustuksen
+
+// Firebase-alustus suoraan tässä tiedostossa — välttää module-ristiriidan
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? "",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? "",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? "",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? "",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? "",
+};
+
+function getFirebaseApp() {
+  return getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+}
 
 type View = "landing" | "upload" | "processing" | "result";
 
@@ -38,8 +51,7 @@ export default function Home() {
     goTo("processing");
 
     try {
-      // Hae Firebase-instanssit suoraan (vältetään require/import-ristiriita)
-      const app = getApp();
+      const app = getFirebaseApp();
       const storage = getStorage(app);
       const db = getFirestore(app);
 
