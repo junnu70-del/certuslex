@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0f1e">
+<title>Kenttämuistio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0f1e;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.15);
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --accent: #3b82f6;
+  --accent2: #60a5fa;
+  --green: #10b981;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --mono: 'DM Mono', monospace;
+  --sans: 'Syne', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.app { max-width: 480px; margin: 0 auto; padding: 0 0 80px; }
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--text); }
+.logo span { color: var(--accent2); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff; letter-spacing: .03em;
+  cursor: pointer;
+}
+.screen { display: none; padding: 20px; }
+.screen.active { display: block; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 10px;
+}
+.session-id {
+  font-family: var(--mono);
+  font-size: 22px; font-weight: 500;
+  color: var(--accent2);
+  letter-spacing: .08em;
+  display: block;
+  margin: 6px 0 4px;
+}
+.session-sub { font-size: 11px; color: var(--muted); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.meta-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+.meta-label { font-size: 10px; color: var(--muted); margin-bottom: 3px; letter-spacing: .06em; text-transform: uppercase; }
+.meta-val { font-size: 13px; font-weight: 500; color: var(--text); }
+.meta-val.mono { font-family: var(--mono); color: var(--accent2); }
+.consent-banner {
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.consent-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); margin-top: 5px; flex-shrink: 0; }
+.consent-text { font-size: 12px; color: var(--amber); line-height: 1.6; }
+.consent-text strong { font-weight: 700; display: block; margin-bottom: 2px; }
+.btn {
+  display: block; width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none; cursor: pointer;
+  font-family: var(--sans);
+  font-size: 13px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  transition: all .15s;
+}
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:not(:disabled):hover { background: #2563eb; }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-success { background: var(--green); color: #fff; }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--text);
+}
+.btn-ghost:not(:disabled):hover { background: var(--surface2); }
+.btn + .btn { margin-top: 8px; }
+.btn-sm {
+  display: inline-block; width: auto;
+  padding: 7px 14px; font-size: 11px; border-radius: 8px;
+}
+.rec-center { text-align: center; padding: 24px 0 8px; }
+.rec-ring {
+  width: 100px; height: 100px; border-radius: 50%;
+  border: 2px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+  position: relative;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.rec-ring.recording {
+  border-color: var(--red);
+  animation: pulse-ring 1.8s ease-in-out infinite;
+}
+@keyframes pulse-ring {
+  0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
+  50% { box-shadow: 0 0 0 14px rgba(239,68,68,0); }
+}
+.rec-inner {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+}
+.rec-dot { width: 20px; height: 20px; border-radius: 50%; background: var(--muted); transition: all .2s; }
+.rec-dot.active { background: var(--red); border-radius: 4px; transform: scale(0.85); }
+.rec-timer { font-family: var(--mono); font-size: 28px; font-weight: 500; color: var(--text); letter-spacing: .05em; }
+.rec-status { font-size: 11px; color: var(--muted); margin-top: 6px; letter-spacing: .08em; text-transform: uppercase; }
+.rec-status.live { color: var(--red); }
+.waveform { display: flex; align-items: center; justify-content: center; gap: 3px; height: 32px; margin: 14px 0; }
+.wave-bar {
+  width: 3px; border-radius: 2px;
+  background: var(--border2);
+  transition: height .1s, background .1s;
+}
+.wave-bar.active { background: var(--accent); }
+textarea {
+  width: 100%; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 10px;
+  color: var(--text); font-family: var(--sans); font-size: 13px;
+  padding: 12px; resize: none; outline: none;
+  transition: border-color .15s;
+}
+textarea:focus { border-color: var(--border2); }
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+}
+.badge-green { background: rgba(16,185,129,0.12); color: var(--green); }
+.badge-amber { background: rgba(245,158,11,0.12); color: var(--amber); }
+.badge-blue { background: rgba(59,130,246,0.12); color: var(--accent2); }
+.badge-red { background: rgba(239,68,68,0.12); color: var(--red); }
+.badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.transcript-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.transcript-box .speaker { font-family: var(--mono); font-size: 10px; color: var(--accent2); margin-top: 10px; margin-bottom: 2px; }
+.transcript-box .speaker:first-child { margin-top: 0; }
+.report-field { margin-bottom: 14px; }
+.report-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.report-value {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text);
+  min-height: 40px;
+  white-space: pre-wrap;
+}
+.bottom-nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 10;
+}
+.nav-item {
+  flex: 1; padding: 12px 4px 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  cursor: pointer; border: none; background: transparent; color: var(--muted);
+  font-family: var(--sans); font-size: 9px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  transition: color .15s;
+}
+.nav-item.active { color: var(--accent2); }
+.nav-icon { width: 20px; height: 20px; }
+select {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: var(--sans); font-size: 13px;
+  padding: 9px 12px; width: 100%; outline: none;
+  appearance: none; cursor: pointer;
+}
+.divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+.progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin: 8px 0; }
+.progress-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width .4s; }
+#toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 12px; font-weight: 500;
+  opacity: 0; transition: opacity .2s;
+  pointer-events: none; z-index: 100;
+  white-space: nowrap;
+  max-width: 320px;
+  text-align: center;
+}
+#toast.show { opacity: 1; }
+#toast.error { border-color: rgba(239,68,68,0.4); color: var(--red); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { width: 16px; height: 16px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+input[type=text], input[type=password] {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: var(--mono); font-size: 13px;
+  padding: 9px 12px; width: 100%; outline: none;
+}
+input[type=text]:focus, input[type=password]:focus { border-color: var(--border2); }
+.section-gap { margin-top: 20px; }
+.lifecycle { display: flex; flex-direction: column; gap: 0; }
+.lc-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+.lc-row:last-child { border-bottom: none; }
+.lc-num { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.lc-label { font-size: 12px; font-weight: 500; color: var(--text); }
+.lc-sub { font-size: 11px; color: var(--muted); }
+.lc-right { margin-left: auto; }
+
+/* Setup screen */
+.setup-step {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setup-step:last-child { border-bottom: none; }
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.step-num.done { background: var(--green); }
+.step-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+.step-sub { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+/* Error box */
+.error-box {
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--red);
+  line-height: 1.6;
+  display: none;
+}
+.error-box.show { display: block; }
+
+/* Processing steps */
+.proc-steps { display: flex; flex-direction: column; gap: 8px; }
+.proc-step {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px; color: var(--muted);
+  padding: 8px 0;
+}
+.proc-step.active { color: var(--text); }
+.proc-step.done { color: var(--green); }
+.proc-icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* Editable report fields */
+.report-value[contenteditable="true"] {
+  outline: none;
+  border-color: var(--accent);
+}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="logo">Kenttä<span>muistio</span></div>
+    <div class="topbar-right">
+      <span class="badge badge-green" id="statusBadge"><span class="badge-dot"></span>valmis</span>
+      <div class="avatar" id="avatarEl" onclick="showScreen('screen-settings')" title="Asetukset">??</div>
+    </div>
+  </div>
+
+  <!-- SCREEN: UUSI SESSIO -->
+  <div class="screen active" id="screen-session">
+
+    <div id="setupWarning" class="error-box" style="display:none">
+      <strong>Asetukset puuttuvat</strong><br>
+      Lisää Gemini API-avain ja haastattelijan tiedot ennen aloitusta.
+      <br><button class="btn btn-ghost" style="margin-top:10px;padding:8px" onclick="showScreen('screen-settings')">Avaa asetukset</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Haastattelija</div>
+      <div class="grid2">
+        <div class="meta-card">
+          <div class="meta-label">Nimi</div>
+          <div class="meta-val" id="disp-name">—</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Tunnus</div>
+          <div class="meta-val mono" id="disp-hid">—</div>
+        </div>
+      </div>
+      <div class="meta-card" style="margin-top:0">
+        <div class="meta-label">Organisaatio</div>
+        <div class="meta-val" id="disp-org">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Asiakastunniste (pseudonymisoitu)</div>
+      <span class="session-id" id="sessionId">—</span>
+      <div class="session-sub">Ei yrityksen nimeä — erillinen avaintaulukko</div>
+      <hr class="divider">
+      <div class="grid2" style="margin-bottom:0">
+        <div>
+          <div class="meta-label" style="margin-bottom:5px">Tapaamisen tyyppi</div>
+          <select id="meetingType">
+            <option>Alkukartoitus</option>
+            <option>Seurantatapaaminen</option>
+            <option>Rahoitusneuvonta</option>
+            <option>Kehityskeskustelu</option>
+            <option>Juridinen neuvottelu</option>
+            <option>Sopimustilanne</option>
+            <option>Muu</option>
+          </select>
+        </div>
+        <div>
+          <div class="meta-label" style="margin-bottom:5px">Sijainti</div>
+          <select id="meetingLoc">
+            <option>Asiakkaan toimitila</option>
+            <option>Toimisto</option>
+            <option>Etäyhteys</option>
+            <option>Muu</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="consent-banner">
+      <div class="consent-dot"></div>
+      <div class="consent-text">
+        <strong>Muista pyytää suostumus</strong>
+        Kerro asiakkaalle ennen äänitystä: tapaaminen äänitetään ja litteroidaan AI-avusteisesti raportointia varten. Äänitiedosto poistetaan 7 vrk käsittelyn jälkeen.
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="startSession()">Asiakas antoi suostumuksen — aloita tapaaminen</button>
+    <button class="btn btn-ghost" onclick="genNewId()" style="margin-top:8px">Generoi uusi tunniste</button>
+  </div>
+
+  <!-- SCREEN: ÄÄNITYS -->
+  <div class="screen" id="screen-rec">
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="meta-label">Sessio</div>
+          <span class="meta-val mono" id="rec-session-id">—</span>
+        </div>
+        <span class="badge badge-amber" id="rec-badge"><span class="badge-dot"></span>valmis</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="rec-center">
+        <div class="rec-ring" id="recRing" onclick="toggleRecording()">
+          <div class="rec-inner">
+            <div class="rec-dot" id="recDot"></div>
+          </div>
+        </div>
+        <div class="rec-timer" id="recTimer">00:00</div>
+        <div class="rec-status" id="recStatus">Paina aloittaaksesi</div>
+      </div>
+
+      <div class="waveform" id="waveform">
+        <div class="wave-bar" style="height:8px"></div>
+        <div class="wave-bar" style="height:14px"></div>
+        <div class="wave-bar" style="height:10px"></div>
+        <div class="wave-bar" style="height:18px"></div>
+        <div class="wave-bar" style="height:12px"></div>
+        <div class="wave-bar" style="height:22px"></div>
+        <div class="wave-bar" style="height:16px"></div>
+        <div class="wave-bar" style="height:10px"></div>
+        <div class="wave-bar" style="height:20px"></div>
+        <div class="wave-bar" style="height:14px"></div>
+        <div class="wave-bar" style="height:8px"></div>
+        <div class="wave-bar" style="height:18px"></div>
+        <div class="wave-bar" style="height:12px"></div>
+        <div class="wave-bar" style="height:24px"></div>
+        <div class="wave-bar" style="height:10px"></div>
+        <div class="wave-bar" style="height:16px"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Pikamerkinnät <span style="color:var(--muted);font-size:9px;text-transform:none;letter-spacing:0">(ei tallennu äänitteeseen)</span></div>
+      <textarea id="quickNotes" rows="3" placeholder="esim. vientipotentiaali, 4 hlö, etsii EU-rahoitusta..."></textarea>
+    </div>
+
+    <button class="btn btn-success" onclick="stopAndProcess()" id="btnStop" disabled>Lopeta ja litteroi</button>
+    <button class="btn btn-ghost" onclick="confirmCancelSession()" style="margin-top:8px">Peruuta sessio</button>
+  </div>
+
+  <!-- SCREEN: KÄSITTELY -->
+  <div class="screen" id="screen-processing">
+    <div class="card">
+      <div class="card-title">AI käsittelee...</div>
+      <div class="proc-steps">
+        <div class="proc-step" id="step-audio">
+          <svg class="proc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="9"/><path d="M9 9h.01M15 9h.01M9 15s1 1 3 1 3-1 3-1" stroke-linecap="round"/>
+          </svg>
+          <span>Valmistellaan äänite...</span>
+        </div>
+        <div class="proc-step" id="step-gemini">
+          <svg class="proc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Lähetetään Whisperille...</span>
+        </div>
+        <div class="proc-step" id="step-parse">
+          <svg class="proc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 12h6M9 16h4M7 3H4a1 1 0 00-1 1v16a1 1 0 001 1h16a1 1 0 001-1V8l-5-5H7z" stroke-linecap="round"/>
+          </svg>
+          <span>Rakennetaan raportti...</span>
+        </div>
+      </div>
+      <div class="progress-bar" style="margin-top:16px">
+        <div class="progress-fill" id="procProgress" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div id="procError" class="error-box">
+      <strong>Virhe käsittelyssä</strong><br>
+      <span id="procErrorMsg"></span>
+      <br>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" id="btnRetry" onclick="retryProcessing()">Yritä uudelleen</button>
+        <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-rec')">Takaisin äänitteeseen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: RAPORTTI -->
+  <div class="screen" id="screen-report">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="card-title" style="margin-bottom:0">Litterointi</div>
+        <span class="badge badge-green" id="transcript-badge"><span class="badge-dot"></span>valmis</span>
+      </div>
+      <div class="transcript-box" id="transcriptBox"></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="card-title" style="margin-bottom:0">AI-raportti</div>
+        <span class="badge badge-green" id="report-badge"><span class="badge-dot"></span>valmis</span>
+      </div>
+
+      <div class="report-field">
+        <div class="report-label">Tilanteen kuvaus</div>
+        <div class="report-value" id="r-tilanne" contenteditable="true"></div>
+      </div>
+      <div class="report-field">
+        <div class="report-label">Tunnistetut tarpeet</div>
+        <div class="report-value" id="r-tarpeet" contenteditable="true"></div>
+      </div>
+      <div class="report-field">
+        <div class="report-label">Sovitut toimenpiteet</div>
+        <div class="report-value" id="r-toimet" contenteditable="true"></div>
+      </div>
+      <div class="report-field">
+        <div class="report-label">Seuraavat askeleet</div>
+        <div class="report-value" id="r-askeleet" contenteditable="true"></div>
+      </div>
+
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">Voit muokata kenttiä ennen tallennusta</div>
+    </div>
+
+    <button class="btn btn-primary" id="btnDrive" onclick="saveToDrive()">Tallenna Google Driveen</button>
+    <button class="btn btn-ghost" onclick="showScreen('screen-session');genNewId()" style="margin-top:8px">Uusi tapaaminen</button>
+  </div>
+
+  <!-- SCREEN: HISTORIA -->
+  <div class="screen" id="screen-history">
+    <div class="card-title" style="margin-bottom:12px;padding:0 2px">Tallennetut tapaamiset</div>
+    <div id="historyList"></div>
+    <div id="historyEmpty" style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px">
+      Ei tallennettuja tapaamisia vielä
+    </div>
+  </div>
+
+  <!-- SCREEN: ASETUKSET -->
+  <div class="screen" id="screen-settings">
+
+    <div class="card">
+      <div class="card-title">Haastattelijan tiedot</div>
+      <div style="margin-bottom:10px">
+        <div class="meta-label" style="margin-bottom:5px">Nimi</div>
+        <input type="text" id="set-name" placeholder="Etunimi Sukunimi">
+      </div>
+      <div style="margin-bottom:10px">
+        <div class="meta-label" style="margin-bottom:5px">Organisaatio</div>
+        <input type="text" id="set-org" placeholder="Yritys Oy">
+      </div>
+      <div>
+        <div class="meta-label" style="margin-bottom:5px">Henkilötunnus (sisäinen)</div>
+        <input type="text" id="set-hid" placeholder="HEN-001">
+      </div>
+      <button class="btn btn-primary" style="margin-top:14px" onclick="saveSettings()">Tallenna tiedot</button>
+    </div>
+
+    <div class="card section-gap">
+      <div class="card-title">Litterointi — Firebase Function URL</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
+        Litterointi tapahtuu Firebase Cloud Functionin kautta (Whisper + GPT-4o-mini).<br>
+        Saat URL:n kun funktio on deploy'attu.
+      </div>
+      <div class="meta-label" style="margin-bottom:5px">Function URL</div>
+      <input type="text" id="set-fnurl" placeholder="https://transcribeaudio-xxxx-ew.a.run.app">
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="testFunctionUrl()">Testaa yhteys</button>
+        <button class="btn btn-primary btn-sm" onclick="saveFunctionUrl()">Tallenna</button>
+      </div>
+      <div id="fnurl-status" style="font-size:11px;margin-top:8px;color:var(--muted)"></div>
+    </div>
+
+    <div class="card section-gap">
+      <div class="card-title">Google Drive — Apps Script</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
+        1. Mene <strong style="color:var(--text)">script.google.com</strong> → Uusi projekti<br>
+        2. Kopioi <strong style="color:var(--text)">kenttamuistio_backend_v2.gs</strong> → Code.gs<br>
+        3. Julkaise → Verkkosovelluksena → Kaikki käyttäjät → kopioi URL tähän
+      </div>
+      <div class="meta-label" style="margin-bottom:5px">Apps Script URL</div>
+      <input type="text" id="set-scripturl" placeholder="https://script.google.com/macros/s/...">
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="testScriptUrl()">Testaa yhteys</button>
+        <button class="btn btn-primary btn-sm" onclick="saveScriptUrl()">Tallenna</button>
+      </div>
+      <div id="script-status" style="font-size:11px;margin-top:8px;color:var(--muted)"></div>
+    </div>
+
+    <div class="card section-gap">
+      <div class="card-title">Tietosuoja — GDPR</div>
+      <div class="lifecycle">
+        <div class="lc-row">
+          <div class="lc-num" style="background:rgba(239,68,68,0.15);color:var(--red)">1</div>
+          <div>
+            <div class="lc-label">Äänitiedosto</div>
+            <div class="lc-sub">Ei tallennu laitteelle — käsitellään muistissa</div>
+          </div>
+          <div class="lc-right"><span class="badge badge-red">ei tallennu</span></div>
+        </div>
+        <div class="lc-row">
+          <div class="lc-num" style="background:rgba(245,158,11,0.15);color:var(--amber)">2</div>
+          <div>
+            <div class="lc-label">Litteraatti</div>
+            <div class="lc-sub">Vain tämä sessio — häviää sulkiessa</div>
+          </div>
+          <div class="lc-right"><span class="badge badge-amber">väliaikainen</span></div>
+        </div>
+        <div class="lc-row">
+          <div class="lc-num" style="background:rgba(16,185,129,0.15);color:var(--green)">3</div>
+          <div>
+            <div class="lc-label">Raportti (pseudonymisoitu)</div>
+            <div class="lc-sub">Tallennetaan Google Driveen</div>
+          </div>
+          <div class="lc-right"><span class="badge badge-green">pysyvä</span></div>
+        </div>
+        <div class="lc-row">
+          <div class="lc-num" style="background:rgba(59,130,246,0.15);color:var(--accent2)">4</div>
+          <div>
+            <div class="lc-label">Avaintaulukko</div>
+            <div class="lc-sub">Tunniste ↔ yritys — erillinen suojattu taulukko</div>
+          </div>
+          <div class="lc-right"><span class="badge badge-blue">salattu</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card section-gap">
+      <div class="card-title">Versio</div>
+      <div style="font-size:12px;color:var(--muted)">Kenttämuistio v2.0 — Gemini 2.0 Flash</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-session" onclick="showScreen('screen-session')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 5v14M5 12h14" stroke-linecap="round"/>
+      </svg>
+      Uusi
+    </button>
+    <button class="nav-item" id="nav-rec" onclick="showScreen('screen-rec')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/>
+      </svg>
+      Äänit.
+    </button>
+    <button class="nav-item" id="nav-report" onclick="showScreen('screen-report')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke-linecap="round"/>
+      </svg>
+      Raportti
+    </button>
+    <button class="nav-item" id="nav-history" onclick="showScreen('screen-history')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/>
+      </svg>
+      Historia
+    </button>
+    <button class="nav-item" id="nav-settings" onclick="showScreen('screen-settings')">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+      </svg>
+      Asetukset
+    </button>
+  </nav>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+
+const defaultSettings = {
+  name: '', org: '', hid: '', fnurl: '/api/transcribe', scripturl: ''
+};
+
+let state = {
+  recording: false,
+  timerInterval: null,
+  seconds: 0,
+  mediaRecorder: null,
+  audioChunks: [],
+  audioBlob: null,
+  audioMimeType: '',
+  currentSession: null,
+  waveInterval: null,
+  sessions: JSON.parse(localStorage.getItem('km_sessions') || '[]'),
+  settings: JSON.parse(localStorage.getItem('km_settings') || 'null') || { ...defaultSettings }
+};
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+applySettings();
+renderHistory();
+genNewId();
+checkSetupWarning();
+
+function checkSetupWarning() {
+  const missing = !state.settings.fnurl || !state.settings.name;
+  document.getElementById('setupWarning').style.display = missing ? 'block' : 'none';
+}
+
+// ─── Audio format detection ───────────────────────────────────────────────────
+
+function getSupportedMimeType() {
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/mp4',
+    'audio/mpeg',
+  ];
+  for (const type of candidates) {
+    if (MediaRecorder.isTypeSupported(type)) return type;
+  }
+  return '';
+}
+
+function mimeToGemini(mime) {
+  // Normalize for Gemini API
+  if (mime.includes('webm')) return 'audio/webm';
+  if (mime.includes('ogg')) return 'audio/ogg';
+  if (mime.includes('mp4')) return 'audio/mp4';
+  if (mime.includes('mpeg') || mime.includes('mp3')) return 'audio/mpeg';
+  return mime.split(';')[0];
+}
+
+// ─── Settings ────────────────────────────────────────────────────────────────
+
+function applySettings() {
+  const s = state.settings;
+  document.getElementById('disp-name').textContent = s.name || '—';
+  document.getElementById('disp-org').textContent = s.org || '—';
+  document.getElementById('disp-hid').textContent = s.hid || '—';
+  document.getElementById('set-name').value = s.name || '';
+  document.getElementById('set-org').value = s.org || '';
+  document.getElementById('set-hid').value = s.hid || '';
+  document.getElementById('set-fnurl').value = s.fnurl || '';
+  document.getElementById('set-scripturl').value = s.scripturl || '';
+  const initials = s.name
+    ? s.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+    : '??';
+  document.getElementById('avatarEl').textContent = initials;
+}
+
+function saveSettings() {
+  state.settings.name = document.getElementById('set-name').value.trim();
+  state.settings.org = document.getElementById('set-org').value.trim();
+  state.settings.hid = document.getElementById('set-hid').value.trim();
+  localStorage.setItem('km_settings', JSON.stringify(state.settings));
+  applySettings();
+  checkSetupWarning();
+  toast('Tiedot tallennettu');
+}
+
+function saveFunctionUrl() {
+  state.settings.fnurl = document.getElementById('set-fnurl').value.trim();
+  localStorage.setItem('km_settings', JSON.stringify(state.settings));
+  checkSetupWarning();
+  toast('Function URL tallennettu');
+}
+
+async function testFunctionUrl() {
+  const url = document.getElementById('set-fnurl').value.trim();
+  const statusEl = document.getElementById('fnurl-status');
+  if (!url) { statusEl.textContent = 'Syötä URL ensin'; return; }
+  if (!url.startsWith('https://') && !url.startsWith('http://')) {
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = 'URL:n pitää alkaa https://';
+    return;
+  }
+  statusEl.style.color = 'var(--green)';
+  statusEl.textContent = 'URL tallennettu — testaa äänittämällä';
+}
+
+function saveScriptUrl() {
+  state.settings.scripturl = document.getElementById('set-scripturl').value.trim();
+  localStorage.setItem('km_settings', JSON.stringify(state.settings));
+  toast('Apps Script URL tallennettu');
+}
+
+
+// ─── Apps Script test ─────────────────────────────────────────────────────────
+
+async function testScriptUrl() {
+  const url = document.getElementById('set-scripturl').value.trim();
+  const statusEl = document.getElementById('script-status');
+  if (!url) { statusEl.textContent = 'Syötä URL ensin'; return; }
+  statusEl.style.color = 'var(--muted)';
+  statusEl.textContent = 'Testataan...';
+  try {
+    const res = await fetch(url + '?test=1');
+    const data = await res.json();
+    if (data.status === 'ok') {
+      statusEl.style.color = 'var(--green)';
+      statusEl.textContent = 'Yhteys OK — ' + data.service + ' v' + data.version;
+    } else {
+      statusEl.style.color = 'var(--amber)';
+      statusEl.textContent = 'Vastasi mutta odottamaton formaatti';
+    }
+  } catch (e) {
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = 'Yhteys epäonnistui — tarkista URL ja julkaisuasetukset';
+  }
+}
+
+// ─── Session ID ───────────────────────────────────────────────────────────────
+
+function genId() {
+  const y = new Date().getFullYear();
+  const n = String(Math.floor(Math.random() * 9000) + 1000);
+  return 'YR-' + y + '-' + n;
+}
+
+function genNewId() {
+  document.getElementById('sessionId').textContent = genId();
+}
+
+// ─── Session start ────────────────────────────────────────────────────────────
+
+function startSession() {
+  if (!state.settings.fnurl) {
+    toast('Lisää Firebase Function URL ensin asetuksiin', true);
+    showScreen('screen-settings');
+    return;
+  }
+  const sid = document.getElementById('sessionId').textContent;
+  state.currentSession = {
+    id: sid,
+    hid: state.settings.hid,
+    type: document.getElementById('meetingType').value,
+    loc: document.getElementById('meetingLoc').value,
+    date: new Date().toISOString(),
+    notes: '',
+    duration: 0
+  };
+  document.getElementById('rec-session-id').textContent = sid;
+  document.getElementById('quickNotes').value = '';
+  document.getElementById('btnStop').disabled = true;
+  showScreen('screen-rec');
+  toast('Sessio ' + sid + ' aloitettu');
+}
+
+function confirmCancelSession() {
+  if (state.recording) {
+    if (!confirm('Äänitetään parhaillaan — haluatko varmasti peruuttaa?')) return;
+    stopRecordingHard();
+  }
+  showScreen('screen-session');
+  genNewId();
+}
+
+// ─── Recording ────────────────────────────────────────────────────────────────
+
+async function toggleRecording() {
+  if (state.recording) return; // Only start, not toggle mid-session
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    state.audioMimeType = getSupportedMimeType();
+    const options = state.audioMimeType ? { mimeType: state.audioMimeType } : {};
+
+    state.mediaRecorder = new MediaRecorder(stream, options);
+    state.audioChunks = [];
+    state.audioBlob = null;
+    state.mediaRecorder.ondataavailable = e => {
+      if (e.data && e.data.size > 0) state.audioChunks.push(e.data);
+    };
+    state.mediaRecorder.start(500);
+    state.recording = true;
+    state.seconds = 0;
+
+    document.getElementById('recDot').classList.add('active');
+    document.getElementById('recRing').classList.add('recording');
+    document.getElementById('recStatus').textContent = 'Äänitetään...';
+    document.getElementById('recStatus').className = 'rec-status live';
+    document.getElementById('rec-badge').innerHTML = '<span class="badge-dot"></span>äänitetään';
+    document.getElementById('rec-badge').className = 'badge badge-red';
+    document.getElementById('btnStop').disabled = false;
+
+    state.timerInterval = setInterval(tickTimer, 1000);
+    startWave();
+  } catch (e) {
+    toast('Mikrofonilupa puuttuu — salli mikrofoni selainasetuксista', true);
+  }
+}
+
+function tickTimer() {
+  state.seconds++;
+  const m = String(Math.floor(state.seconds / 60)).padStart(2, '0');
+  const s = String(state.seconds % 60).padStart(2, '0');
+  document.getElementById('recTimer').textContent = m + ':' + s;
+}
+
+function startWave() {
+  const bars = document.querySelectorAll('.wave-bar');
+  state.waveInterval = setInterval(() => {
+    if (!state.recording) return;
+    bars.forEach(b => {
+      b.style.height = (Math.floor(Math.random() * 20) + 4) + 'px';
+      b.classList.toggle('active', Math.random() > 0.4);
+    });
+  }, 120);
+}
+
+function stopRecordingHard() {
+  clearInterval(state.timerInterval);
+  clearInterval(state.waveInterval);
+  state.recording = false;
+  if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') {
+    state.mediaRecorder.stop();
+  }
+  if (state.mediaRecorder && state.mediaRecorder.stream) {
+    state.mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  }
+}
+
+function stopAndProcess() {
+  if (!state.mediaRecorder || !state.recording) return;
+
+  clearInterval(state.timerInterval);
+  clearInterval(state.waveInterval);
+  state.recording = false;
+
+  document.getElementById('recDot').classList.remove('active');
+  document.getElementById('recRing').classList.remove('recording');
+  document.getElementById('recStatus').textContent = 'Käsitellään...';
+  document.getElementById('recStatus').className = 'rec-status';
+
+  if (state.currentSession) {
+    state.currentSession.notes = document.getElementById('quickNotes').value;
+    state.currentSession.duration = state.seconds;
+  }
+
+  state.mediaRecorder.onstop = () => {
+    const mime = state.audioMimeType || 'audio/webm';
+    state.audioBlob = new Blob(state.audioChunks, { type: mime });
+    state.mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    startProcessing();
+  };
+  state.mediaRecorder.stop();
+}
+
+// ─── Processing (Gemini direct from browser) ──────────────────────────────────
+
+function setStep(id, status) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('active', 'done');
+  if (status === 'active') {
+    el.classList.add('active');
+    const spinner = document.createElement('div');
+    spinner.className = 'spinner proc-icon';
+    el.replaceChild(spinner, el.querySelector('.proc-icon, .spinner'));
+  } else if (status === 'done') {
+    el.classList.add('done');
+    el.querySelector('.spinner, .proc-icon') && (el.innerHTML = el.innerHTML.replace(
+      /<div[^>]*class="spinner[^"]*"[^>]*><\/div>/,
+      `<svg class="proc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
+    ));
+  }
+}
+
+async function startProcessing() {
+  showScreen('screen-processing');
+  document.getElementById('procError').classList.remove('show');
+  document.getElementById('procProgress').style.width = '0%';
+
+  setStep('step-audio', 'active');
+
+  try {
+    // Step 1: prepare audio
+    if (!state.audioBlob || state.audioBlob.size < 100) {
+      throw new Error('Äänitiedosto on tyhjä tai liian lyhyt. Äänity uudelleen.');
+    }
+    const base64 = await blobToBase64(state.audioBlob);
+    const mime = mimeToGemini(state.audioMimeType || 'audio/webm');
+    setStep('step-audio', 'done');
+    document.getElementById('procProgress').style.width = '33%';
+
+    // Step 2: Whisper + GPT-4o-mini via Firebase Function
+    setStep('step-gemini', 'active');
+    const result = await callTranscribeFunction(base64, mime);
+    setStep('step-gemini', 'done');
+    document.getElementById('procProgress').style.width = '66%';
+
+    // Step 3: parse
+    setStep('step-parse', 'active');
+    const parsed = result;
+    setStep('step-parse', 'done');
+    document.getElementById('procProgress').style.width = '100%';
+
+    // Show report
+    showReport(parsed);
+
+  } catch (err) {
+    document.getElementById('procErrorMsg').textContent = err.message;
+    document.getElementById('procError').classList.add('show');
+    toast('Virhe: ' + err.message, true);
+  }
+}
+
+async function callTranscribeFunction(audioBase64, mimeType) {
+  const fnUrl = state.settings.fnurl;
+  if (!fnUrl) throw new Error('Firebase Function URL puuttuu. Lisää se asetuksiin.');
+
+  const s = state.currentSession || {};
+  const payload = {
+    audioBase64,
+    audioMimeType: mimeType,
+    sessionId: s.id || '—',
+    meetingType: s.type || 'Tapaaminen',
+    duration: formatDuration(s.duration),
+    name: state.settings.name || '—',
+    notes: s.notes || ''
+  };
+
+  const res = await fetch(fnUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'HTTP ' + res.status);
+  }
+  return data;
+}
+
+// ─── Show report ──────────────────────────────────────────────────────────────
+
+function showReport(parsed) {
+  // Transcript
+  const box = document.getElementById('transcriptBox');
+  const tText = parsed.transcript || '';
+  box.innerHTML = tText.split('\n\n').map(block => {
+    const lines = block.split('\n');
+    if (lines[0] && lines[0].startsWith('[')) {
+      return `<div class="speaker">${lines[0]}</div><div>${lines.slice(1).join(' ')}</div>`;
+    }
+    return `<div>${block}</div>`;
+  }).join('');
+
+  // Report fields
+  document.getElementById('r-tilanne').textContent = parsed.tilanne || '—';
+  document.getElementById('r-tarpeet').textContent = parsed.tarpeet || '—';
+  document.getElementById('r-toimet').textContent = parsed.toimet || '—';
+  document.getElementById('r-askeleet').textContent = parsed.askeleet || '—';
+  document.getElementById('btnDrive').disabled = false;
+  document.getElementById('btnDrive').textContent = 'Tallenna Google Driveen';
+  document.getElementById('btnDrive').style.background = '';
+
+  if (state.currentSession) {
+    state.currentSession.transcript = parsed.transcript;
+    state.currentSession.reportReady = true;
+    saveSessionToHistory();
+  }
+
+  showScreen('screen-report');
+}
+
+// ─── Save to Drive ────────────────────────────────────────────────────────────
+
+async function saveToDrive() {
+  const scriptUrl = state.settings.scripturl;
+  const btn = document.getElementById('btnDrive');
+
+  if (!scriptUrl || !scriptUrl.includes('script.google.com')) {
+    toast('Lisää Apps Script URL asetuksiin ensin', true);
+    showScreen('screen-settings');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;gap:8px"><div class="spinner"></div>Tallennetaan...</div>';
+
+  const s = state.currentSession || {};
+  const payload = {
+    sessionId: s.id || '—',
+    interviewer: state.settings.name,
+    interviewerId: state.settings.hid,
+    org: state.settings.org,
+    date: new Date().toLocaleString('fi-FI'),
+    meetingType: s.type || '—',
+    location: s.loc || '—',
+    duration: s.duration ? formatDuration(s.duration) : '—',
+    notes: s.notes || '',
+    tilanne: document.getElementById('r-tilanne').textContent,
+    tarpeet: document.getElementById('r-tarpeet').textContent,
+    toimet: document.getElementById('r-toimet').textContent,
+    askeleet: document.getElementById('r-askeleet').textContent,
+    transcript: document.getElementById('transcriptBox').innerText
+  };
+
+  try {
+    const res = await fetch(scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload),
+      redirect: 'follow'
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      btn.textContent = '✓ Tallennettu — avaa dokumentti';
+      btn.style.background = 'var(--green)';
+      btn.disabled = false;
+      btn.onclick = () => window.open(data.docUrl, '_blank');
+      toast('Tallennettu: ' + data.filename);
+    } else {
+      throw new Error(data.error || 'Tuntematon virhe');
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Tallenna Google Driveen';
+    btn.style.background = '';
+    btn.onclick = saveToDrive;
+    toast('Tallennus epäonnistui: ' + err.message, true);
+  }
+}
+
+// ─── History ──────────────────────────────────────────────────────────────────
+
+function saveSessionToHistory() {
+  if (!state.currentSession) return;
+  const idx = state.sessions.findIndex(s => s.id === state.currentSession.id);
+  if (idx >= 0) state.sessions[idx] = state.currentSession;
+  else state.sessions.unshift(state.currentSession);
+  localStorage.setItem('km_sessions', JSON.stringify(state.sessions));
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  const empty = document.getElementById('historyEmpty');
+  if (state.sessions.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = state.sessions.map(s => {
+    const d = new Date(s.date);
+    const dateStr = d.toLocaleDateString('fi-FI') + ' ' + d.toLocaleTimeString('fi-FI', { hour: '2-digit', minute: '2-digit' });
+    const dur = s.duration ? formatDuration(s.duration) : '—';
+    return `<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-family:var(--mono);font-size:13px;color:var(--accent2);font-weight:500">${s.id}</span>
+        <span class="badge ${s.reportReady ? 'badge-green' : 'badge-amber'}">${s.reportReady ? 'raportti valmis' : 'kesken'}</span>
+      </div>
+      <div style="display:flex;gap:16px;font-size:12px;color:var(--muted);flex-wrap:wrap">
+        <span>${s.type || '—'}</span>
+        <span>${dateStr}</span>
+        <span>${dur}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const map = {
+    'screen-session': 'nav-session',
+    'screen-rec': 'nav-rec',
+    'screen-report': 'nav-report',
+    'screen-history': 'nav-history',
+    'screen-settings': 'nav-settings'
+  };
+  if (map[id]) document.getElementById(map[id]).classList.add('active');
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatDuration(sec) {
+  if (!sec) return '—';
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m + ' min ' + s + ' s';
+}
+
+function retryProcessing() {
+  if (!state.audioBlob) {
+    toast('Äänitiedosto ei ole enää muistissa — äänity uudelleen', true);
+    showScreen('screen-rec');
+    return;
+  }
+  document.getElementById('procError').classList.remove('show');
+  startProcessing();
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+let toastTimer;
+function toast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.toggle('error', isError);
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
