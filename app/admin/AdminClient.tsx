@@ -58,6 +58,19 @@ function formatSize(bytes: number) {
   return (bytes / 1024).toFixed(0) + " KB";
 }
 
+interface AccessCode {
+  id: string;
+  code: string;
+  label: string;
+  recipientEmail: string;
+  recipientName: string;
+  maxUses: number;
+  usedCount: number;
+  uses: { timestamp: string; action: string }[];
+  active: boolean;
+  createdAt: { seconds: number } | null;
+}
+
 export default function AdminClient() {
   const [authed, setAuthed] = useState(false);
   const [password, setPassword] = useState("");
@@ -72,16 +85,61 @@ export default function AdminClient() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const correctedFileRef = useRef<HTMLInputElement>(null);
   const [filter, setFilter] = useState<"all" | "pending_review" | "in_review" | "completed">("all");
+  const [tab, setTab] = useState<"jono" | "koodit">("jono");
+  // Koodit
+  const [codes, setCodes] = useState<AccessCode[]>([]);
+  const [newEmail, setNewEmail] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newLabel, setNewLabel] = useState("");
+  const [newMaxUses, setNewMaxUses] = useState("10");
+  const [creatingCode, setCreatingCode] = useState(false);
+  const [createResult, setCreateResult] = useState<{ code?: string; error?: string } | null>(null);
 
   useEffect(() => {
     if (!authed) return;
     const db = getFirestore(getFirebaseApp());
+    // Dokumenttijono
     const q = query(collection(db, "documents"), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       setDocs(snap.docs.map(d => ({ id: d.id, ...d.data() } as Document)));
     });
-    return unsub;
+    // Käyttökoodit
+    const qc = query(collection(db, "access_codes"), orderBy("createdAt", "desc"));
+    const unsubCodes = onSnapshot(qc, (snap) => {
+      setCodes(snap.docs.map(d => ({ id: d.id, ...d.data() } as AccessCode)));
+    });
+    return () => { unsub(); unsubCodes(); };
   }, [authed]);
+
+  async function createCode() {
+    if (!newEmail) return;
+    setCreatingCode(true);
+    setCreateResult(null);
+    try {
+      const res = await fetch("/api/create-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminPassword: "certuslex2026",
+          recipientEmail: newEmail,
+          recipientName: newName,
+          label: newLabel || newEmail,
+          maxUses: Number(newMaxUses) || 10,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCreateResult({ code: data.codeFormatted });
+        setNewEmail(""); setNewName(""); setNewLabel(""); setNewMaxUses("10");
+      } else {
+        setCreateResult({ error: data.error });
+      }
+    } catch {
+      setCreateResult({ error: "Verkkovirhe" });
+    } finally {
+      setCreatingCode(false);
+    }
+  }
 
   function login() {
     if (password === ADMIN_PASSWORD) {
@@ -338,38 +396,152 @@ export default function AdminClient() {
         </div>
       </nav>
 
-      <div style={{ maxWidth: "900px", margin: "0 auto", padding: "2rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
-          <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.8rem", fontWeight: 700, color: "var(--navy)" }}>Dokumenttijono</h2>
-          <div style={{ display: "flex", gap: "0.4rem" }}>
-            {(["all", "pending_review", "in_review", "completed"] as const).map(f => (
-              <button key={f} onClick={() => setFilter(f)} style={{ padding: "0.35rem 0.9rem", fontSize: "0.75rem", letterSpacing: "0.05em", border: "1px solid var(--cream2)", cursor: "pointer", background: filter === f ? "var(--navy)" : "#fff", color: filter === f ? "#fff" : "var(--navy)" }}>
-                {f === "all" ? "Kaikki" : f === "pending_review" ? "Odottaa" : f === "in_review" ? "Käsittelyssä" : "Valmis"}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Välilehdet */}
+      <div style={{ background: "var(--navy)", borderBottom: "1px solid rgba(200,164,74,.15)", display: "flex", gap: "0" }}>
+        {([["jono", `📄 Dokumenttijono${pendingCount > 0 ? ` (${pendingCount})` : ""}`], ["koodit", `🔑 Käyttökoodit (${codes.length})`]] as const).map(([id, label]) => (
+          <button key={id} onClick={() => setTab(id)}
+            style={{ padding: "0.75rem 1.8rem", background: "none", border: "none", borderBottom: tab === id ? "2px solid #C8A44A" : "2px solid transparent", color: tab === id ? "#C8A44A" : "rgba(255,255,255,.5)", fontSize: "0.82rem", fontWeight: tab === id ? 700 : 400, cursor: "pointer", letterSpacing: "0.04em" }}>
+            {label}
+          </button>
+        ))}
+      </div>
 
-        {filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "4rem", color: "var(--muted)", fontSize: "0.9rem" }}>Ei asiakirjoja</div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            {filtered.map(d => {
-              const st = statusLabel[d.status];
-              return (
-                <div key={d.id} onClick={() => openDoc(d)}
-                  style={{ background: "#fff", border: `1px solid ${d.status === "pending_review" ? "rgba(200,164,74,.4)" : "var(--cream2)"}`, padding: "1rem 1.5rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "1rem", transition: "border-color .15s" }}>
-                  <div style={{ fontSize: "1.4rem" }}>📄</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 500, fontSize: "0.9rem", color: "var(--navy)" }}>{d.fileName}</div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.2rem" }}>{d.docType} · {d.plan} ({d.price}€) · {formatDate(d.createdAt)}</div>
-                  </div>
-                  <div style={{ fontSize: "0.75rem", fontWeight: 500, color: st.color, whiteSpace: "nowrap" }}>⬤ {st.text}</div>
-                  <div style={{ color: "var(--muted)", fontSize: "0.9rem" }}>→</div>
+      <div style={{ maxWidth: "900px", margin: "0 auto", padding: "2rem" }}>
+
+        {/* ── JONO-VÄLILEHTI ── */}
+        {tab === "jono" && (
+          <>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+              <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.8rem", fontWeight: 700, color: "var(--navy)" }}>Dokumenttijono</h2>
+              <div style={{ display: "flex", gap: "0.4rem" }}>
+                {(["all", "pending_review", "in_review", "completed"] as const).map(f => (
+                  <button key={f} onClick={() => setFilter(f)} style={{ padding: "0.35rem 0.9rem", fontSize: "0.75rem", letterSpacing: "0.05em", border: "1px solid var(--cream2)", cursor: "pointer", background: filter === f ? "var(--navy)" : "#fff", color: filter === f ? "#fff" : "var(--navy)" }}>
+                    {f === "all" ? "Kaikki" : f === "pending_review" ? "Odottaa" : f === "in_review" ? "Käsittelyssä" : "Valmis"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {filtered.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "4rem", color: "var(--muted)", fontSize: "0.9rem" }}>Ei asiakirjoja</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {filtered.map(d => {
+                  const st = statusLabel[d.status];
+                  return (
+                    <div key={d.id} onClick={() => openDoc(d)}
+                      style={{ background: "#fff", border: `1px solid ${d.status === "pending_review" ? "rgba(200,164,74,.4)" : "var(--cream2)"}`, padding: "1rem 1.5rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "1rem" }}>
+                      <div style={{ fontSize: "1.4rem" }}>📄</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 500, fontSize: "0.9rem", color: "var(--navy)" }}>{d.fileName}</div>
+                        <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.2rem" }}>{d.docType} · {d.plan} ({d.price}€) · {formatDate(d.createdAt)}</div>
+                      </div>
+                      <div style={{ fontSize: "0.75rem", fontWeight: 500, color: st.color, whiteSpace: "nowrap" }}>⬤ {st.text}</div>
+                      <div style={{ color: "var(--muted)", fontSize: "0.9rem" }}>→</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── KOODIT-VÄLILEHTI ── */}
+        {tab === "koodit" && (
+          <>
+            <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.8rem", fontWeight: 700, color: "var(--navy)", marginBottom: "1.5rem" }}>Käyttökoodit</h2>
+
+            {/* Luo uusi koodi */}
+            <div style={{ background: "#fff", border: "1px solid var(--cream2)", padding: "1.5rem 2rem", marginBottom: "2rem" }}>
+              <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "var(--navy)", margin: "0 0 1.2rem" }}>+ LUO UUSI KÄYTTÖKOODI</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.8rem", marginBottom: "0.8rem" }}>
+                <div>
+                  <label style={{ fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", display: "block", marginBottom: "0.3rem", color: "var(--navy)" }}>SÄHKÖPOSTI *</label>
+                  <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="asiakas@yritys.fi" type="email"
+                    style={{ width: "100%", border: "1px solid var(--cream2)", padding: "0.6rem 0.8rem", fontSize: "0.85rem", outline: "none", boxSizing: "border-box" as const }} />
                 </div>
-              );
-            })}
-          </div>
+                <div>
+                  <label style={{ fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", display: "block", marginBottom: "0.3rem", color: "var(--navy)" }}>NIMI</label>
+                  <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Matti Meikäläinen"
+                    style={{ width: "100%", border: "1px solid var(--cream2)", padding: "0.6rem 0.8rem", fontSize: "0.85rem", outline: "none", boxSizing: "border-box" as const }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", display: "block", marginBottom: "0.3rem", color: "var(--navy)" }}>KUVAUS (oma muistiinpano)</label>
+                  <input value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="esim. Rakennus Oy kokeilu"
+                    style={{ width: "100%", border: "1px solid var(--cream2)", padding: "0.6rem 0.8rem", fontSize: "0.85rem", outline: "none", boxSizing: "border-box" as const }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", display: "block", marginBottom: "0.3rem", color: "var(--navy)" }}>MAX KÄYTTÖKERRAT</label>
+                  <input value={newMaxUses} onChange={e => setNewMaxUses(e.target.value)} type="number" min="1" max="100"
+                    style={{ width: "100%", border: "1px solid var(--cream2)", padding: "0.6rem 0.8rem", fontSize: "0.85rem", outline: "none", boxSizing: "border-box" as const }} />
+                </div>
+              </div>
+              <button onClick={createCode} disabled={!newEmail || creatingCode}
+                style={{ background: !newEmail || creatingCode ? "var(--cream2)" : "var(--navy)", color: !newEmail || creatingCode ? "var(--muted)" : "var(--gold)", border: "none", padding: "0.75rem 1.8rem", fontSize: "0.85rem", fontWeight: 600, cursor: !newEmail || creatingCode ? "default" : "pointer", letterSpacing: "0.04em" }}>
+                {creatingCode ? "Luodaan..." : "Luo koodi & lähetä sähköposti →"}
+              </button>
+              {createResult?.code && (
+                <div style={{ marginTop: "0.8rem", background: "#F0FDF4", border: "1px solid #86EFAC", padding: "0.7rem 1rem", fontSize: "0.85rem", color: "#166534" }}>
+                  ✅ Koodi luotu ja lähetetty: <strong style={{ fontFamily: "monospace", fontSize: "1rem", letterSpacing: "0.12em" }}>{createResult.code}</strong>
+                </div>
+              )}
+              {createResult?.error && (
+                <div style={{ marginTop: "0.8rem", background: "#fff0f0", border: "1px solid #f5c6cb", padding: "0.7rem 1rem", fontSize: "0.85rem", color: "#9b2335" }}>
+                  ⚠️ {createResult.error}
+                </div>
+              )}
+            </div>
+
+            {/* Koodilista */}
+            {codes.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "3rem", color: "var(--muted)" }}>Ei koodeja vielä</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {codes.map(c => {
+                  const pct = Math.round((c.usedCount / c.maxUses) * 100);
+                  return (
+                    <div key={c.id} style={{ background: "#fff", border: "1px solid var(--cream2)", padding: "1rem 1.5rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.6rem" }}>
+                        <span style={{ fontFamily: "monospace", fontSize: "1.1rem", fontWeight: 700, color: "var(--navy)", letterSpacing: "0.12em" }}>
+                          {c.code.slice(0, 3)} {c.code.slice(3)}
+                        </span>
+                        <span style={{ flex: 1, fontSize: "0.82rem", color: "var(--muted)" }}>{c.label}</span>
+                        <span style={{ fontSize: "0.75rem", color: c.active ? "#2D6A4F" : "var(--muted)", fontWeight: 600 }}>
+                          {c.active ? "⬤ Aktiivinen" : "⬤ Suljettu"}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: "0.78rem", color: "var(--muted)", marginBottom: "0.5rem" }}>
+                        📧 {c.recipientEmail}{c.recipientName ? ` (${c.recipientName})` : ""}
+                      </div>
+                      {/* Käyttömittari */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
+                        <div style={{ flex: 1, height: "4px", background: "var(--cream2)", position: "relative" }}>
+                          <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${pct}%`, background: pct >= 80 ? "#C8862A" : "var(--navy)", transition: "width 0.3s" }} />
+                        </div>
+                        <span style={{ fontSize: "0.72rem", color: "var(--muted)", whiteSpace: "nowrap" }}>
+                          {c.usedCount} / {c.maxUses} käyttöä
+                        </span>
+                      </div>
+                      {/* Käyttöloki */}
+                      {c.uses?.length > 0 && (
+                        <details style={{ marginTop: "0.6rem" }}>
+                          <summary style={{ fontSize: "0.72rem", color: "var(--muted)", cursor: "pointer" }}>
+                            Näytä käyttöloki ({c.uses.length} merkintää)
+                          </summary>
+                          <div style={{ marginTop: "0.5rem", display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+                            {[...c.uses].reverse().slice(0, 10).map((u, i) => (
+                              <div key={i} style={{ fontSize: "0.72rem", color: "var(--muted)", paddingLeft: "0.5rem", borderLeft: "2px solid var(--cream2)" }}>
+                                {new Date(u.timestamp).toLocaleString("fi-FI")} — {u.action}
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

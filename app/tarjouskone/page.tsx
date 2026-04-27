@@ -52,16 +52,32 @@ export default function TarjouskoneePage() {
   const [logoUrl, setLogoUrl] = useState("");
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
   const [isExpired, setIsExpired] = useState(false);
+  const [accessCode, setAccessCode] = useState<string | null>(null);
+  const [codeUsesLeft, setCodeUsesLeft] = useState<number | null>(null);
   const [attachment, setAttachment] = useState<{ name: string; size: number; base64: string; mimeType: string } | null>(null);
   const attachRef = useRef<HTMLInputElement>(null);
 
   const T = t[lang].tarjouskone;
   const PROJECT_TYPES = lang === "en" ? PROJECT_TYPES_EN : PROJECT_TYPES_FI;
 
-  // Lue kieli localStoragesta
+  // Lue kieli + access code localStoragesta
   useEffect(() => {
-    const saved = localStorage.getItem("certuslex_lang") as Lang | null;
-    if (saved === "en" || saved === "fi") setLang(saved);
+    const savedLang = localStorage.getItem("certuslex_lang") as Lang | null;
+    if (savedLang === "en" || savedLang === "fi") setLang(savedLang);
+
+    const savedCode = localStorage.getItem("certuslex_code");
+    if (savedCode) {
+      fetch(`/api/verify-code?code=${savedCode}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.valid) {
+            setAccessCode(savedCode);
+            setCodeUsesLeft(d.usesLeft);
+          } else {
+            localStorage.removeItem("certuslex_code");
+          }
+        });
+    }
   }, []);
 
   function toggleLang() {
@@ -108,6 +124,22 @@ export default function TarjouskoneePage() {
   async function generateQuote() {
     setStep("generating");
     setError("");
+
+    // Käytä yksi käyttökerta jos koodi käytössä
+    if (accessCode && !userEmail) {
+      const res = await fetch("/api/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: accessCode, action: "generate_quote" }),
+      });
+      const data = await res.json();
+      if (!data.valid) {
+        setError(lang === "en" ? "Access code has no uses left." : "Käyttökoodi on käytetty loppuun.");
+        setStep("specs");
+        return;
+      }
+      setCodeUsesLeft(data.usesLeft);
+    }
     try {
       const res = await fetch("/api/generate-quote", {
         method: "POST",
@@ -190,6 +222,28 @@ export default function TarjouskoneePage() {
 
   const stepNum = { company: 1, project: 2, specs: 3, generating: 3, result: 3, send: 3 }[step];
 
+  // Koodi käytetty loppuun — ei kirjautunut käyttäjä
+  if (!userEmail && accessCode && codeUsesLeft === 0) return (
+    <div style={{ background: "#F7F4EE", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+      <div style={{ background: "#fff", border: "2px solid #C8A44A", padding: "3rem 3.5rem", maxWidth: "480px", textAlign: "center" }}>
+        <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>🎯</div>
+        <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.14em", color: "#C8A44A", marginBottom: "0.8rem" }}>KÄYTTÖKERRAT KÄYTETTY</p>
+        <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.8rem", fontWeight: 700, color: "#0F1F3D", margin: "0 0 1rem" }}>
+          {lang === "en" ? "All uses spent" : "Kaikki käyttökerrat käytetty"}
+        </h2>
+        <p style={{ fontSize: "0.88rem", color: "#8A8070", margin: "0 0 2rem", lineHeight: 1.6 }}>
+          {lang === "en" ? "Your access code is used up. Subscribe to continue creating professional quotes." : "Käyttökoodisi on käytetty loppuun. Tilaa paketti jatkaaksesi ammattimaisten tarjousten luomista."}
+        </p>
+        <a href="/hinnoittelu" style={{ display: "inline-block", background: "#C8A44A", color: "#0F1F3D", padding: "0.9rem 2.5rem", fontSize: "0.95rem", fontWeight: 700, textDecoration: "none", letterSpacing: "0.05em" }}>
+          {lang === "en" ? "View plans →" : "Katso paketit →"}
+        </a>
+        <p style={{ fontSize: "0.75rem", color: "#8A8070", marginTop: "1.5rem" }}>
+          {lang === "en" ? "Questions? " : "Kysymyksiä? "}<a href="mailto:info@certuslex.fi" style={{ color: "#C8A44A" }}>info@certuslex.fi</a>
+        </p>
+      </div>
+    </div>
+  );
+
   // Paywall
   if (isExpired) return (
     <div style={{ background: "#F7F4EE", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
@@ -217,6 +271,18 @@ export default function TarjouskoneePage() {
 
   return (
     <div style={{ background: step === "result" ? "#fff" : "#F7F4EE", minHeight: "100vh" }}>
+      {/* Koodi-banneri */}
+      {accessCode && !userEmail && codeUsesLeft !== null && (
+        <div style={{ background: codeUsesLeft <= 2 ? "#FFF8E7" : "#F0FDF4", borderBottom: `2px solid ${codeUsesLeft <= 2 ? "#C8A44A" : "#86efac"}`, padding: "0.6rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.82rem" }}>
+          <span style={{ color: codeUsesLeft <= 2 ? "#7A4F00" : "#166534", fontWeight: 600 }}>
+            {codeUsesLeft <= 2 ? "⚠️" : "🔑"} {lang === "en" ? `Access code active — ${codeUsesLeft} use${codeUsesLeft !== 1 ? "s" : ""} remaining` : `Käyttökoodi aktiivinen — ${codeUsesLeft} käyttökertaa jäljellä`}
+          </span>
+          <a href="/hinnoittelu" style={{ color: "#C8A44A", fontWeight: 700, textDecoration: "none", fontSize: "0.78rem" }}>
+            {lang === "en" ? "Subscribe →" : "Tilaa paketti →"}
+          </a>
+        </div>
+      )}
+
       {/* Trial-banneri */}
       {userEmail && trialDaysLeft !== null && trialDaysLeft <= 7 && !isExpired && (
         <div style={{ background: trialDaysLeft <= 3 ? "#fff0f0" : "#FFF8E7", borderBottom: `2px solid ${trialDaysLeft <= 3 ? "#f5c6cb" : "#C8A44A"}`, padding: "0.6rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.82rem" }}>
