@@ -33,6 +33,14 @@ export default function Home() {
   async function startProcessing() {
     if (!file || !docType || !userEmail) return;
     setUploadError(null);
+
+    // Varmista että Firebase Storage on alustettu ja storageBucket on asetettu
+    const bucketOk = !!process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+    if (!storage || !bucketOk) {
+      setUploadError("Virhe: Tiedostojen tallennus ei ole käytettävissä. Ota yhteyttä: info@certuslex.fi");
+      return;
+    }
+
     goTo("processing");
 
     try {
