@@ -1,9 +1,22 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? "",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? "",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? "",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? "",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? "",
+};
+
+function getFirebaseApp() {
+  return getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+}
 
 const ADMIN_PASSWORD = "certuslex2026";
 
@@ -62,6 +75,7 @@ export default function AdminClient() {
 
   useEffect(() => {
     if (!authed) return;
+    const db = getFirestore(getFirebaseApp());
     const q = query(collection(db, "documents"), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       setDocs(snap.docs.map(d => ({ id: d.id, ...d.data() } as Document)));
@@ -82,6 +96,7 @@ export default function AdminClient() {
     setSelected(d);
     setReview(d.review ?? "");
     if (d.status === "pending_review") {
+      const db = getFirestore(getFirebaseApp());
       await updateDoc(doc(db, "documents", d.id), { status: "in_review", inReviewAt: serverTimestamp() });
     }
   }
@@ -92,6 +107,10 @@ export default function AdminClient() {
     setEmailSent(false);
     setEmailError(null);
     setUploadProgress(0);
+
+    const app = getFirebaseApp();
+    const db = getFirestore(app);
+    const storage = getStorage(app);
 
     let correctedUrl: string | null = null;
     if (correctedFile) {
