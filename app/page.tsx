@@ -2,9 +2,10 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { storage, db } from "@/lib/firebase";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { getApp } from "firebase/app";
+import "@/lib/firebase"; // Varmistaa Firebase-alustuksen
 
 type View = "landing" | "upload" | "processing" | "result";
 
@@ -34,16 +35,14 @@ export default function Home() {
     if (!file || !docType || !userEmail) return;
     setUploadError(null);
 
-    // Varmista että Firebase Storage on alustettu ja storageBucket on asetettu
-    const bucketOk = !!process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-    if (!storage || !bucketOk) {
-      setUploadError("Virhe: Tiedostojen tallennus ei ole käytettävissä. Ota yhteyttä: info@certuslex.fi");
-      return;
-    }
-
     goTo("processing");
 
     try {
+      // Hae Firebase-instanssit suoraan (vältetään require/import-ristiriita)
+      const app = getApp();
+      const storage = getStorage(app);
+      const db = getFirestore(app);
+
       // 1. Upload file to Firebase Storage
       const timestamp = Date.now();
       const storageRef = ref(storage, `documents/${timestamp}_${file.name}`);
