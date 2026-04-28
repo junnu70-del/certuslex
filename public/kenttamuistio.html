@@ -929,7 +929,6 @@ function applySettings() {
   document.getElementById('set-hid').value = s.hid || '';
   document.getElementById('set-email').value = s.email || '';
   document.getElementById('set-fnurl').value = s.fnurl || '';
-  document.getElementById('set-scripturl').value = s.scripturl || '';
   if (s.email) document.getElementById('sendEmailInput').value = s.email;
   const initials = s.name
     ? s.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
@@ -968,36 +967,6 @@ async function testFunctionUrl() {
   statusEl.textContent = '✓ OK — testaa äänittämällä';
 }
 
-function saveScriptUrl() {
-  state.settings.scripturl = document.getElementById('set-scripturl').value.trim();
-  localStorage.setItem('km_settings', JSON.stringify(state.settings));
-  toast('Apps Script URL tallennettu');
-}
-
-
-// ─── Apps Script test ─────────────────────────────────────────────────────────
-
-async function testScriptUrl() {
-  const url = document.getElementById('set-scripturl').value.trim();
-  const statusEl = document.getElementById('script-status');
-  if (!url) { statusEl.textContent = 'Syötä URL ensin'; return; }
-  statusEl.style.color = 'var(--muted)';
-  statusEl.textContent = 'Testataan...';
-  try {
-    const res = await fetch(url + '?test=1');
-    const data = await res.json();
-    if (data.status === 'ok') {
-      statusEl.style.color = 'var(--green)';
-      statusEl.textContent = 'Yhteys OK — ' + data.service + ' v' + data.version;
-    } else {
-      statusEl.style.color = 'var(--amber)';
-      statusEl.textContent = 'Vastasi mutta odottamaton formaatti';
-    }
-  } catch (e) {
-    statusEl.style.color = 'var(--red)';
-    statusEl.textContent = 'Yhteys epäonnistui — tarkista URL ja julkaisuasetukset';
-  }
-}
 
 // ─── Session ID ───────────────────────────────────────────────────────────────
 
