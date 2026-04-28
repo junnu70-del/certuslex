@@ -562,10 +562,16 @@ input[type=text]:focus, input[type=password]:focus { border-color: var(--border2
 
   <!-- SCREEN: HISTORIA -->
   <div class="screen" id="screen-history">
-    <div class="card-title" style="margin-bottom:12px;padding:0 2px">Tallennetut tapaamiset</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 2px">
+      <div class="card-title" style="margin:0">Tallennetut tapaamiset</div>
+      <button class="btn btn-ghost btn-sm" onclick="loadFirestoreReports()">↺ Päivitä</button>
+    </div>
     <div id="historyList"></div>
     <div id="historyEmpty" style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px">
       Ei tallennettuja tapaamisia vielä
+    </div>
+    <div id="historyLoading" style="text-align:center;padding:24px;color:var(--muted);font-size:13px;display:none">
+      <div class="spinner" style="margin:0 auto 8px"></div>Haetaan arkistoa...
     </div>
   </div>
 
@@ -1167,6 +1173,98 @@ function showReport(parsed) {
   }
 
   showScreen('screen-report');
+  saveToFirestore(parsed);
+}
+
+// ─── Save to Firestore ───────────────────────────────────────────────────────
+
+async function saveToFirestore(parsed) {
+  const s = state.currentSession || {};
+  const hid = state.settings.hid;
+  if (!hid) return; // ei tallenneta jos tunnus puuttuu
+
+  try {
+    await fetch('/api/save-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: s.id,
+        hid,
+        name: state.settings.name,
+        org: state.settings.org,
+        meetingType: s.type || '',
+        location: s.loc || '',
+        date: s.date || new Date().toISOString(),
+        duration: s.duration ? formatDuration(s.duration) : '',
+        transcript: parsed.transcript || '',
+        tilanne: parsed.tilanne || '',
+        tarpeet: parsed.tarpeet || '',
+        toimet: parsed.toimet || '',
+        askeleet: parsed.askeleet || '',
+      }),
+    });
+    toast('Raportti tallennettu arkistoon');
+  } catch {
+    // hiljainen virhe — ei haittaa käyttöä
+  }
+}
+
+async function loadFirestoreReports() {
+  const hid = state.settings.hid;
+  if (!hid) {
+    toast('Lisää henkilötunnus asetuksiin ensin', true);
+    return;
+  }
+
+  document.getElementById('historyLoading').style.display = 'block';
+  document.getElementById('historyList').innerHTML = '';
+  document.getElementById('historyEmpty').style.display = 'none';
+
+  try {
+    const res = await fetch(`/api/get-reports?hid=${encodeURIComponent(hid)}`);
+    const data = await res.json();
+
+    document.getElementById('historyLoading').style.display = 'none';
+
+    if (!data.ok || !data.reports.length) {
+      document.getElementById('historyEmpty').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('historyList').innerHTML = data.reports.map(r => {
+      const d = new Date(r.date);
+      const dateStr = d.toLocaleDateString('fi-FI') + ' ' + d.toLocaleTimeString('fi-FI', { hour: '2-digit', minute: '2-digit' });
+      return `<div class="card" style="margin-bottom:10px;cursor:pointer" onclick="showArchivedReport(${JSON.stringify(JSON.stringify(r))})">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-family:var(--mono);font-size:13px;color:var(--accent2);font-weight:500">${r.sessionId}</span>
+          <span class="badge badge-green">arkistoitu</span>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">${r.meetingType || '—'}</div>
+        <div style="display:flex;gap:16px;font-size:12px;color:var(--muted);flex-wrap:wrap">
+          <span>${dateStr}</span>
+          <span>${r.duration || '—'}</span>
+          ${r.org ? `<span>${r.org}</span>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    document.getElementById('historyLoading').style.display = 'none';
+    toast('Arkiston haku epäonnistui', true);
+  }
+}
+
+function showArchivedReport(jsonStr) {
+  const r = JSON.parse(jsonStr);
+  document.getElementById('r-session-id').textContent = r.sessionId || '—';
+  document.getElementById('r-type').textContent = r.meetingType || '—';
+  document.getElementById('r-duration').textContent = r.duration || '—';
+  document.getElementById('r-tilanne').textContent = r.tilanne || '—';
+  document.getElementById('r-tarpeet').textContent = r.tarpeet || '—';
+  document.getElementById('r-toimet').textContent = r.toimet || '—';
+  document.getElementById('r-askeleet').textContent = r.askeleet || '—';
+  const tb = document.getElementById('transcriptBox');
+  if (tb) tb.textContent = r.transcript || '';
+  showScreen('screen-report');
 }
 
 // ─── Save to Drive ────────────────────────────────────────────────────────────
@@ -1281,6 +1379,7 @@ function showScreen(id) {
     'screen-settings': 'nav-settings'
   };
   if (map[id]) document.getElementById(map[id]).classList.add('active');
+  if (id === 'screen-history') loadFirestoreReports();
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
