@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
+import PwaInit from "./components/PwaInit";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
@@ -20,6 +21,16 @@ export const metadata: Metadata = {
   description: "Tekoälyn kirjoittama. Juristin vahvistama. Viranomaiskelpoinen.",
   icons: {
     icon: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "CertusLex",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
   },
 };
 
@@ -30,7 +41,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fi" className={`${cormorant.variable} ${dmSans.variable}`}>
-      <body>{children}</body>
+      <body>
+        <PwaInit />
+        {children}
+      </body>
     </html>
   );
 }
