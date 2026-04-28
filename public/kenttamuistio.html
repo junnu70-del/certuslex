@@ -6,6 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0f1e">
+<meta name="apple-mobile-web-app-title" content="Kenttämuistio">
+<link rel="apple-touch-icon" href="/kenttamuistio-icon.svg">
+<link rel="manifest" href="/kenttamuistio-manifest.json">
 <title>Kenttämuistio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
@@ -322,6 +325,31 @@ input[type=text]:focus, input[type=password]:focus { border-color: var(--border2
 
 <div id="toast"></div>
 
+<!-- PIN overlay — shown when not authenticated -->
+<div id="pin-overlay" style="
+  position:fixed;inset:0;z-index:999;background:#0a0f1e;
+  display:flex;align-items:center;justify-content:center;
+">
+  <div style="background:#111827;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:2.5rem;width:300px;max-width:90vw">
+    <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:#e8eaf0;margin-bottom:0.2rem">
+      Kenttä<span style="color:#60a5fa">muistio</span>
+    </div>
+    <p style="font-size:0.7rem;color:#6b7280;letter-spacing:0.1em;margin-bottom:1.8rem">CERTUSLEX — KENTTÄTYÖKALU</p>
+    <label style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;color:#9ca3af;display:block;margin-bottom:0.5rem">PIN-KOODI</label>
+    <input
+      id="pin-input"
+      type="password"
+      placeholder="••••••••••"
+      autocomplete="current-password"
+      style="width:100%;background:#1a2235;border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#e8eaf0;padding:0.75rem 1rem;font-size:1rem;outline:none;margin-bottom:0.5rem;box-sizing:border-box;font-family:'DM Mono',monospace"
+    />
+    <p id="pin-error" style="color:#ef4444;font-size:0.72rem;margin-bottom:0.8rem;display:none">Väärä PIN-koodi</p>
+    <button onclick="checkPin()" style="width:100%;background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:0.85rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;letter-spacing:0.05em">
+      Kirjaudu →
+    </button>
+  </div>
+</div>
+
 <div class="app">
   <div class="topbar">
     <div class="logo">Kenttä<span>muistio</span></div>
@@ -592,6 +620,19 @@ input[type=text]:focus, input[type=password]:focus { border-color: var(--border2
       <div id="script-status" style="font-size:11px;margin-top:8px;color:var(--muted)"></div>
     </div>
 
+    <div class="card section-gap" id="install-card" style="display:none">
+      <div class="card-title">Asenna sovellus</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.7">
+        Asenna Kenttämuistio kotinäytölle — avautuu kuin natiivi applikaatio ilman selainta.
+      </div>
+      <button class="btn btn-primary" id="install-btn" onclick="installPWA()">
+        ↓ Lisää kotinäytölle
+      </button>
+      <div id="ios-hint" style="display:none;font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6">
+        iPhonessa: Safari → <strong style="color:var(--text)">Jaa</strong> → <strong style="color:var(--text)">Lisää kotivalikkoon</strong>
+      </div>
+    </div>
+
     <div class="card section-gap">
       <div class="card-title">Tietosuoja — GDPR</div>
       <div class="lifecycle">
@@ -672,6 +713,70 @@ input[type=text]:focus, input[type=password]:focus { border-color: var(--border2
 </div>
 
 <script>
+// ─── PIN ─────────────────────────────────────────────────────────────────────
+
+const APP_PIN = 'kentta2026';
+
+function checkPin() {
+  const val = document.getElementById('pin-input').value;
+  if (val === APP_PIN) {
+    sessionStorage.setItem('km_auth', '1');
+    document.getElementById('pin-overlay').style.display = 'none';
+    document.getElementById('pin-input').value = '';
+  } else {
+    document.getElementById('pin-error').style.display = 'block';
+    document.getElementById('pin-input').select();
+  }
+}
+
+document.getElementById('pin-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkPin();
+});
+
+if (sessionStorage.getItem('km_auth') === '1') {
+  document.getElementById('pin-overlay').style.display = 'none';
+} else {
+  setTimeout(() => document.getElementById('pin-input').focus(), 100);
+}
+
+// ─── PWA install ─────────────────────────────────────────────────────────────
+
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('install-card').style.display = 'block';
+  document.getElementById('install-btn').style.display = 'block';
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-card').style.display = 'none';
+  deferredInstallPrompt = null;
+});
+
+function installPWA() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(() => { deferredInstallPrompt = null; });
+  }
+}
+
+// iOS detection — show manual hint
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.navigator.standalone;
+if (isIOS && !isStandalone) {
+  document.getElementById('install-card').style.display = 'block';
+  document.getElementById('install-btn').style.display = 'none';
+  document.getElementById('ios-hint').style.display = 'block';
+}
+
+// ─── Service Worker ───────────────────────────────────────────────────────────
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/kenttamuistio-sw.js').catch(() => {});
+}
+
 // ─── State ───────────────────────────────────────────────────────────────────
 
 const defaultSettings = {
