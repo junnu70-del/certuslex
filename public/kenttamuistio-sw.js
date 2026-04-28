@@ -1,4 +1,4 @@
-const CACHE = 'kenttamuistio-v1';
+const CACHE = 'kenttamuistio-v3';
 const ASSETS = ['/kenttamuistio.html', '/kenttamuistio-manifest.json'];
 
 self.addEventListener('install', e => {

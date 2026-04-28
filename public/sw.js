@@ -1,4 +1,4 @@
-const CACHE = 'certuslex-v1';
+const CACHE = 'certuslex-v3';
 const STATIC = ['/favicon.svg', '/manifest.json'];
 
 self.addEventListener('install', e => {

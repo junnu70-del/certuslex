@@ -43,7 +43,7 @@ body {
   position: sticky; top: 0; z-index: 10;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
-  padding: 14px 20px;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 20px 14px;
   display: flex; align-items: center; justify-content: space-between;
 }
 .logo { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--text); }
@@ -326,28 +326,37 @@ input[type=text]:focus, input[type=password]:focus { border-color: var(--border2
 
 <div id="toast"></div>
 
-<!-- PIN overlay — shown when not authenticated -->
-<div id="pin-overlay" style="
-  position:fixed;inset:0;z-index:999;background:#0a0f1e;
-  display:flex;align-items:center;justify-content:center;
-">
-  <div style="background:#111827;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:2.5rem;width:300px;max-width:90vw">
-    <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:#e8eaf0;margin-bottom:0.2rem">
-      Kenttä<span style="color:#60a5fa">muistio</span>
-    </div>
+<!-- Auth overlay -->
+<div id="pin-overlay" style="position:fixed;inset:0;z-index:999;background:#0a0f1e;display:flex;align-items:center;justify-content:center;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)">
+  <div style="background:#111827;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:2.5rem;width:300px;max-width:88vw">
+    <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:#e8eaf0;margin-bottom:0.2rem">Kenttä<span style="color:#60a5fa">muistio</span></div>
     <p style="font-size:0.7rem;color:#6b7280;letter-spacing:0.1em;margin-bottom:1.8rem">CERTUSLEX — KENTTÄTYÖKALU</p>
-    <label style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;color:#9ca3af;display:block;margin-bottom:0.5rem">PIN-KOODI</label>
-    <input
-      id="pin-input"
-      type="password"
-      placeholder="••••••••••"
-      autocomplete="current-password"
-      style="width:100%;background:#1a2235;border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#e8eaf0;padding:0.75rem 1rem;font-size:1rem;outline:none;margin-bottom:0.5rem;box-sizing:border-box;font-family:'DM Mono',monospace"
-    />
-    <p id="pin-error" style="color:#ef4444;font-size:0.72rem;margin-bottom:0.8rem;display:none">Väärä PIN-koodi</p>
-    <button onclick="checkPin()" style="width:100%;background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:0.85rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;letter-spacing:0.05em">
-      Kirjaudu →
-    </button>
+
+    <!-- Biometric section -->
+    <div id="bio-section" style="display:none;text-align:center">
+      <button id="bio-btn" onclick="tryBiometric()" style="width:100%;background:#1a2235;border:1px solid rgba(96,165,250,0.3);border-radius:12px;color:#60a5fa;padding:1.1rem;font-size:1.1rem;cursor:pointer;margin-bottom:0.8rem;font-family:'Syne',sans-serif;font-weight:700">
+        🔐 Face ID / Touch ID
+      </button>
+      <button onclick="showPinSection()" style="background:none;border:none;color:#6b7280;font-size:0.75rem;cursor:pointer;font-family:'Syne',sans-serif;text-decoration:underline">Käytä PIN-koodia</button>
+    </div>
+
+    <!-- PIN section -->
+    <div id="pin-section">
+      <label style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;color:#9ca3af;display:block;margin-bottom:0.5rem">PIN-KOODI</label>
+      <input id="pin-input" type="password" placeholder="••••••••••" autocomplete="current-password"
+        style="width:100%;background:#1a2235;border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#e8eaf0;padding:0.75rem 1rem;font-size:1rem;outline:none;margin-bottom:0.5rem;box-sizing:border-box;font-family:'DM Mono',monospace"/>
+      <p id="pin-error" style="color:#ef4444;font-size:0.72rem;margin-bottom:0.8rem;display:none">Väärä PIN-koodi</p>
+      <button onclick="checkPin()" style="width:100%;background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:0.85rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;letter-spacing:0.05em">Kirjaudu →</button>
+    </div>
+
+    <!-- Biometric registration offer -->
+    <div id="bio-offer" style="display:none;text-align:center">
+      <p style="font-size:0.8rem;color:#9ca3af;margin-bottom:1rem;line-height:1.6">Kirjaudu jatkossa Face ID / Touch ID:llä?</p>
+      <div style="display:flex;gap:8px">
+        <button onclick="registerBiometric()" style="flex:1;background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:0.75rem;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif">Aktivoi</button>
+        <button onclick="completeBioOffer(false)" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,0.1);color:#9ca3af;border-radius:10px;padding:0.75rem;font-size:0.82rem;cursor:pointer;font-family:'Syne',sans-serif">Ohita</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -712,31 +721,106 @@ input[type=text]:focus, input[type=password]:focus { border-color: var(--border2
 </div>
 
 <script>
-// ─── PIN ─────────────────────────────────────────────────────────────────────
+// ─── Globals (hoisted to avoid TDZ) ──────────────────────────────────────────
+var toastTimer;
+
+// ─── PIN + Biometric auth ─────────────────────────────────────────────────────
 
 const APP_PIN = 'kentta2026';
+const bioSupported = typeof PublicKeyCredential !== 'undefined';
 
 function checkPin() {
   const val = document.getElementById('pin-input').value;
   if (val === APP_PIN) {
-    sessionStorage.setItem('km_auth', '1');
-    document.getElementById('pin-overlay').style.display = 'none';
     document.getElementById('pin-input').value = '';
+    document.getElementById('pin-error').style.display = 'none';
+    if (bioSupported && !localStorage.getItem('km_cred_id')) {
+      document.getElementById('pin-section').style.display = 'none';
+      document.getElementById('bio-offer').style.display = 'block';
+    } else {
+      unlockApp();
+    }
   } else {
     document.getElementById('pin-error').style.display = 'block';
     document.getElementById('pin-input').select();
   }
 }
 
+function unlockApp() {
+  sessionStorage.setItem('km_auth', '1');
+  document.getElementById('pin-overlay').style.display = 'none';
+}
+
+function showPinSection() {
+  document.getElementById('bio-section').style.display = 'none';
+  document.getElementById('pin-section').style.display = 'block';
+  setTimeout(() => document.getElementById('pin-input').focus(), 100);
+}
+
+async function tryBiometric() {
+  const credIdStr = localStorage.getItem('km_cred_id');
+  if (!credIdStr) return;
+  const btn = document.getElementById('bio-btn');
+  btn.textContent = '🔐 Tunnistetaan...';
+  try {
+    const credId = Uint8Array.from(atob(credIdStr), c => c.charCodeAt(0));
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{ id: credId, type: 'public-key' }],
+        userVerification: 'required',
+        timeout: 60000
+      }
+    });
+    if (assertion) unlockApp();
+  } catch {
+    btn.textContent = '🔐 Face ID / Touch ID';
+  }
+}
+
+async function registerBiometric() {
+  try {
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name: 'Kenttämuistio', id: window.location.hostname },
+        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'km-user', displayName: 'Kenttämuistio' },
+        pubKeyCredParams: [{ alg: -7, type: 'public-key' }, { alg: -257, type: 'public-key' }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+        timeout: 60000
+      }
+    });
+    localStorage.setItem('km_cred_id', btoa(String.fromCharCode(...new Uint8Array(cred.rawId))));
+    completeBioOffer(true);
+  } catch {
+    completeBioOffer(false);
+  }
+}
+
+function completeBioOffer(registered) {
+  unlockApp();
+  if (registered) setTimeout(() => toast('✓ Face ID / Touch ID aktivoitu'), 400);
+}
+
 document.getElementById('pin-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') checkPin();
 });
 
-if (sessionStorage.getItem('km_auth') === '1') {
-  document.getElementById('pin-overlay').style.display = 'none';
-} else {
-  setTimeout(() => document.getElementById('pin-input').focus(), 100);
-}
+// Init auth
+(function initAuth() {
+  if (sessionStorage.getItem('km_auth') === '1') {
+    document.getElementById('pin-overlay').style.display = 'none';
+    return;
+  }
+  const credId = localStorage.getItem('km_cred_id');
+  if (bioSupported && credId) {
+    document.getElementById('bio-section').style.display = 'block';
+    document.getElementById('pin-section').style.display = 'none';
+    setTimeout(tryBiometric, 400);
+  } else {
+    setTimeout(() => document.getElementById('pin-input').focus(), 100);
+  }
+})();
 
 // ─── PWA install ─────────────────────────────────────────────────────────────
 
@@ -1451,7 +1535,6 @@ function blobToBase64(blob) {
   });
 }
 
-let toastTimer;
 function toast(msg, isError = false) {
   const el = document.getElementById('toast');
   el.textContent = msg;
