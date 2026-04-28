@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
         <tr>
           <td style="background:#F5F2EC;padding:16px 32px;border-top:1px solid #E0D9CE;">
             <p style="font-size:11px;color:#A09080;margin:0;">
-              © 2026 CertusLex — DeepEnd Oy &nbsp;|&nbsp;
+              © 2026 CertusLex — DeepEnd Solutions Oy &nbsp;|&nbsp;
               <a href="https://certuslex.fi" style="color:#C8A44A;text-decoration:none;">certuslex.fi</a>
             </p>
           </td>

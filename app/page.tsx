@@ -546,7 +546,7 @@ export default function Home() {
 
       <div className="footer">
         <div className="footer-logo">Certus<span>Lex</span></div>
-        <p>© 2026 CertusLex — DeepEnd Oy</p>
+        <p>© 2026 CertusLex — DeepEnd Solutions Oy</p>
         <div className="footer-links">
           <a href="#hinnoittelu">Hinnoittelu</a>
           <a href="/tietosuoja">Tietosuoja</a>

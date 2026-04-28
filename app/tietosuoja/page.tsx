@@ -34,8 +34,8 @@ export default function Tietosuoja() {
             title: "Rekisterinpitäjä",
             content: (
               <>
-                <p>DeepEnd Oy (CertusLex-palvelu)<br />
-                Y-tunnus: [Y-tunnus]<br />
+                <p>DeepEnd Solutions Oy (CertusLex-palvelu)<br />
+                Y-tunnus: 3620565-7<br />
                 Sähköposti: <a href="mailto:info@certuslex.fi" style={{ color: "#C8A44A" }}>info@certuslex.fi</a><br />
                 Verkkosivu: <a href="https://certuslex.fi" style={{ color: "#C8A44A" }}>certuslex.fi</a></p>
               </>
@@ -161,7 +161,7 @@ export default function Tietosuoja() {
             content: (
               <p>Tietosuojaan liittyvissä kysymyksissä ota yhteyttä:<br />
               <a href="mailto:info@certuslex.fi" style={{ color: "#C8A44A" }}>info@certuslex.fi</a><br />
-              DeepEnd Oy / CertusLex</p>
+              DeepEnd Solutions Oy / CertusLex</p>
             )
           },
         ].map((section) => (
@@ -178,7 +178,7 @@ export default function Tietosuoja() {
 
         {/* Bottom gold line */}
         <div style={{ height: "1px", background: "linear-gradient(90deg, #C8A44A, transparent)", margin: "3rem 0 2rem" }} />
-        <p style={{ fontSize: "0.78rem", color: "#8A8070" }}>© 2026 CertusLex — DeepEnd Oy · <a href="mailto:info@certuslex.fi" style={{ color: "#C8A44A", textDecoration: "none" }}>info@certuslex.fi</a></p>
+        <p style={{ fontSize: "0.78rem", color: "#8A8070" }}>© 2026 CertusLex — DeepEnd Solutions Oy · <a href="mailto:info@certuslex.fi" style={{ color: "#C8A44A", textDecoration: "none" }}>info@certuslex.fi</a></p>
       </div>
     </div>
   );
