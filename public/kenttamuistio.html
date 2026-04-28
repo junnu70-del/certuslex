@@ -2,7 +2,7 @@
 <html lang="fi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0f1e">
@@ -38,7 +38,7 @@ body {
   font-size: 14px;
   line-height: 1.5;
 }
-.app { max-width: 480px; margin: 0 auto; padding: 0 0 80px; }
+.app { max-width: 480px; margin: 0 auto; padding: 0 0 calc(80px + env(safe-area-inset-bottom, 0px)); }
 .topbar {
   position: sticky; top: 0; z-index: 10;
   background: var(--bg);
@@ -214,6 +214,7 @@ textarea:focus { border-color: var(--border2); }
   border-top: 1px solid var(--border);
   display: flex;
   z-index: 10;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 .nav-item {
   flex: 1; padding: 12px 4px 10px;
@@ -618,22 +619,6 @@ input[type=text]:focus, input[type=password]:focus { border-color: var(--border2
       <div id="fnurl-status" style="font-size:11px;margin-top:8px;color:var(--muted)"></div>
     </div>
 
-    <div class="card section-gap">
-      <div class="card-title">Google Drive — Apps Script</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.7">
-        1. Mene <strong style="color:var(--text)">script.google.com</strong> → Uusi projekti<br>
-        2. Kopioi <strong style="color:var(--text)">kenttamuistio_backend_v2.gs</strong> → Code.gs<br>
-        3. Julkaise → Verkkosovelluksena → Kaikki käyttäjät → kopioi URL tähän
-      </div>
-      <div class="meta-label" style="margin-bottom:5px">Apps Script URL</div>
-      <input type="text" id="set-scripturl" placeholder="https://script.google.com/macros/s/...">
-      <div style="margin-top:8px;display:flex;gap:8px">
-        <button class="btn btn-ghost btn-sm" onclick="testScriptUrl()">Testaa yhteys</button>
-        <button class="btn btn-primary btn-sm" onclick="saveScriptUrl()">Tallenna</button>
-      </div>
-      <div id="script-status" style="font-size:11px;margin-top:8px;color:var(--muted)"></div>
-    </div>
-
     <div class="card section-gap" id="install-card" style="display:none">
       <div class="card-title">Asenna sovellus</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.7">
@@ -890,13 +875,13 @@ async function testFunctionUrl() {
   const url = document.getElementById('set-fnurl').value.trim();
   const statusEl = document.getElementById('fnurl-status');
   if (!url) { statusEl.textContent = 'Syötä URL ensin'; return; }
-  if (!url.startsWith('https://') && !url.startsWith('http://')) {
+  if (!url.startsWith('/') && !url.startsWith('https://') && !url.startsWith('http://')) {
     statusEl.style.color = 'var(--red)';
-    statusEl.textContent = 'URL:n pitää alkaa https://';
+    statusEl.textContent = 'URL:n pitää alkaa / tai https://';
     return;
   }
   statusEl.style.color = 'var(--green)';
-  statusEl.textContent = 'URL tallennettu — testaa äänittämällä';
+  statusEl.textContent = '✓ OK — testaa äänittämällä';
 }
 
 function saveScriptUrl() {
