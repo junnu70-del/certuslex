@@ -337,6 +337,7 @@ export default function Home() {
         <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
           <a href="#hinnoittelu" style={{ color: "var(--light)", fontSize: "0.85rem", textDecoration: "none" }}>Hinnoittelu</a>
           <a href="/tarjouskone" style={{ color: "var(--gold)", fontSize: "0.85rem", textDecoration: "none", fontWeight: 500 }}>Tarjouskone</a>
+          <a href="/kenttamuistio" style={{ color: "#60a5fa", fontSize: "0.85rem", textDecoration: "none", fontWeight: 500 }}>Kenttämuistio</a>
           <button className="nav-cta" onClick={() => goTo("upload")}>Lähetä asiakirja →</button>
         </div>
       </nav>
@@ -386,9 +387,9 @@ export default function Home() {
         <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "3rem" }}>
             <div style={{ fontSize: "0.72rem", letterSpacing: "0.14em", color: "#C8A44A", marginBottom: "0.8rem" }}>ALUSTA</div>
-            <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "clamp(1.8rem, 3vw, 2.6rem)", fontWeight: 700, color: "#fff" }}>Kaksi palvelua. Yksi ekosysteemi.</h2>
+            <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "clamp(1.8rem, 3vw, 2.6rem)", fontWeight: 700, color: "#fff" }}>Kolme palvelua. Yksi ekosysteemi.</h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
             {/* Juridinen tarkastus */}
             <div style={{ background: "#0A1828", border: "1px solid rgba(200,164,74,.2)", padding: "2.5rem", position: "relative" }}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "#C8A44A" }} />
@@ -428,6 +429,25 @@ export default function Home() {
                 </a>
               </div>
             </div>
+
+            {/* Kenttämuistio */}
+            <div style={{ background: "#0A1828", border: "1px solid rgba(96,165,250,.25)", padding: "2.5rem", position: "relative" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: "linear-gradient(90deg, #3b82f6, #60a5fa)" }} />
+              <div style={{ position: "absolute", top: "1rem", right: "1rem", background: "rgba(96,165,250,.15)", color: "#60a5fa", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em", padding: "0.2rem 0.6rem", border: "1px solid rgba(96,165,250,.3)" }}>BETA</div>
+              <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>🎙️</div>
+              <div style={{ fontSize: "0.7rem", letterSpacing: "0.12em", color: "#60a5fa", marginBottom: "0.5rem" }}>KENTTÄTYÖKALU</div>
+              <h3 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.6rem", fontWeight: 700, color: "#fff", marginBottom: "0.8rem" }}>Kenttämuistio</h3>
+              <p style={{ fontSize: "0.85rem", color: "#8899AA", lineHeight: 1.7, marginBottom: "1.5rem" }}>Nauhoita yritystapaaminen — tekoäly litteroi ja rakentaa strukturoidun raportin. Tunnistetut tarpeet, sovitut toimenpiteet ja seuraavat askeleet valmiina.</p>
+              <div style={{ fontSize: "0.78rem", color: "#556678", marginBottom: "1.5rem" }}>
+                <div style={{ marginBottom: "0.3rem" }}>✓ Whisper-litterointi suomeksi</div>
+                <div style={{ marginBottom: "0.3rem" }}>✓ Claude rakentaa raportin</div>
+                <div>✓ Arkisto Firestoreen</div>
+              </div>
+              <a href="/kenttamuistio" style={{ display: "inline-block", background: "transparent", border: "1px solid rgba(96,165,250,.4)", color: "#60a5fa", padding: "0.7rem 1.4rem", fontSize: "0.82rem", textDecoration: "none", letterSpacing: "0.05em" }}>
+                Avaa työkalu →
+              </a>
+            </div>
+
           </div>
         </div>
       </div>
