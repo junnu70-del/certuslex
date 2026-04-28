@@ -510,3 +510,14 @@ h1 em { color: var(--gold); font-style: italic; }
 .footer-links a:hover { color: var(--gold); }
 
 } /* end @layer components */
+
+@media (max-width: 640px) {
+  nav { padding: 1rem 1.2rem; }
+  .nav-links { display: none; }
+  .logo { font-size: 1.5rem; }
+  .nav-cta { font-size: 0.78rem; padding: 0.5rem 1rem; }
+  .pricing-section { padding: 3rem 1.2rem; }
+  .plans { grid-template-columns: 1fr !important; }
+  .footer { padding: 2rem 1.2rem; flex-direction: column; }
+  .footer-links { flex-wrap: wrap; gap: 1rem; }
+}

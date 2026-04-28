@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   description: "Tekoälyn kirjoittama. Juristin vahvistama. Viranomaiskelpoinen.",
   icons: {
     icon: "/favicon.svg",
-    apple: "/favicon.svg",
+    apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.json",
   appleWebApp: {

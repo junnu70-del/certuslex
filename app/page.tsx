@@ -335,9 +335,11 @@ export default function Home() {
       <nav>
         <div className="logo">Certus<span>Lex</span></div>
         <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-          <a href="#hinnoittelu" style={{ color: "var(--light)", fontSize: "0.85rem", textDecoration: "none" }}>Hinnoittelu</a>
-          <a href="/tarjouskone" style={{ color: "var(--gold)", fontSize: "0.85rem", textDecoration: "none", fontWeight: 500 }}>Tarjouskone</a>
-          <a href="/kenttamuistio" style={{ color: "#60a5fa", fontSize: "0.85rem", textDecoration: "none", fontWeight: 500 }}>Kenttämuistio</a>
+          <div className="nav-links" style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+            <a href="#hinnoittelu" style={{ color: "var(--light)", fontSize: "0.85rem", textDecoration: "none" }}>Hinnoittelu</a>
+            <a href="/tarjouskone" style={{ color: "var(--gold)", fontSize: "0.85rem", textDecoration: "none", fontWeight: 500 }}>Tarjouskone</a>
+            <a href="/kenttamuistio" style={{ color: "#60a5fa", fontSize: "0.85rem", textDecoration: "none", fontWeight: 500 }}>Kenttämuistio</a>
+          </div>
           <button className="nav-cta" onClick={() => goTo("upload")}>Lähetä asiakirja →</button>
         </div>
       </nav>
