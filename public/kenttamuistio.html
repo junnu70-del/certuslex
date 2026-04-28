@@ -557,6 +557,10 @@ input[type=text]:focus, input[type=password]:focus { border-color: var(--border2
     </div>
 
     <button class="btn btn-primary" id="btnDrive" onclick="saveToDrive()">Tallenna Google Driveen</button>
+    <div id="emailSendRow" style="margin-top:8px;display:flex;gap:8px;align-items:center">
+      <input type="email" id="sendEmailInput" placeholder="nimi@yritys.fi" style="flex:1;padding:0.65rem 0.9rem;font-size:0.85rem">
+      <button class="btn btn-ghost" id="btnEmail" onclick="sendReportByEmail()" style="white-space:nowrap">✉ Lähetä</button>
+    </div>
     <button class="btn btn-ghost" onclick="showScreen('screen-session');genNewId()" style="margin-top:8px">Uusi tapaaminen</button>
   </div>
 
@@ -591,6 +595,10 @@ input[type=text]:focus, input[type=password]:focus { border-color: var(--border2
       <div>
         <div class="meta-label" style="margin-bottom:5px">Henkilötunnus (sisäinen)</div>
         <input type="text" id="set-hid" placeholder="HEN-001">
+      </div>
+      <div style="margin-top:10px">
+        <div class="meta-label" style="margin-bottom:5px">Sähköposti (raporttien lähetys)</div>
+        <input type="email" id="set-email" placeholder="nimi@yritys.fi">
       </div>
       <button class="btn btn-primary" style="margin-top:14px" onclick="saveSettings()">Tallenna tiedot</button>
     </div>
@@ -786,7 +794,7 @@ if ('serviceWorker' in navigator) {
 // ─── State ───────────────────────────────────────────────────────────────────
 
 const defaultSettings = {
-  name: '', org: '', hid: '', fnurl: '/api/transcribe', scripturl: ''
+  name: '', org: '', hid: '', email: '', fnurl: '/api/transcribe', scripturl: ''
 };
 
 let state = {
@@ -850,8 +858,10 @@ function applySettings() {
   document.getElementById('set-name').value = s.name || '';
   document.getElementById('set-org').value = s.org || '';
   document.getElementById('set-hid').value = s.hid || '';
+  document.getElementById('set-email').value = s.email || '';
   document.getElementById('set-fnurl').value = s.fnurl || '';
   document.getElementById('set-scripturl').value = s.scripturl || '';
+  if (s.email) document.getElementById('sendEmailInput').value = s.email;
   const initials = s.name
     ? s.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
     : '??';
@@ -862,6 +872,7 @@ function saveSettings() {
   state.settings.name = document.getElementById('set-name').value.trim();
   state.settings.org = document.getElementById('set-org').value.trim();
   state.settings.hid = document.getElementById('set-hid').value.trim();
+  state.settings.email = document.getElementById('set-email').value.trim();
   localStorage.setItem('km_settings', JSON.stringify(state.settings));
   applySettings();
   checkSetupWarning();
@@ -1363,6 +1374,51 @@ function renderHistory() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ─── Send report by email ─────────────────────────────────────────────────────
+
+async function sendReportByEmail() {
+  const email = document.getElementById('sendEmailInput').value.trim();
+  if (!email || !email.includes('@')) { toast('Syötä kelvollinen sähköpostiosoite', true); return; }
+
+  const btn = document.getElementById('btnEmail');
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  const s = state.currentSession || {};
+  try {
+    const res = await fetch('/api/send-km-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: email,
+        sessionId: s.id || '—',
+        meetingType: s.type || '—',
+        date: s.date ? new Date(s.date).toLocaleString('fi-FI') : '—',
+        duration: s.duration ? formatDuration(s.duration) : '—',
+        interviewer: state.settings.name || '—',
+        org: state.settings.org || '—',
+        tilanne: document.getElementById('r-tilanne').textContent,
+        tarpeet: document.getElementById('r-tarpeet').textContent,
+        toimet: document.getElementById('r-toimet').textContent,
+        askeleet: document.getElementById('r-askeleet').textContent,
+        transcript: document.getElementById('transcriptBox').innerText || '',
+      }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      btn.textContent = '✓ Lähetetty';
+      btn.style.color = 'var(--green)';
+      toast('Raportti lähetetty: ' + email);
+    } else {
+      throw new Error(data.error || 'Virhe');
+    }
+  } catch (err) {
+    toast('Lähetys epäonnistui: ' + err.message, true);
+    btn.disabled = false;
+    btn.textContent = '✉ Lähetä';
+  }
 }
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
