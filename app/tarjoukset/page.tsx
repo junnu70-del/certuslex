@@ -64,6 +64,13 @@ export default function TarjouksetPage() {
   const [invoiceError, setInvoiceError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Edit modal
+  const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
+  const [editHtml, setEditHtml] = useState("");
+  const [loadingEdit, setLoadingEdit] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState("");
+
   const T = t[lang].tarjoukset;
   const TI = t[lang].invoice;
 
@@ -100,6 +107,43 @@ export default function TarjouksetPage() {
     });
     return () => unsub();
   }, [router]);
+
+  async function openEditModal(q: Quote) {
+    setEditingQuote(q);
+    setEditHtml("");
+    setEditError("");
+    setLoadingEdit(true);
+    try {
+      const token = await user!.getIdToken();
+      const res = await fetch(`/api/quote-owner/${q.id}`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      setEditHtml(data.quoteHtml ?? "");
+    } catch {
+      setEditError("Tarjouksen lataus epäonnistui");
+    } finally {
+      setLoadingEdit(false);
+    }
+  }
+
+  async function saveEditedQuote() {
+    if (!editingQuote || !user) return;
+    setSavingEdit(true);
+    setEditError("");
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/quote-owner/${editingQuote.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ quoteHtml: editHtml }),
+      });
+      if (!res.ok) throw new Error("Tallennus epäonnistui");
+      setEditingQuote(null);
+    } catch (e: unknown) {
+      setEditError(e instanceof Error ? e.message : "Tallennus epäonnistui");
+    } finally {
+      setSavingEdit(false);
+    }
+  }
 
   async function openInvoiceModal(q: Quote) {
     setInvoiceQuote(q);
@@ -443,6 +487,10 @@ export default function TarjouksetPage() {
                         📄 {T.createInvoice}
                       </button>
                     )}
+                    <button onClick={() => openEditModal(q)}
+                      style={{ background: "none", border: "1px solid #EDE8DE", color: "#0F1F3D", fontSize: "0.72rem", fontWeight: 600, padding: "0.2rem 0.5rem", cursor: "pointer", textAlign: "left", whiteSpace: "nowrap" }}>
+                      ✏️ {lang === "fi" ? "Muokkaa" : "Edit"}
+                    </button>
                     <button onClick={() => handleDeleteQuote(q.id)} disabled={deletingId === q.id}
                       style={{ background: "none", border: "none", color: deletingId === q.id ? "#ccc" : "#9b2335", fontSize: "0.72rem", cursor: deletingId === q.id ? "not-allowed" : "pointer", padding: "0", textAlign: "left", whiteSpace: "nowrap" }}>
                       {deletingId === q.id ? "..." : (lang === "fi" ? "🗑 Poista" : "🗑 Delete")}
@@ -461,6 +509,47 @@ export default function TarjouksetPage() {
         )}
       </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+
+      {/* ── MUOKKAA-MODAALI ── */}
+      {editingQuote && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,31,61,0.7)", zIndex: 1000, display: "flex", flexDirection: "column" }}>
+          {/* Otsikkopalkki */}
+          <div style={{ background: "#0F1F3D", borderBottom: "4px solid #C8A44A", padding: "1rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+            <div>
+              <div style={{ fontSize: "0.7rem", letterSpacing: "0.12em", color: "#C8A44A", fontWeight: 700 }}>MUOKKAA TARJOUSTA</div>
+              <div style={{ color: "#fff", fontFamily: "Georgia, serif", fontSize: "1rem", marginTop: "0.2rem" }}>
+                {editingQuote.project?.projectName} → {editingQuote.project?.clientName || editingQuote.clientName}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "0.8rem", alignItems: "center" }}>
+              {editError && <span style={{ color: "#f5c6cb", fontSize: "0.8rem" }}>{editError}</span>}
+              <button onClick={saveEditedQuote} disabled={savingEdit || loadingEdit}
+                style={{ background: savingEdit ? "#8A8070" : "#C8A44A", color: "#0F1F3D", border: "none", padding: "0.6rem 1.4rem", fontSize: "0.85rem", fontWeight: 700, cursor: savingEdit ? "not-allowed" : "pointer" }}>
+                {savingEdit ? "Tallennetaan..." : "💾 Tallenna"}
+              </button>
+              <button onClick={() => setEditingQuote(null)}
+                style={{ background: "none", border: "1px solid rgba(255,255,255,0.3)", color: "#fff", padding: "0.6rem 1rem", fontSize: "0.85rem", cursor: "pointer" }}>
+                ✕ Sulje
+              </button>
+            </div>
+          </div>
+
+          {/* Muokattava sisältö */}
+          <div style={{ flex: 1, overflow: "auto", background: "#F7F4EE", padding: "2rem" }}>
+            {loadingEdit ? (
+              <div style={{ textAlign: "center", padding: "4rem", color: "#8A8070" }}>Ladataan...</div>
+            ) : (
+              <div
+                contentEditable
+                suppressContentEditableWarning
+                onInput={e => setEditHtml((e.target as HTMLDivElement).innerHTML)}
+                style={{ background: "#fff", padding: "2.5rem", maxWidth: "820px", margin: "0 auto", boxShadow: "0 8px 48px rgba(15,31,61,0.13)", borderTop: "4px solid #C8A44A", outline: "none", minHeight: "60vh", fontFamily: "Georgia, serif", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416" }}
+                dangerouslySetInnerHTML={{ __html: editHtml }}
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

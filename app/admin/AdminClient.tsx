@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 const firebaseConfig = {
@@ -240,6 +240,18 @@ export default function AdminClient() {
     setSelected(null);
   }
 
+  async function deleteDocument(id: string) {
+    if (!confirm("Poistetaanko dokumentti pysyvästi?")) return;
+    const db = getFirestore(getFirebaseApp());
+    await deleteDoc(doc(db, "documents", id));
+  }
+
+  async function deleteAccessCode(id: string) {
+    if (!confirm("Poistetaanko käyttökoodi pysyvästi?")) return;
+    const db = getFirestore(getFirebaseApp());
+    await deleteDoc(doc(db, "access_codes", id));
+  }
+
   const filtered = filter === "all" ? docs : docs.filter(d => d.status === filter);
   const pendingCount = docs.filter(d => d.status === "pending_review").length;
 
@@ -458,6 +470,9 @@ export default function AdminClient() {
                       </div>
                       <div style={{ fontSize: "0.75rem", fontWeight: 500, color: st.color, whiteSpace: "nowrap" }}>⬤ {st.text}</div>
                       <div style={{ color: "var(--muted)", fontSize: "0.9rem" }}>→</div>
+                      <button onClick={e => { e.stopPropagation(); deleteDocument(d.id); }}
+                        style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.1rem", padding: "0.2rem 0.4rem", color: "#9b2335", lineHeight: 1 }}
+                        title="Poista dokumentti">🗑️</button>
                     </div>
                   );
                 })}
@@ -574,6 +589,9 @@ export default function AdminClient() {
                         <span style={{ fontSize: "0.75rem", color: c.active ? "#2D6A4F" : "var(--muted)", fontWeight: 600 }}>
                           {c.active ? "⬤ Aktiivinen" : "⬤ Suljettu"}
                         </span>
+                        <button onClick={() => deleteAccessCode(c.id)}
+                          style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.1rem", padding: "0.2rem 0.4rem", color: "#9b2335", lineHeight: 1 }}
+                          title="Poista koodi">🗑️</button>
                       </div>
                       <div style={{ fontSize: "0.78rem", color: "var(--muted)", marginBottom: "0.5rem" }}>
                         📧 {c.recipientEmail}{c.recipientName ? ` (${c.recipientName})` : ""}

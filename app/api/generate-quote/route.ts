@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
       attachments?: Attachment[];
     };
     const { company, project, specs } = body;
+    const projectImageUrl: string = (body as Record<string, unknown>).projectImageUrl as string ?? "";
     // Tue sekä vanhaa yksittäistä attachment- että uutta attachments-taulukkoa
     const attachments: Attachment[] = body.attachments ?? (body.attachment ? [body.attachment] : []);
 
@@ -88,7 +89,11 @@ PROJEKTIN TIEDOT:
 
 SPESIFIKAATIOT JA LAAJUUS:
 ${specs}
-
+${projectImageUrl ? `
+KOHTEEN KUVA:
+Sisällytä dokumenttiin kohteen kuva heti kultaisen vaakaviivan erottimen JÄLKEEN (ennen vastaanottajan tietoja), käyttäen tätä HTML-koodia SELLAISENAAN ilman muutoksia:
+<div style="width:100%;margin-bottom:2rem;overflow:hidden;"><img src="${projectImageUrl}" alt="Kohde" style="width:100%;max-height:320px;object-fit:cover;display:block;border-bottom:4px solid #C8A44A;" /></div>
+` : ""}
 Luo tästä ammattimainen tarjousdokumentti HTML-muodossa. Palauta VAIN HTML-koodi ilman \`\`\`html tai muita koodimerkkejä.
 
 Käytä näitä inline-tyylejä dokumentissa:
@@ -136,6 +141,7 @@ TÄRKEÄÄ:
 - Jos pankkitiedot puuttuvat, jätä tyhjä allekirjoitusviiva ilman hakasulkuja
 - Käytä järkeviä arvioita numeroille jos tarkkoja ei ole annettu, merkitse arviot tekstillä "(arvio)"
 - Tee dokumentista A4-tulostuskelpoinen, padding 40px
+- ALAPALKKI (footer): Dokumentin viimeinen elementti on AINA tumma palkki tyylillä background:#0F1F3D;border-top:4px solid #C8A44A;padding:1rem 2.5rem;display:flex;justify-content:space-between;align-items:center; — Kaikki teksti footerissa PAKOSTI color:#ffffff tai color:rgba(255,255,255,0.6) — ÄLÄ käytä kultaa (#C8A44A) tekstinä footerissa, se ei erotu tummasta taustasta. Yrityksen yhteystiedot vasemmalla (valkoinen), "Kiitos luottamuksestanne!" oikealla (valkoinen).
 
 MATERIAALIMÄÄRÄT JA HINNOITTELU — KRIITTISTÄ:
 - ÄLÄ ylispesifioi materiaaleja — käytä realistisia, konservatiivisia määriä

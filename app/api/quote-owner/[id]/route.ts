@@ -66,3 +66,28 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Virhe" }, { status: 500 });
   }
 }
+
+// PATCH /api/quote-owner/[id] — päivitä tarjouksen HTML
+export async function PATCH(req: NextRequest) {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "Ei kirjautunut" }, { status: 401 });
+  }
+  try {
+    const db = getAdminDb();
+    const decoded = await getAuth().verifyIdToken(authHeader.slice(7));
+    const id = req.nextUrl.pathname.split("/").at(-1)!;
+    const snap = await db.collection("quotes").doc(id).get();
+    if (!snap.exists) return NextResponse.json({ error: "Ei löydy" }, { status: 404 });
+    const data = snap.data()!;
+    if (data.senderUid !== decoded.uid && data.senderEmail !== decoded.email) {
+      return NextResponse.json({ error: "Ei oikeutta" }, { status: 403 });
+    }
+    const { quoteHtml } = await req.json() as { quoteHtml: string };
+    await db.collection("quotes").doc(id).update({ quoteHtml, updatedAt: new Date() });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("Quote owner PATCH error:", err);
+    return NextResponse.json({ error: "Virhe" }, { status: 500 });
+  }
+}

@@ -156,6 +156,7 @@ export default function TarjouskoneePage() {
             validUntil: project.validUntil ? new Date(project.validUntil).toLocaleDateString("fi-FI") : "",
           },
           attachments,
+          projectImageUrl,
           specs: specs
             + (margin ? `\n\nKATEPROSENTTI: Lisää kustannuksiin ${margin}% kate/marginaali suoraan yksikköhintoihin. ÄLÄ mainitse kateprosenttia tai marginaalia tarjousdokumentissa — se on yrityksen sisäinen tieto eikä kuulu asiakkaalle.` : "")
             + (extraInstructions ? `\n\nLISÄOHJEET: ${extraInstructions}` : ""),
@@ -179,16 +180,7 @@ export default function TarjouskoneePage() {
             `style="${before}background-color:#0F1F3D;color:#C8A44A;${after}"`
         );
       }
-      const projectImageHtml = projectImageUrl
-        ? `<div style="width:100%;margin-bottom:2rem;overflow:hidden;border-bottom:4px solid #C8A44A;">
-            <img src="${projectImageUrl}" alt="${project.projectName}" style="width:100%;max-height:340px;object-fit:cover;display:block;" />
-            <div style="background:#0F1F3D;padding:0.9rem 2rem;display:flex;justify-content:space-between;align-items:center;">
-              <span style="color:#C8A44A;font-family:Georgia,serif;font-size:1.05rem;font-weight:700;">${project.projectName}</span>
-              <span style="color:rgba(255,255,255,0.5);font-size:0.78rem;">${project.clientName}</span>
-            </div>
-          </div>`
-        : "";
-      setQuote(logoHtml + projectImageHtml + fixDarkCells(data.quote));
+      setQuote(logoHtml + fixDarkCells(data.quote));
       setStep("result");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Tuntematon virhe");
@@ -341,7 +333,7 @@ export default function TarjouskoneePage() {
     : [{ n: 1, label: "Yritystiedot" }, { n: 2, label: "Projekti" }, { n: 3, label: "Speksit & generointi" }];
 
   return (
-    <div style={{ background: step === "result" ? "#fff" : "#F7F4EE", minHeight: "100vh" }}>
+    <div style={{ background: "#F7F4EE", minHeight: "100vh" }}>
       {/* Koodi-banneri */}
       {accessCode && !userEmail && codeUsesLeft !== null && (
         <div style={{ background: codeUsesLeft <= 2 ? "#FFF8E7" : "#F0FDF4", borderBottom: `2px solid ${codeUsesLeft <= 2 ? "#C8A44A" : "#86efac"}`, padding: "0.6rem 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.82rem" }}>
@@ -700,7 +692,7 @@ export default function TarjouskoneePage() {
             </div>
 
             <div
-              style={{ background: "#fff", padding: "2.5rem 2rem 10rem", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif", marginLeft: "-2rem", marginRight: "-2rem" }}
+              style={{ background: "#fff", padding: "2.5rem 2rem 8rem", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif", boxShadow: "0 8px 48px rgba(15,31,61,0.13), 0 2px 8px rgba(15,31,61,0.07)", borderTop: "4px solid #C8A44A" }}
               dangerouslySetInnerHTML={{ __html: quote }}
             />
           </div>
