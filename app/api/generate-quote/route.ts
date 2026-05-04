@@ -215,8 +215,14 @@ TÄRKEÄÄ:
       messages: [{ role: "user", content: messageContent as any }],
     });
 
-    const quote = aiResponse.content?.[0]?.type === "text" ? aiResponse.content[0].text : null;
+    let quote = aiResponse.content?.[0]?.type === "text" ? aiResponse.content[0].text : null;
     if (!quote) throw new Error("Tyhjä vastaus AI:lta");
+
+    // Poistetaan markdown-koodiaidat jos AI lisäsi ne ohjeiden vastaisesti
+    quote = quote.trim();
+    if (quote.startsWith("```")) {
+      quote = quote.replace(/^```(?:html)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
+    }
 
     return NextResponse.json({ quote });
   } catch (err) {
