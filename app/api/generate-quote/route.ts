@@ -134,7 +134,15 @@ TÄRKEÄÄ:
 - Käytä tarjousnumeroa: ${quoteNumber}
 - Jos pankkitiedot puuttuvat, jätä tyhjä allekirjoitusviiva ilman hakasulkuja
 - Käytä järkeviä arvioita numeroille jos tarkkoja ei ole annettu, merkitse arviot tekstillä "(arvio)"
-- Tee dokumentista A4-tulostuskelpoinen, padding 40px`;
+- Tee dokumentista A4-tulostuskelpoinen, padding 40px
+
+MATERIAALIMÄÄRÄT JA HINNOITTELU — KRIITTISTÄ:
+- ÄLÄ ylispesifioi materiaaleja — käytä realistisia, konservatiivisia määriä
+- Ruuvit, naulat, kiinnikkeet: laske järkevästi projektin koon mukaan, älä keksi suuria kg-määriä
+- Jos käyttäjä antaa tarkat määrät, käytä niitä SELLAISENAAN — älä lisää tai muuta
+- Jos määrät puuttuvat, arvioi alakanttiin ja merkitse "(arvio)" — asiakkaan on helpompi hyväksyä konservatiivinen tarjous
+- Tarkista looginen koherenssi: yksittäiset rivit eivät saa olla ristiriidassa projektin laajuuden kanssa
+- Älä keksi lisärivejä joita ei ole mainittu spekseissä`;
 
     // Parsitaan Excel/CSV tekstiksi — Claude ei tue niitä natiivisti
     function parseExcelToText(base64: string, fileName: string): string {
@@ -204,8 +212,8 @@ TÄRKEÄÄ:
       messageContent = prompt;
     }
 
-    // Tekstipohjainen → haiku (nopea), kuva/PDF → sonnet (vision-tuki)
-    const model = hasVision ? "claude-sonnet-4-5" : "claude-haiku-4-5";
+    // Sonnet kaikille — haiku hallusinoi materiaalimääriä ja hintoja liikaa
+    const model = "claude-sonnet-4-5";
 
     const anthropic = new Anthropic({ apiKey });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
