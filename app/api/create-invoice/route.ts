@@ -233,7 +233,7 @@ function buildInvoiceHtml(data: {
         </div>
         <div class="payment-item">
           <span>VIITENUMERO</span>
-          <span class="ref">${referenceFormatted}</span>
+          <span class="ref">${reference}</span>
         </div>
         <div class="payment-item">
           <span>ERÄPÄIVÄ</span>
