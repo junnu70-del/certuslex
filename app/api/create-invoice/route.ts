@@ -137,8 +137,8 @@ function buildInvoiceHtml(data: {
   .payment-item{font-size:12px;color:#2C2416}
   .payment-item span{font-size:10px;color:#8A8070;display:block;margin-bottom:2px;letter-spacing:0.08em;font-weight:600}
   .ref{font-family:monospace;font-size:13px;color:#0F1F3D;font-weight:600}
-  .ftr{background:#F5F2EC;border-top:1px solid #EDE8DE;padding:14px 36px;display:flex;justify-content:space-between;align-items:center}
-  .ftr-left{font-size:11px;color:#A09080}
+  .ftr{background:#0F1F3D;border-top:4px solid #C8A44A;padding:14px 36px;display:flex;justify-content:space-between;align-items:center}
+  .ftr-left{font-size:11px;color:rgba(255,255,255,0.5)}
   .ftr-right{font-size:11px;color:#C8A44A}
   @media print{
     body{background:#fff;padding:0}

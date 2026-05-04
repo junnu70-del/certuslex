@@ -179,8 +179,8 @@ export default function LaskuPage() {
         </div>
 
         {/* Footer */}
-        <div style={{ background: "#F5F2EC", borderTop: "1px solid #EDE8DE", padding: "14px 36px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: "11px", color: "#A09080" }}>© 2026 CertusLex — certuslex.fi</span>
+        <div style={{ background: "#0F1F3D", borderTop: "4px solid #C8A44A", padding: "14px 36px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)" }}>© 2026 CertusLex — certuslex.fi</span>
           <span style={{ fontSize: "11px", color: "#C8A44A" }}>Kiitos yhteistyöstä!</span>
         </div>
       </div>
