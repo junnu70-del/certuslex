@@ -58,6 +58,17 @@ function formatSize(bytes: number) {
   return (bytes / 1024).toFixed(0) + " KB";
 }
 
+interface ConsentLog {
+  id: string;
+  uid: string;
+  email: string;
+  termsVersion: string;
+  acceptedAt: { seconds: number } | null;
+  ip: string;
+  userAgent: string;
+  action: string;
+}
+
 interface AccessCode {
   id: string;
   code: string;
@@ -85,9 +96,10 @@ export default function AdminClient() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const correctedFileRef = useRef<HTMLInputElement>(null);
   const [filter, setFilter] = useState<"all" | "pending_review" | "in_review" | "completed">("all");
-  const [tab, setTab] = useState<"jono" | "koodit">("jono");
+  const [tab, setTab] = useState<"jono" | "koodit" | "loki">("jono");
   // Koodit
   const [codes, setCodes] = useState<AccessCode[]>([]);
+  const [consentLogs, setConsentLogs] = useState<ConsentLog[]>([]);
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
   const [newLabel, setNewLabel] = useState("");
@@ -108,7 +120,12 @@ export default function AdminClient() {
     const unsubCodes = onSnapshot(qc, (snap) => {
       setCodes(snap.docs.map(d => ({ id: d.id, ...d.data() } as AccessCode)));
     });
-    return () => { unsub(); unsubCodes(); };
+    // Suostumusloki
+    const ql = query(collection(db, "consent_logs"), orderBy("acceptedAt", "desc"));
+    const unsubLogs = onSnapshot(ql, (snap) => {
+      setConsentLogs(snap.docs.map(d => ({ id: d.id, ...d.data() } as ConsentLog)));
+    });
+    return () => { unsub(); unsubCodes(); unsubLogs(); };
   }, [authed]);
 
   async function createCode() {
@@ -398,7 +415,11 @@ export default function AdminClient() {
 
       {/* Välilehdet */}
       <div style={{ background: "var(--navy)", borderBottom: "1px solid rgba(200,164,74,.15)", display: "flex", gap: "0" }}>
-        {([["jono", `📄 Dokumenttijono${pendingCount > 0 ? ` (${pendingCount})` : ""}`], ["koodit", `🔑 Käyttökoodit (${codes.length})`]] as const).map(([id, label]) => (
+        {([
+          ["jono", `📄 Dokumenttijono${pendingCount > 0 ? ` (${pendingCount})` : ""}`],
+          ["koodit", `🔑 Käyttökoodit (${codes.length})`],
+          ["loki", `✅ Suostumusloki (${consentLogs.length})`],
+        ] as const).map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
             style={{ padding: "0.75rem 1.8rem", background: "none", border: "none", borderBottom: tab === id ? "2px solid #C8A44A" : "2px solid transparent", color: tab === id ? "#C8A44A" : "rgba(255,255,255,.5)", fontSize: "0.82rem", fontWeight: tab === id ? 700 : 400, cursor: "pointer", letterSpacing: "0.04em" }}>
             {label}
@@ -440,6 +461,51 @@ export default function AdminClient() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── SUOSTUMUSLOKI-VÄLILEHTI ── */}
+        {tab === "loki" && (
+          <>
+            <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.8rem", fontWeight: 700, color: "var(--navy)", marginBottom: "0.5rem" }}>Suostumusloki</h2>
+            <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "1.5rem" }}>
+              Rekisteröitymisen yhteydessä kirjattu käyttöehtojen hyväksyntä. Tallennetaan palvelinpuolella — ei muokattavissa.
+            </p>
+
+            {consentLogs.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "4rem", color: "var(--muted)", fontSize: "0.9rem" }}>Ei merkintöjä vielä</div>
+            ) : (
+              <div style={{ overflowX: "auto" as const }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" as const, fontSize: "0.82rem" }}>
+                  <thead>
+                    <tr style={{ background: "var(--navy)", color: "#fff" }}>
+                      {["Sähköposti", "Hyväksytty", "IP-osoite", "Ehtojen versio", "Selain"].map(h => (
+                        <th key={h} style={{ padding: "0.7rem 1rem", textAlign: "left" as const, fontWeight: 600, letterSpacing: "0.05em", fontSize: "0.72rem", whiteSpace: "nowrap" as const }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {consentLogs.map((log, i) => (
+                      <tr key={log.id} style={{ background: i % 2 === 0 ? "#fff" : "#F7F4EE", borderBottom: "1px solid var(--cream2)" }}>
+                        <td style={{ padding: "0.75rem 1rem", color: "var(--navy)", fontWeight: 500 }}>{log.email || "—"}</td>
+                        <td style={{ padding: "0.75rem 1rem", color: "var(--navy)", whiteSpace: "nowrap" as const }}>
+                          {log.acceptedAt ? new Date(log.acceptedAt.seconds * 1000).toLocaleString("fi-FI", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—"}
+                        </td>
+                        <td style={{ padding: "0.75rem 1rem", color: "var(--muted)", fontFamily: "monospace" }}>{log.ip || "—"}</td>
+                        <td style={{ padding: "0.75rem 1rem" }}>
+                          <span style={{ background: "rgba(200,164,74,.15)", color: "#7A5C00", fontSize: "0.72rem", fontWeight: 700, padding: "0.2rem 0.6rem", letterSpacing: "0.05em" }}>
+                            v{log.termsVersion || "—"}
+                          </span>
+                        </td>
+                        <td style={{ padding: "0.75rem 1rem", color: "var(--muted)", maxWidth: "260px", overflow: "hidden" as const, textOverflow: "ellipsis" as const, whiteSpace: "nowrap" as const }} title={log.userAgent}>
+                          {log.userAgent?.replace(/\(.*?\)/g, "").trim().slice(0, 60) || "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </>
