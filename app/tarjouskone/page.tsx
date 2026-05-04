@@ -56,6 +56,9 @@ export default function TarjouskoneePage() {
   const [codeUsesLeft, setCodeUsesLeft] = useState<number | null>(null);
   const [attachments, setAttachments] = useState<Array<{ name: string; size: number; base64: string; mimeType: string }>>([]);
   const attachRef = useRef<HTMLInputElement>(null);
+  const [projectImageUrl, setProjectImageUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const projectImageRef = useRef<HTMLInputElement>(null);
 
   const T = t[lang].tarjouskone;
   const PROJECT_TYPES = lang === "en" ? PROJECT_TYPES_EN : PROJECT_TYPES_FI;
@@ -176,7 +179,16 @@ export default function TarjouskoneePage() {
             `style="${before}background-color:#0F1F3D;color:#C8A44A;${after}"`
         );
       }
-      setQuote(logoHtml + fixDarkCells(data.quote));
+      const projectImageHtml = projectImageUrl
+        ? `<div style="width:100%;margin-bottom:2rem;overflow:hidden;border-bottom:4px solid #C8A44A;">
+            <img src="${projectImageUrl}" alt="${project.projectName}" style="width:100%;max-height:340px;object-fit:cover;display:block;" />
+            <div style="background:#0F1F3D;padding:0.9rem 2rem;display:flex;justify-content:space-between;align-items:center;">
+              <span style="color:#C8A44A;font-family:Georgia,serif;font-size:1.05rem;font-weight:700;">${project.projectName}</span>
+              <span style="color:rgba(255,255,255,0.5);font-size:0.78rem;">${project.clientName}</span>
+            </div>
+          </div>`
+        : "";
+      setQuote(logoHtml + projectImageHtml + fixDarkCells(data.quote));
       setStep("result");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Tuntematon virhe");
@@ -199,6 +211,57 @@ export default function TarjouskoneePage() {
       reader.readAsDataURL(file);
     }
     e.target.value = "";
+  }
+
+  function compressImage(file: File, maxWidth = 1400, quality = 0.82): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(
+          blob => blob ? resolve(blob) : reject(new Error("Kuvan pakkaus epäonnistui")),
+          "image/jpeg", quality
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Kuvan luku epäonnistui")); };
+      img.src = url;
+    });
+  }
+
+  async function handleProjectImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { setError(lang === "en" ? "Image too large (max 50 MB)" : "Kuva liian suuri (max 50 Mt)"); return; }
+    setUploadingImage(true);
+    try {
+      const user = auth?.currentUser;
+      if (!user) throw new Error("Kirjaudu sisään ensin");
+      const idToken = await user.getIdToken();
+      const compressed = await compressImage(file);
+      const fd = new FormData();
+      fd.append("file", new File([compressed], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }));
+      const res = await fetch("/api/upload-project-image", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${idToken}` },
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? res.statusText);
+      setProjectImageUrl(data.url);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError((lang === "en" ? "Image upload failed: " : "Kuvan lataus epäonnistui: ") + msg);
+    } finally {
+      setUploadingImage(false);
+      e.target.value = "";
+    }
   }
 
   function copyToClipboard() {
@@ -532,6 +595,43 @@ export default function TarjouskoneePage() {
                 <span style={{ fontSize: "1.1rem" }}>📎</span> {attachments.length > 0 ? (lang === "en" ? "Add another file" : "Lisää toinen tiedosto") : T.attachBtn}
               </button>
               <input ref={attachRef} type="file" multiple accept="application/pdf,image/png,image/jpeg,image/jpg,image/webp,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,.xlsx,.xls,.csv" style={{ display: "none" }} onChange={handleAttachmentSelect} />
+            </div>
+
+            {/* Kohteen kuva */}
+            <div style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "1.5rem 2rem", marginBottom: "1rem" }}>
+              <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 0.5rem" }}>
+                🖼️ {lang === "en" ? "PROJECT PHOTO" : "KOHTEEN KUVA"} <span style={{ color: "#8A8070", fontWeight: 400, letterSpacing: 0 }}>({lang === "en" ? "optional" : "valinnainen"})</span>
+              </p>
+              <p style={{ fontSize: "0.8rem", color: "#8A8070", margin: "0 0 1rem" }}>
+                {lang === "en" ? "Add a photo of the site or property — it appears as a full-width banner at the top of the quote." : "Lisää kuva kohteesta tai kiinteistöstä — se näkyy tarjouksen yläosassa leveänä banneri-kuvana."}
+              </p>
+
+              {projectImageUrl && (
+                <div style={{ position: "relative", marginBottom: "0.8rem", border: "2px solid #C8A44A" }}>
+                  <img src={projectImageUrl} alt="Kohteen kuva" style={{ width: "100%", maxHeight: "180px", objectFit: "cover", display: "block" }} />
+                  <button
+                    onClick={() => setProjectImageUrl("")}
+                    style={{ position: "absolute", top: "8px", right: "8px", background: "#0F1F3D", border: "none", color: "#C8A44A", width: "28px", height: "28px", borderRadius: "50%", cursor: "pointer", fontSize: "1rem", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    ✕
+                  </button>
+                  <div style={{ background: "#0F1F3D", padding: "0.4rem 0.8rem", fontSize: "0.75rem", color: "rgba(255,255,255,0.6)" }}>
+                    ✓ {lang === "en" ? "Photo added" : "Kuva lisätty"} — {lang === "en" ? "will appear in quote" : "näkyy tarjouksessa"}
+                  </div>
+                </div>
+              )}
+
+              {uploadingImage ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", padding: "0.8rem", color: "#8A8070", fontSize: "0.83rem" }}>
+                  <div style={{ width: "18px", height: "18px", border: "2px solid #EDE8DE", borderTopColor: "#C8A44A", borderRadius: "50%", animation: "spin 1s linear infinite", flexShrink: 0 }} />
+                  {lang === "en" ? "Uploading photo…" : "Ladataan kuvaa…"}
+                </div>
+              ) : (
+                <button onClick={() => projectImageRef.current?.click()}
+                  style={{ display: "flex", alignItems: "center", gap: "0.6rem", background: "transparent", border: "2px dashed #C8A44A", color: "#0F1F3D", padding: "0.8rem 1.4rem", fontSize: "0.83rem", fontWeight: 600, cursor: "pointer", width: "100%", justifyContent: "center" }}>
+                  <span style={{ fontSize: "1.1rem" }}>🖼️</span> {projectImageUrl ? (lang === "en" ? "Change photo" : "Vaihda kuva") : (lang === "en" ? "Add site photo" : "Lisää kohteen kuva")}
+                </button>
+              )}
+              <input ref={projectImageRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp" style={{ display: "none" }} onChange={handleProjectImageSelect} />
             </div>
 
             <div style={{ background: "rgba(200,164,74,.08)", border: "1px solid rgba(200,164,74,.3)", padding: "1rem 1.2rem", marginBottom: "1.5rem", fontSize: "0.82rem", color: "#4A4035" }}>

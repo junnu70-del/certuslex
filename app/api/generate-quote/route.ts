@@ -106,7 +106,7 @@ ${isProductSale ? `Dokumentin rakenne (TUOTEMYYNTI — EI tuntihinnoittelua):
 5. Tuoteluettelo HTML-taulukkona (tuote/nimike, määrä, yksikköhinta, yhteensä ALV 0%). Taulukon tyylit:
    - Otsikkorivi: background:#0F1F3D, color:#C8A44A, font-weight:bold
    - Datarivit: vuorotellen background:#fff ja background:#F7F4EE, color:#2C2416
-   - ALV-rivi: background:#F7F4EE, color:#2C2416, font-style:italic
+   - ALV-rivi (ALV 25,5%): background:#F7F4EE, color:#2C2416, font-style:italic
    - YHTEENSÄ ALV sisältyy -rivi: background:#0F1F3D, color:#C8A44A, font-weight:bold, font-size:1.05em — KAIKKI teksti tällä rivillä PAKOSTI color:#C8A44A
    - ÄLÄ lisää tuntirivejä, työkustannuksia tai tuntihintoja taulukkoon
 6. Toimitustiedot ja toimitusaika
@@ -129,6 +129,7 @@ ${isProductSale ? `Dokumentin rakenne (TUOTEMYYNTI — EI tuntihinnoittelua):
 10. Allekirjoitusosio kahdelle osapuolelle`}
 
 TÄRKEÄÄ:
+- ALV-KANTA: Käytä AINA 25,5 % (Suomen yleinen ALV-kanta 1.9.2024 alkaen). ÄLÄ käytä 24 % tai muuta prosenttia.
 - Älä käytä hakasulkupaikanvarauksia [näin] missään kohdassa
 - Käytä oikeaa päivämäärää: ${today}
 - Käytä tarjousnumeroa: ${quoteNumber}
