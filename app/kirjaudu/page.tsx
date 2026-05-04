@@ -41,6 +41,7 @@ function KirjauduForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   async function handleForgotPassword() {
     if (!email) { setError("Syötä sähköpostiosoite ensin"); return; }
@@ -58,12 +59,22 @@ function KirjauduForm() {
     setError("");
     if (!email || !password) { setError("Täytä kaikki kentät"); return; }
     if (mode === "register" && password !== password2) { setError("Salasanat eivät täsmää"); return; }
+    if (mode === "register" && !termsAccepted) { setError("Hyväksy käyttöehdot jatkaaksesi"); return; }
     if (password.length < 6) { setError("Salasanan tulee olla vähintään 6 merkkiä"); return; }
 
     setLoading(true);
     try {
       if (mode === "register") {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        // Tallennetaan käyttöehtojen hyväksyntä audit-lokiin
+        try {
+          const idToken = await cred.user.getIdToken();
+          await fetch("/api/log-consent", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({ termsVersion: "2026-05-04" }),
+          });
+        } catch { /* logi epäonnistui, ei estä rekisteröitymistä */ }
         router.push("/profiili");
       } else {
         await signInWithEmailAndPassword(auth, email, password);
@@ -137,8 +148,24 @@ function KirjauduForm() {
           <>
             <label style={lbl}>SALASANA UUDELLEEN</label>
             <input type="password" value={password2} onChange={e => setPassword2(e.target.value)}
-              placeholder="••••••••" style={{ ...inp, marginBottom: "1.5rem" }}
+              placeholder="••••••••" style={{ ...inp, marginBottom: "1.2rem" }}
               onKeyDown={e => e.key === "Enter" && handleSubmit()} />
+            <label style={{ display: "flex", alignItems: "flex-start", gap: "0.7rem", marginBottom: "1.2rem", cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={e => setTermsAccepted(e.target.checked)}
+                style={{ marginTop: "2px", width: "16px", height: "16px", flexShrink: 0, accentColor: "#0F1F3D", cursor: "pointer" }}
+              />
+              <span style={{ fontSize: "0.8rem", color: "#4A4438", lineHeight: 1.5 }}>
+                Olen lukenut ja hyväksyn{" "}
+                <a href="/kayttoehdot" target="_blank" rel="noopener noreferrer"
+                  style={{ color: "#C8A44A", textDecoration: "underline" }}>käyttöehdot</a>
+                {" "}ja{" "}
+                <a href="/tietosuoja" target="_blank" rel="noopener noreferrer"
+                  style={{ color: "#C8A44A", textDecoration: "underline" }}>tietosuojaselosteen</a>.
+              </span>
+            </label>
           </>
         )}
 
