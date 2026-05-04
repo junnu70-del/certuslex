@@ -32,11 +32,22 @@ export async function POST(req: NextRequest) {
     let totalAmountExVat: number | null = null;
     try {
       const stripped = quoteHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
-      // Hae "Yhteensä" grand total (sis. ALV)
-      const totalMatch = stripped.match(/yhteensä[^0-9€]{0,15}([\d\s]+[,.]\d{1,2})\s*€/i);
-      if (totalMatch) {
-        totalAmountIncVat = parseFloat(totalMatch[1].replace(/\s/g, "").replace(",", "."));
+      const parseNum = (s: string) => parseFloat(s.replace(/\s/g, "").replace(",", "."));
+
+      // Strategia 1: kaikki "yhteensä"-esiintymät + lähin luku, viimeisin = grand total
+      const allTotals = [...stripped.matchAll(/yhteensä[^0-9]{0,40}([\d][\d\s]*[,.]\d{1,2})/gi)];
+      if (allTotals.length > 0) {
+        const v = parseNum(allTotals[allTotals.length - 1][1]);
+        if (!isNaN(v) && v > 0) totalAmountIncVat = v;
       }
+
+      // Strategia 2: suurin €-merkillinen luku dokumentissa
+      if (!totalAmountIncVat || totalAmountIncVat <= 0) {
+        const allEuros = [...stripped.matchAll(/([\d][\d\s]*[,.]\d{1,2})\s*€/g)]
+          .map(m => parseNum(m[1])).filter(n => !isNaN(n) && n > 99);
+        if (allEuros.length > 0) totalAmountIncVat = Math.max(...allEuros);
+      }
+
       // Hae ALV-prosentti HTML:stä
       const vatMatch = stripped.match(/alv\s+([\d,]+)\s*%/i);
       const vatRate = vatMatch ? parseFloat(vatMatch[1].replace(",", ".")) : 25.5;

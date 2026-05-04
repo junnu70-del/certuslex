@@ -131,16 +131,16 @@ export default function TarjouksetPage() {
           const vat = vatMatch ? parseFloat(vatMatch[1].replace(",", ".")) : 25.5;
           const parseEuro = (s: string) => parseFloat(s.replace(/\s/g, "").replace(",", "."));
 
-          // Strategia 1: kaikki "yhteensä" + summa -esiintymät, viimeisin on grand total
-          const allTotals = [...stripped.matchAll(/yhteensä[^0-9€]{0,25}(\d[\d\s]*(?:[,.]\d{1,2})?)\s*€/gi)];
+          // Strategia 1: kaikki "yhteensä"-esiintymät + lähin luku, viimeisin = grand total
+          const allTotals = [...stripped.matchAll(/yhteensä[^0-9]{0,40}(\d[\d\s]*[,.]\d{1,2})/gi)];
           if (allTotals.length > 0) {
             const incVat = parseEuro(allTotals[allTotals.length - 1][1]);
             const exVat = Math.round((incVat / (1 + vat / 100)) * 100) / 100;
             if (!isNaN(exVat) && exVat > 0) { setAmountExVat(exVat.toString()); return; }
           }
 
-          // Strategia 2: suurin euromäärä HTML:ssä (grand total)
-          const allEuros = [...stripped.matchAll(/(\d[\d\s]*(?:[,.]\d{1,2})?)\s*€/g)]
+          // Strategia 2: suurin €-merkillinen luku dokumentissa
+          const allEuros = [...stripped.matchAll(/(\d[\d\s]*[,.]\d{1,2})\s*€/g)]
             .map(m => parseEuro(m[1])).filter(n => !isNaN(n) && n > 99);
           if (allEuros.length > 0) {
             const maxIncVat = Math.max(...allEuros);
