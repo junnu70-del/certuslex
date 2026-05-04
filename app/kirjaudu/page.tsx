@@ -7,6 +7,7 @@ import { auth } from "@/lib/firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -39,6 +40,19 @@ function KirjauduForm() {
   const [password2, setPassword2] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  async function handleForgotPassword() {
+    if (!email) { setError("Syötä sähköpostiosoite ensin"); return; }
+    if (!auth) return;
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setResetSent(true);
+      setError("");
+    } catch {
+      setError("Salasanan nollaus epäonnistui — tarkista sähköpostiosoite");
+    }
+  }
 
   async function handleSubmit() {
     setError("");
@@ -106,9 +120,18 @@ function KirjauduForm() {
           onKeyDown={e => e.key === "Enter" && handleSubmit()} />
 
         <label style={lbl}>SALASANA</label>
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+        <input type="password" value={email && mode === "login" ? password : password} onChange={e => setPassword(e.target.value)}
           placeholder="••••••••" style={inp}
           onKeyDown={e => e.key === "Enter" && handleSubmit()} />
+
+        {mode === "login" && (
+          <div style={{ textAlign: "right", marginTop: "-0.8rem", marginBottom: "1rem" }}>
+            {resetSent
+              ? <span style={{ fontSize: "0.78rem", color: "#166534" }}>✓ Linkki lähetetty sähköpostiisi</span>
+              : <button onClick={handleForgotPassword} style={{ background: "none", border: "none", color: "#C8A44A", fontSize: "0.78rem", cursor: "pointer", padding: 0, textDecoration: "underline" }}>Unohditko salasanan?</button>
+            }
+          </div>
+        )}
 
         {mode === "register" && (
           <>
@@ -129,6 +152,14 @@ function KirjauduForm() {
           style={{ width: "100%", background: loading ? "#EDE8DE" : "#0F1F3D", color: loading ? "#8A8070" : "#C8A44A", border: "none", padding: "0.9rem", fontSize: "0.9rem", fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", letterSpacing: "0.05em" }}>
           {loading ? "Odota..." : mode === "login" ? "Kirjaudu →" : "Luo tili →"}
         </button>
+
+        <div style={{ marginTop: "1.5rem", borderTop: "1px solid #EDE8DE", paddingTop: "1.2rem", textAlign: "center" }}>
+          <p style={{ fontSize: "0.8rem", color: "#8A8070", margin: "0 0 0.6rem" }}>Onko sinulla käyttökoodi?</p>
+          <Link href="/koodi"
+            style={{ display: "inline-block", border: "1px solid #C8A44A", color: "#0F1F3D", padding: "0.6rem 1.4rem", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.04em" }}>
+            Syötä käyttökoodi →
+          </Link>
+        </div>
       </div>
     </div>
   );

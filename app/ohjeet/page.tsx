@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const STEPS = [
   { num: "01", title: "Rekisteröidy ilmaiseksi", desc: "Luo tili sähköpostilla ja salasanalla. 30 päivän kokeilu käynnistyy automaattisesti — ei luottokorttia." },
-  { num: "02", title: "Täytä yritysprofiili", desc: "Syötä yritystietosi kerran: nimi, Y-tunnus, osoite, logo, tuntihinta ja maksuehdot. Tiedot täyttyvät automaattisesti jokaiseen tarjoukseen." },
+  { num: "02", title: "Täytä yritysprofiili", desc: "Syötä yritystietosi kerran: nimi, Y-tunnus, osoite, logo, tuntihinta ja maksuehdot. Valitse myös toimialasi — AI räätälöi tarjoukset automaattisesti toimialasi kustannusrakenteen, terminologian ja lainalaisuuksien mukaan. Tiedot täyttyvät automaattisesti jokaiseen tarjoukseen." },
   { num: "03", title: "Avaa Tarjouskone", desc: "Siirry Tarjouskoneeseen ja käy läpi kolme vaihetta: yritystiedot (esitäytetty), projektin tiedot ja spesifikaatiot." },
   { num: "04", title: "Kuvaa projekti", desc: "Kirjoita vapaamuotoisesti mitä projekti sisältää — materiaalit, työvaiheet, arviot. Voit myös liittää PDF-piirustuksia, Excel-laskelmia tai kuvia." },
   { num: "05", title: "Generoi tarjous AI:lla", desc: "Paina nappia ja odota 15–30 sekuntia. AI tuottaa ammattimaisen tarjousdokumentin hintalaskelmineen ja aikatauluineen." },
@@ -32,6 +32,10 @@ const FAQ = [
   {
     q: "Mitä kate-% kenttä tekee?",
     a: "Kun syötät esimerkiksi 20, AI lisää 20% katteen kaikkiin kustannuksiin automaattisesti. Kateprosentti ei näy asiakkaalle — se sisällytetään suoraan yksikköhintoihin.",
+  },
+  {
+    q: "Miten toimialavalinta vaikuttaa tarjoukseen?",
+    a: "Kun valitset toimialan yritysprofiilista (esim. LVI, rakennusurakointi, IT-konsultointi), AI saa tarkat ohjeet kyseisen toimialan kustannusrakenteesta, käytettävistä termeistä ja lainsäädännöllisistä vaatimuksista. Esimerkiksi LVI-tarjouksessa AI huomioi YSE 1998 -ehdot, viranomaistarkastukset ja materiaalikustannukset automaattisesti.",
   },
   {
     q: "Näkyykö tarjous arkistossa heti lähetyksen jälkeen?",

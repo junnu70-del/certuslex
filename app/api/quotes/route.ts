@@ -72,3 +72,30 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
+
+// DELETE /api/quotes?id=... — poista tarjous (vain omistaja)
+export async function DELETE(req: NextRequest) {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "Ei kirjautunut" }, { status: 401 });
+  }
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id puuttuu" }, { status: 400 });
+
+  try {
+    getAdminDb();
+    const decoded = await getAuth().verifyIdToken(authHeader.slice(7));
+    const db = getAdminDb();
+    const snap = await db.collection("quotes").doc(id).get();
+    if (!snap.exists) return NextResponse.json({ error: "Ei löydy" }, { status: 404 });
+    const data = snap.data()!;
+    if (data.senderUid !== decoded.uid && data.senderEmail !== decoded.email) {
+      return NextResponse.json({ error: "Ei oikeuksia" }, { status: 403 });
+    }
+    await snap.ref.delete();
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("Quotes DELETE error:", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}

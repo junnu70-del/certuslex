@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
   if (usesLeft <= 0) return NextResponse.json({ valid: false, error: "Koodin käyttökerrat on käytetty" });
 
-  return NextResponse.json({ valid: true, usesLeft, label: data.label ?? "", codeId: snap.docs[0].id });
+  return NextResponse.json({ valid: true, usesLeft, label: data.label ?? "", codeId: snap.docs[0].id, recipientEmail: data.recipientEmail ?? "", recipientName: data.recipientName ?? "" });
 }
 
 // POST — käytä yksi käyttökerta

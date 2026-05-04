@@ -27,6 +27,24 @@ export async function POST(req: NextRequest) {
 
     const token = crypto.randomBytes(32).toString("hex");
 
+    // Parsitaan kokonaissumma tarjouksen HTML:stä tallennusta varten
+    let totalAmountIncVat: number | null = null;
+    let totalAmountExVat: number | null = null;
+    try {
+      const stripped = quoteHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+      // Hae "Yhteensä" grand total (sis. ALV)
+      const totalMatch = stripped.match(/yhteensä[^0-9€]{0,15}([\d\s]+[,.]\d{1,2})\s*€/i);
+      if (totalMatch) {
+        totalAmountIncVat = parseFloat(totalMatch[1].replace(/\s/g, "").replace(",", "."));
+      }
+      // Hae ALV-prosentti HTML:stä
+      const vatMatch = stripped.match(/alv\s+([\d,]+)\s*%/i);
+      const vatRate = vatMatch ? parseFloat(vatMatch[1].replace(",", ".")) : 25.5;
+      if (totalAmountIncVat && totalAmountIncVat > 0) {
+        totalAmountExVat = Math.round((totalAmountIncVat / (1 + vatRate / 100)) * 100) / 100;
+      }
+    } catch { /* ei kriittinen */ }
+
     const db = getAdminDb();
     const ref = await db.collection("quotes").add({
       quoteHtml,
@@ -41,6 +59,7 @@ export async function POST(req: NextRequest) {
       status: "sent",
       comments: [],
       createdAt: new Date(),
+      ...(totalAmountExVat ? { totalAmountExVat, totalAmountIncVat } : {}),
     });
 
     const quoteUrl = `https://certuslex.fi/tarjous/${ref.id}?token=${token}`;

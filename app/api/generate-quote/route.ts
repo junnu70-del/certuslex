@@ -2,14 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import * as XLSX from "xlsx";
+import Anthropic from "@anthropic-ai/sdk";
 
-// Suurten liitteiden (base64) tuki — App Router käyttää tätä
-export const maxDuration = 60; // sekuntia, pitkä AI-kutsu liitteen kanssa
+export const maxDuration = 120;
 
 function getApiKey(): string {
-  // Kokeile ensin normaalin env:n kautta
   if (process.env.ANTHROPIC_API_KEY) return process.env.ANTHROPIC_API_KEY;
-  // Fallback: lue .env.local suoraan tiedostosta (Turbopack-workaround)
   try {
     const envPath = path.join(process.cwd(), ".env.local");
     const content = fs.readFileSync(envPath, "utf8");
@@ -27,12 +25,16 @@ interface Attachment {
 
 export async function POST(req: NextRequest) {
   try {
-    const { company, project, specs, attachment } = await req.json() as {
+    const body = await req.json() as {
       company: Record<string, string>;
       project: Record<string, string>;
       specs: string;
       attachment?: Attachment;
+      attachments?: Attachment[];
     };
+    const { company, project, specs } = body;
+    // Tue sekä vanhaa yksittäistä attachment- että uutta attachments-taulukkoa
+    const attachments: Attachment[] = body.attachments ?? (body.attachment ? [body.attachment] : []);
 
     const apiKey = getApiKey();
     if (!apiKey) {
@@ -42,7 +44,28 @@ export async function POST(req: NextRequest) {
     const today = new Date().toLocaleDateString("fi-FI", { day: "numeric", month: "numeric", year: "numeric" });
     const quoteNumber = `TAR-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 900) + 100)}`;
 
-    const prompt = `Olet ammattimainen tarjouskirjoittaja. Laadi alla olevien tietojen pohjalta täydellinen, ammattimainen tarjousdokumentti suomeksi.
+    const isProductSale = project.type === "Tuotemyynti" || project.type === "Product sale";
+
+    const INDUSTRY_PROMPTS: Record<string, string> = {
+      lvi: "Olet LVI- ja putkiurakointiin erikoistunut tarjousasiantuntija. Huomioi: materiaalikustannukset (putket, venttiilit, liittimet, eristeet), asennustyötunnit LVI-asentajille, mahdolliset kaivuu- ja rakennustyöt, tarkastukset ja dokumentointi, takuuehdot YSE 1998 mukaisesti, tarvittavat luvat ja viranomaistarkastukset.",
+      rakenne: "Olet rakennusurakointiin erikoistunut tarjousasiantuntija. Huomioi: YSE 1998 sopimusehdot, rakennusluvat ja viranomaismaksut, materiaalit ja tarvikkeet, alihankkijakustannukset, työmaan logistiikka, vakuutukset ja vastuut, takuuaika 2 vuotta, rakennusaikainen valvonta.",
+      sahko: "Olet sähköurakointiin erikoistunut tarjousasiantuntija. Huomioi: sähköasennusmateriaalit (kaapelit, jakokeskukset, pistorasiat), sähköasentajien työtunnit, tarkastusmittaukset ja käyttöönottotarkastus, ST-korttivaatimukset, takuuehdot, mahdolliset rakennuslupa-asiat.",
+      it: "Olet IT-konsultointiin ja ohjelmistokehitykseen erikoistunut tarjousasiantuntija. Huomioi: projektin vaiheistus (vaatimusmäärittely, suunnittelu, toteutus, testaus, käyttöönotto, koulutus), tuntiperusteisuus tai kiinteähintainen sopimus, ylläpito- ja tukisopimukset jatkoksi, lisenssikustannukset, tietoturva ja GDPR-vaatimukset.",
+      markkinointi: "Olet markkinointi- ja viestintäalaan erikoistunut tarjousasiantuntija. Huomioi: suunnittelutyötunnit, mainosmateriaalien tuotantokustannukset, mediaostot ja kanavakustannukset, raportointi ja analytiikka, tekijänoikeudet ja käyttöoikeudet, kampanjakohtaiset vs. kuukausisopimukset.",
+      kiinteisto: "Olet kiinteistöpalveluihin ja isännöintiin erikoistunut tarjousasiantuntija. Huomioi: kiinteistönhoitohenkilöstön työtunnit, huolto- ja kunnossapitokustannukset, isännöintipalkkiot, lakisääteiset tarkastukset, vakuutusasiat, energiatehokkuus ja ympäristövaatimukset.",
+      taloushallinto: "Olet taloushallintoon ja kirjanpitoon erikoistunut tarjousasiantuntija. Huomioi: kuukausipalkkioperusteisuus vs. toimenpidehinnoittelu, kirjanpito, palkanlaskenta, tilinpäätös, veroneuvojen erillisveloitus, ohjelmistolisenssit (esim. Procountor, Netvisor), KLT-vaatimukset.",
+      juridiikka: "Olet lakipalveluihin erikoistunut tarjousasiantuntija. Huomioi: tuntilaskutus, toimenpidepalkkiot, kulut (käräjämaksut, haastemiehet), asiakirjakulut, mahdollinen onnistumispalkkio, salassapitovelvollisuus, toimeksiantosopimus.",
+      kuljetus: "Olet kuljetus- ja logistiikka-alaan erikoistunut tarjousasiantuntija. Huomioi: ajomatkat ja aikaveloitukset, kuormakirjat ja dokumentointi, polttoainelisä, paluukuorman mahdollisuus, vakuutukset ja vastuut, ADR-kuljetukset tarvittaessa, kaluston soveltuvuus.",
+      teollisuus: "Olet teollisuuteen ja valmistukseen erikoistunut tarjousasiantuntija. Huomioi: raaka-aineet ja materiaalit, koneistus- ja valmistustyötunnit, laadunvarmistus ja tarkastukset, CE-merkinnät ja standardit, pakkaus ja toimitus, sarjavalmistuksen vs. yksittäiskappaleiden hinnoittelu.",
+      siivous: "Olet siivous- ja puhdistuspalveluihin erikoistunut tarjousasiantuntija. Huomioi: siivoustuntien määrä ja tiheys, pesuaineet ja tarvikkeet, koneet ja laitteet, kertaluonteiset vs. sopimushinnat, henkilöstökulut, vakuutukset.",
+      maisemointi: "Olet maisemointiin ja pihatöihin erikoistunut tarjousasiantuntija. Huomioi: kasvit ja materiaalit, konetyöt (kaivinkone, traktori), käsityötunnit, istutussuunnittelu, kastelujärjestelmät, jätehuolto ja poiskuljetukset, takuu istutuksille.",
+    };
+
+    const industryPrompt = company.industry && INDUSTRY_PROMPTS[company.industry]
+      ? `\nTOIMIALAKOHTAINEN OHJEISTUS:\n${INDUSTRY_PROMPTS[company.industry]}\n`
+      : "";
+
+    const prompt = `Olet ammattimainen tarjouskirjoittaja. Laadi alla olevien tietojen pohjalta täydellinen, ammattimainen tarjousdokumentti suomeksi.${industryPrompt}
 
 YRITYKSEN TIEDOT:
 - Yritys: ${company.name}
@@ -52,13 +75,13 @@ YRITYKSEN TIEDOT:
 - Puhelin: ${company.phone || "—"}
 - Sähköposti: ${company.email}
 - Maksuehdot: ${company.paymentTerms || "14 päivää netto"}
-- Tuntihinta: ${company.hourlyRate ? company.hourlyRate + " €/h" : "ei määritelty"}
+${isProductSale ? "" : `- Tuntihinta: ${company.hourlyRate ? company.hourlyRate + " €/h" : "ei määritelty"}`}
 
 PROJEKTIN TIEDOT:
 - Asiakas: ${project.clientName}
-- Projektin nimi: ${project.projectName}
+- Projektin nimi / tuote: ${project.projectName}
 - Tyyppi: ${project.type}
-- Arvioitu aloitus: ${project.startDate || "sovittavissa"}
+- Toimitusaika: ${project.startDate || "sovittavissa"}
 - Voimassaolo: ${project.validUntil || "30 päivää"}
 - Tarjouksen numero: ${quoteNumber}
 - Tänään: ${today}
@@ -75,7 +98,21 @@ Käytä näitä inline-tyylejä dokumentissa:
 - Tekstiväri: #2C2416
 - Taulukon reunat: #EDE8DE
 
-Dokumentin rakenne:
+${isProductSale ? `Dokumentin rakenne (TUOTEMYYNTI — EI tuntihinnoittelua):
+1. Yläpalkki: yrityksen nimi vasemmalla (iso, Georgia-fontti, #0F1F3D), tarjousnumero + päivämäärä oikealla
+2. Kultainen vaakaviiva erottimena
+3. Vastaanottajan tiedot (asiakas)
+4. Tuotteen / ratkaisun kuvaus
+5. Tuoteluettelo HTML-taulukkona (tuote/nimike, määrä, yksikköhinta, yhteensä ALV 0%). Taulukon tyylit:
+   - Otsikkorivi: background:#0F1F3D, color:#C8A44A, font-weight:bold
+   - Datarivit: vuorotellen background:#fff ja background:#F7F4EE, color:#2C2416
+   - ALV-rivi: background:#F7F4EE, color:#2C2416, font-style:italic
+   - YHTEENSÄ ALV sisältyy -rivi: background:#0F1F3D, color:#C8A44A, font-weight:bold, font-size:1.05em — KAIKKI teksti tällä rivillä PAKOSTI color:#C8A44A
+   - ÄLÄ lisää tuntirivejä, työkustannuksia tai tuntihintoja taulukkoon
+6. Toimitustiedot ja toimitusaika
+7. Maksuehdot
+8. Takuu- ja palautusehdot (tuotteelle sopivat)
+9. Allekirjoitusosio kahdelle osapuolelle` : `Dokumentin rakenne:
 1. Yläpalkki: yrityksen nimi vasemmalla (iso, Georgia-fontti, #0F1F3D), tarjousnumero + päivämäärä oikealla
 2. Kultainen vaakaviiva erottimena
 3. Vastaanottajan tiedot (asiakas)
@@ -89,7 +126,7 @@ Dokumentin rakenne:
 7. Toimitusaikataulu taulukkona
 8. Maksuehdot ja maksuaikataulu
 9. Takuuehdot
-10. Allekirjoitusosio kahdelle osapuolelle
+10. Allekirjoitusosio kahdelle osapuolelle`}
 
 TÄRKEÄÄ:
 - Älä käytä hakasulkupaikanvarauksia [näin] missään kohdassa
@@ -122,67 +159,63 @@ TÄRKEÄÄ:
       return lines.join("\n");
     }
 
-    // Build message content — text only or multimodal with attachment
+    // Build message content — text only or multimodal with attachments
     type ContentBlock =
       | { type: "text"; text: string }
       | { type: "image"; source: { type: "base64"; media_type: string; data: string } }
       | { type: "document"; source: { type: "base64"; media_type: string; data: string }; title?: string };
 
-    let messageContent: string | ContentBlock[];
+    // Erota Excel/CSV-liitteet (→ teksti) ja binäärit (→ content blocks)
+    let extraText = "";
+    const binaryBlocks: ContentBlock[] = [];
+    let hasVision = false;
 
-    if (attachment?.base64) {
-      const mime = attachment.mimeType;
+    for (const att of attachments) {
+      const mime = att.mimeType;
+      const isExcel = mime.includes("spreadsheet") || mime.includes("excel") || mime === "text/csv" || att.name.match(/\.(xlsx|xls|csv)$/i);
       const isImage = mime.startsWith("image/");
-      const isExcel = mime.includes("spreadsheet") || mime.includes("excel") || mime === "text/csv" || attachment.name.match(/\.(xlsx|xls|csv)$/i);
 
       if (isExcel) {
-        // Excel/CSV → teksti joka lisätään promptiin
-        const excelText = parseExcelToText(attachment.base64, attachment.name);
-        messageContent = prompt + `\n\nLIITETTY TAULUKKO (Excel/CSV):\nAnalysoi alla oleva taulukko ja hyödynnä kaikki hinnat, määrät, materiaalit ja työvaiheet tarjouksen laadinnassa.\n\n${excelText}`;
+        const excelText = parseExcelToText(att.base64, att.name);
+        extraText += `\n\nLIITETTY TAULUKKO (${att.name}):\n${excelText}`;
       } else if (isImage) {
-        messageContent = [
-          { type: "text", text: prompt + "\n\nLiitetty kuva/piirustus: Analysoi se huolellisesti ja hyödynnä kaikki löytyvä tieto tarjouksen laadinnassa." },
-          { type: "image", source: { type: "base64", media_type: mime, data: attachment.base64 } },
-        ];
+        hasVision = true;
+        binaryBlocks.push({ type: "image", source: { type: "base64", media_type: mime, data: att.base64 } });
       } else {
-        // PDF tai muu dokumentti
-        messageContent = [
-          { type: "text", text: prompt + "\n\nLiitetty asiakirja: Analysoi se huolellisesti ja hyödynnä kaikki siitä löytyvä tieto (mitat, materiaalit, työvaiheet, hinnat jne.) tarjouksen laadinnassa." },
-          { type: "document", source: { type: "base64", media_type: "application/pdf", data: attachment.base64 }, title: attachment.name },
-        ];
+        // PDF tai muu → document block
+        hasVision = true;
+        binaryBlocks.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data: att.base64 }, title: att.name });
       }
+    }
+
+    let messageContent: string | ContentBlock[];
+
+    if (binaryBlocks.length > 0) {
+      const countTxt = binaryBlocks.length > 1
+        ? `\n\nLiitetty ${binaryBlocks.length} tiedostoa (kuvat/piirustukset/asiakirjat): Analysoi ne huolellisesti ja hyödynnä kaikki löytyvä tieto (mitat, materiaalit, työvaiheet, hinnat jne.) tarjouksen laadinnassa.`
+        : "\n\nLiitetty kuva/piirustus/asiakirja: Analysoi se huolellisesti ja hyödynnä kaikki löytyvä tieto tarjouksen laadinnassa.";
+      messageContent = [
+        { type: "text", text: prompt + countTxt + (extraText ? `\n\nLIITETTY TAULUKKODATA:${extraText}` : "") },
+        ...binaryBlocks,
+      ];
+    } else if (extraText) {
+      messageContent = prompt + `\n\nLIITETTY TAULUKKO (Excel/CSV):\nAnalysoi alla oleva taulukko ja hyödynnä kaikki hinnat, määrät, materiaalit ja työvaiheet tarjouksen laadinnassa.${extraText}`;
     } else {
       messageContent = prompt;
     }
 
     // Tekstipohjainen → haiku (nopea), kuva/PDF → sonnet (vision-tuki)
-    const model =
-      !attachment?.base64 ? "claude-haiku-4-5-20251001"
-      : attachment.mimeType.startsWith("image/") || attachment.mimeType === "application/pdf"
-        ? "claude-sonnet-4-5-20250929"
-        : "claude-haiku-4-5-20251001";
+    const model = hasVision ? "claude-sonnet-4-5" : "claude-haiku-4-5";
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 8000,
-        messages: [{ role: "user", content: messageContent }],
-      }),
+    const anthropic = new Anthropic({ apiKey });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const aiResponse = await anthropic.messages.create({
+      model,
+      max_tokens: 8000,
+      messages: [{ role: "user", content: messageContent as any }],
     });
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Anthropic API virhe: ${err}`);
-    }
-
-    const data = await response.json();
-    const quote = data.content?.[0]?.text;
+    const quote = aiResponse.content?.[0]?.type === "text" ? aiResponse.content[0].text : null;
     if (!quote) throw new Error("Tyhjä vastaus AI:lta");
 
     return NextResponse.json({ quote });

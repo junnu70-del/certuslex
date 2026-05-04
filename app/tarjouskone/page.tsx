@@ -26,7 +26,7 @@ type Step = "company" | "project" | "specs" | "generating" | "result" | "send";
 interface CompanyInfo {
   name: string; businessId: string; address: string;
   contact: string; phone: string; email: string;
-  hourlyRate: string; paymentTerms: string;
+  hourlyRate: string; paymentTerms: string; industry: string;
 }
 interface ProjectInfo {
   clientName: string; projectName: string; type: string;
@@ -36,7 +36,7 @@ interface ProjectInfo {
 export default function TarjouskoneePage() {
   const [lang, setLang] = useState<Lang>("fi");
   const [step, setStep] = useState<Step>("company");
-  const [company, setCompany] = useState<CompanyInfo>({ name: "", businessId: "", address: "", contact: "", phone: "", email: "", hourlyRate: "", paymentTerms: "14 päivää netto" });
+  const [company, setCompany] = useState<CompanyInfo>({ name: "", businessId: "", address: "", contact: "", phone: "", email: "", hourlyRate: "", paymentTerms: "14 päivää netto", industry: "" });
   const [project, setProject] = useState<ProjectInfo>({ clientName: "", projectName: "", type: "", startDate: "", validUntil: "" });
   const [specs, setSpecs] = useState("");
   const [margin, setMargin] = useState("");
@@ -54,7 +54,7 @@ export default function TarjouskoneePage() {
   const [isExpired, setIsExpired] = useState(false);
   const [accessCode, setAccessCode] = useState<string | null>(null);
   const [codeUsesLeft, setCodeUsesLeft] = useState<number | null>(null);
-  const [attachment, setAttachment] = useState<{ name: string; size: number; base64: string; mimeType: string } | null>(null);
+  const [attachments, setAttachments] = useState<Array<{ name: string; size: number; base64: string; mimeType: string }>>([]);
   const attachRef = useRef<HTMLInputElement>(null);
 
   const T = t[lang].tarjouskone;
@@ -109,6 +109,7 @@ export default function TarjouskoneePage() {
               email: p.email ?? "",
               hourlyRate: p.hourlyRate ?? "",
               paymentTerms: p.paymentTerms ?? "14 päivää netto",
+              industry: p.industry ?? "",
             });
             setLogoUrl(p.logoUrl ?? "");
             setProfileLoaded(true);
@@ -145,7 +146,13 @@ export default function TarjouskoneePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          company, project, attachment,
+          company,
+          project: {
+            ...project,
+            startDate: project.startDate ? new Date(project.startDate).toLocaleDateString("fi-FI") : "",
+            validUntil: project.validUntil ? new Date(project.validUntil).toLocaleDateString("fi-FI") : "",
+          },
+          attachments,
           specs: specs
             + (margin ? `\n\nKATEPROSENTTI: Lisää kustannuksiin ${margin}% kate/marginaali suoraan yksikköhintoihin. ÄLÄ mainitse kateprosenttia tai marginaalia tarjousdokumentissa — se on yrityksen sisäinen tieto eikä kuulu asiakkaalle.` : "")
             + (extraInstructions ? `\n\nLISÄOHJEET: ${extraInstructions}` : ""),
@@ -178,18 +185,19 @@ export default function TarjouskoneePage() {
   }
 
   function handleAttachmentSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 15 * 1024 * 1024) {
-      setError(lang === "en" ? "File too large (max 15 MB)" : "Tiedosto on liian suuri (max 15 Mt)");
-      return;
+    const files = Array.from(e.target.files || []);
+    for (const file of files) {
+      if (file.size > 15 * 1024 * 1024) {
+        setError(lang === "en" ? `${file.name}: too large (max 15 MB)` : `${file.name}: liian suuri (max 15 Mt)`);
+        continue;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        setAttachments(prev => [...prev, { name: file.name, size: file.size, base64: dataUrl.split(",")[1], mimeType: file.type }]);
+      };
+      reader.readAsDataURL(file);
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      setAttachment({ name: file.name, size: file.size, base64: dataUrl.split(",")[1], mimeType: file.type });
-    };
-    reader.readAsDataURL(file);
     e.target.value = "";
   }
 
@@ -364,8 +372,10 @@ export default function TarjouskoneePage() {
                 <Input label={t[lang].profiili.phone} value={company.phone} onChange={v => setCompany(p => ({ ...p, phone: v }))} placeholder="+358 40 123 4567" />
               </div>
               <Input label={t[lang].profiili.email} value={company.email} onChange={v => setCompany(p => ({ ...p, email: v }))} placeholder="info@company.fi" type="email" />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                <Input label={t[lang].profiili.hourlyRate} value={company.hourlyRate} onChange={v => setCompany(p => ({ ...p, hourlyRate: v }))} placeholder="85" />
+              <div style={{ display: "grid", gridTemplateColumns: project.type === "Tuotemyynti" || project.type === "Product sale" ? "1fr" : "1fr 1fr", gap: "1rem" }}>
+                {project.type !== "Tuotemyynti" && project.type !== "Product sale" && (
+                  <Input label={t[lang].profiili.hourlyRate} value={company.hourlyRate} onChange={v => setCompany(p => ({ ...p, hourlyRate: v }))} placeholder="85" />
+                )}
                 <Input label={t[lang].profiili.paymentTerms} value={company.paymentTerms} onChange={v => setCompany(p => ({ ...p, paymentTerms: v }))} placeholder={lang === "en" ? "14 days net" : "14 päivää netto"} />
               </div>
             </div>
@@ -410,8 +420,8 @@ export default function TarjouskoneePage() {
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                <Input label={lang === "en" ? "EST. START DATE" : "ARVIOITU ALOITUS"} value={project.startDate} onChange={v => setProject(p => ({ ...p, startDate: v }))} placeholder={lang === "en" ? "1 Jun 2026" : "1.6.2026"} />
-                <Input label={lang === "en" ? "VALID FOR" : "TARJOUS VOIMASSA"} value={project.validUntil} onChange={v => setProject(p => ({ ...p, validUntil: v }))} placeholder={lang === "en" ? "30 days" : "30 päivää"} />
+                <Input label={lang === "en" ? "EST. START DATE" : "ARVIOITU ALOITUS"} value={project.startDate} onChange={v => setProject(p => ({ ...p, startDate: v }))} type="date" />
+                <Input label={lang === "en" ? "VALID UNTIL" : "TARJOUS VOIMASSA"} value={project.validUntil} onChange={v => setProject(p => ({ ...p, validUntil: v }))} type="date" />
               </div>
             </div>
 
@@ -439,9 +449,27 @@ export default function TarjouskoneePage() {
             <div style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "2rem", marginBottom: "1rem" }}>
               <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.08em", color: "#0F1F3D", marginBottom: "0.4rem" }}>{T.specsLabel}</label>
               <textarea value={specs} onChange={e => setSpecs(e.target.value)} rows={10}
-                placeholder={lang === "en"
-                  ? `Describe the project in detail. For example:\n\n- Materials: steel pipe DN100, 3mm, 50m length\n- Work stages: excavation, pipe installation, backfill\n- Est. effort: 3 people × 5 days\n- Special requirements: work in traffic, permits needed\n- Additional services: commissioning and testing included\n- Price estimate: materials ~€8,000, labour ~€12,000`
-                  : `Kuvaile tarkasti mitä projekti sisältää. Esimerkiksi:\n\n- Materiaalit: teräsputki DN100, paksuus 3mm, pituus 50m\n- Työvaiheet: kaivuutyöt, putkiasennus, täyttö\n- Arvioitu työmäärä: 3 henkilöä × 5 päivää\n- Erityisvaatimukset: työ tehdään liikenteen seassa, tarvitaan luvat\n- Lisäpalvelut: käyttöönotto ja testaus sisältyy hintaan\n- Hintataso: materiaalit n. 8 000 €, työ n. 12 000 €`}
+                placeholder={(() => {
+                  const ind = company.industry;
+                  const examples: Record<string, string> = {
+                    lvi: `Kuvaile tarkasti mitä LVI-työ sisältää. Esimerkiksi:\n\n- Kohde: kerrostalo, 12 asuntoa, 1970-luvun rakennus\n- Työ: käyttövesiputkiston uusiminen kupariputkella (DN15–DN32)\n- Materiaalit: kupariputket, liittimet, venttiilit, eristeet (arvio n. 4 500 €)\n- Työvaiheet: vanhan putken purku, uuden asennus, eristys, painekoe\n- Työmäärä: 2 LVI-asentajaa × 5 päivää\n- Erityistä: työ tehdään asukkaiden kannalta haastavissa olosuhteissa, vesi poikki max 4h/päivä\n- Lupakuvat ja dokumentointi sisältyy`,
+                    rakenne: `Kuvaile tarkasti urakan sisältö. Esimerkiksi:\n\n- Kohde: omakotitalo, 150 m², Espoo\n- Työ: kylpyhuoneremontti täydellinen — purkutyöt, vesieristys, kaakeli, kalusteet\n- Materiaalit: asiakkaan valitsemat kaakelit (n. 80 m²), vesieriste, valulaatta\n- Työvaiheet: purku, kaatovalu, vesieristys, kaakelointi, kalusteasennus, silikonointi\n- Työmäärä: 2 rakennusmiestä × 10 päivää\n- Aikataulu: aloitus heti, valmis 3 viikossa\n- YSE 1998 -ehdot, takuu 2 vuotta`,
+                    sahko: `Kuvaile tarkasti sähkötyön sisältö. Esimerkiksi:\n\n- Kohde: liiketila 200 m², Tampere\n- Työ: sähköistyksen täydellinen uusiminen — nousukaapeli, jakokeskus, pistorasiat, valaistus\n- Materiaalit: 3-vaiheinen jakokeskus 63A, MMJ-kaapelit, LED-valaisimet 40 kpl\n- Työvaiheet: suunnittelu, kaapelointi, keskuksen kytkentä, testaus, käyttöönottotarkastus\n- Työmäärä: 2 sähköasentajaa × 4 päivää\n- Tarkastusmittaukset ja dokumentointi (sähköpiirustukset) sisältyy\n- Käyttöönottotarkastus viranomaisen kanssa`,
+                    it: `Kuvaile projekti tarkasti. Esimerkiksi:\n\n- Projekti: verkkokaupan uudistus React + Node.js -teknologioilla\n- Laajuus: tuotelistaus, ostoskori, maksujärjestelmä (Stripe), asiakastili\n- Vaiheet: vaatimusmäärittely (5h), UI/UX-suunnittelu (15h), frontend (60h), backend + API (40h), testaus (15h), käyttöönotto (5h)\n- Integraatiot: WooCommerce-tuotedata, Stripe-maksu, PostNord-toimitus\n- Teknologia: React 18, Next.js 14, Node.js, PostgreSQL, AWS\n- Ylläpito: 10h/kk SLA-sopimus tarjolla erikseen\n- Projektin kesto: n. 3 kk`,
+                    markkinointi: `Kuvaile toimeksianto tarkasti. Esimerkiksi:\n\n- Toimeksianto: B2B-yrityksen brändiuudistus + markkinointimateriaalit\n- Sisältö: logo, värimaailma, fonttiopas, käyntikortti, esitepohja, PowerPoint-pohja\n- Lisäksi: 3 kk some-sisältökalenteri (Instagram, LinkedIn), 12 julkaisua/kk\n- Suunnittelutyö: 40h\n- Kuvamateriaalit: stock-kuvat (lisenssi sisältyy)\n- Tekijänoikeudet siirtyvät tilaajalle luovutuksen yhteydessä`,
+                    kiinteisto: `Kuvaile palvelun sisältö tarkasti. Esimerkiksi:\n\n- Kohde: toimistokiinteistö 1 500 m², Helsinki\n- Palvelu: kiinteistönhoitosopimus 12 kk\n- Sisältö: lämmitysjärjestelmän valvonta ja huolto, lumenauraus + hiekoitus, nurmikon hoito, siivous 2×/vk\n- Henkilöstö: 1 kiinteistönhoitaja + siivoustiimi\n- Päivystys: 24/7 vikailmoitukset\n- Raportointi: kuukausiraportti tilaajalle`,
+                    taloushallinto: `Kuvaile palvelun sisältö tarkasti. Esimerkiksi:\n\n- Asiakas: kasvuyritys, 8 henkilöä, liikevaihto n. 1,2 M€/vuosi\n- Palvelut: juokseva kirjanpito, arvonlisäveroilmoitukset (kuukausittain), palkanlaskenta (8 henkilöä)\n- Tilinpäätös: vuosittainen, sisältää veroilmoituksen\n- Ohjelmisto: Procountor (lisenssi asiakkaalla)\n- Lisäpalvelut: kvartaaliraportointi johdolle, budjetointi tarvittaessa\n- Aloitus: heti`,
+                    juridiikka: `Kuvaile toimeksianto tarkasti. Esimerkiksi:\n\n- Toimeksianto: yrityskaupan juridinen neuvonta ostajan puolella\n- Kohde: teknologiayritys, kauppahinta n. 2 M€\n- Vaiheet: due diligence -tarkastus, kauppakirjan laadinta, neuvottelutuki, sulkeminen\n- Arvioitu työmäärä: 40–60 tuntia\n- Erityistä: myyjällä oma juristi, tavoite sulkea kauppa 3 kuukaudessa\n- Kulut (käräjämaksut, rekisteröinti-ilmoitukset) veloitetaan erikseen toteutuneen mukaan`,
+                    kuljetus: `Kuvaile kuljetustarve tarkasti. Esimerkiksi:\n\n- Reitti: Helsinki → Tampere, viikoittain tiistaisin\n- Lasti: elintarvikkeet, 10 EUR-lavaa, yhteensä n. 8 000 kg\n- Kalusto: täysperävaunu (13,6 m) + hydraulinen nosturi\n- Erityisvaatimukset: kylmäkuljetus +4°C, HACCP-dokumentointi\n- Sopimuskausi: 12 kk, aloitus heti\n- Polttoainelisä: markkinaindeksin mukaan`,
+                    teollisuus: `Kuvaile tilaus tarkasti. Esimerkiksi:\n\n- Tuote: teräsrakenne, hitsattu, materiaali S355\n- Mitat: 3 000 × 800 × 600 mm, paino n. 450 kg\n- Valmistus: plasma- tai laserleikkaus, särmäys, MIG-hitsaus, pintakäsittely (maalaus RAL 7016)\n- Määrä: 5 kpl (protoerä), jatkotilaukset mahdollisia\n- Toleranssit: ISO 2768-m\n- Dokumentointi: EN 1090 -sertifiointi, hitsauspöytäkirjat\n- Toimitusaika: 4 viikkoa`,
+                    siivous: `Kuvaile palvelu tarkasti. Esimerkiksi:\n\n- Kohde: toimisto 300 m², 2 kerrosta, Helsinki\n- Palvelu: ylläpitosiivoussopimus 12 kk\n- Tiheys: 3× viikossa (ma, ke, pe), kesto n. 3h/kerta\n- Sisältö: toimistotilat, neuvotteluhuoneet, wc:t (4 kpl), keittiö, käytävät\n- Perussiivous: 2× vuodessa (ikkunat, kaappien päälliset)\n- Pesuaineet ja tarvikkeet sisältyvät hintaan`,
+                    maisemointi: `Kuvaile työ tarkasti. Esimerkiksi:\n\n- Kohde: omakotitalon piha 800 m², Vantaa\n- Työ: piharemontti — nurmikko, istutukset, kiveys, aitaus\n- Materiaalit: nurmikonsiemenet tai valmis nurmimatto (300 m²), pensaat 20 kpl, kiveyslaatat 80 m²\n- Kaivinkone: tarvitaan maansiirtoon (1 päivä)\n- Kasteluputkisto: automaattinen, 6 vyöhykettä\n- Jätteet: kuljetus pois sisältyy\n- Istutustakuu: 1 kasvukausi`,
+                  };
+                  if (ind && examples[ind]) return examples[ind];
+                  return lang === "en"
+                    ? `Describe the project in detail. For example:\n\n- Materials: steel pipe DN100, 3mm, 50m length\n- Work stages: excavation, pipe installation, backfill\n- Est. effort: 3 people × 5 days\n- Special requirements: work in traffic, permits needed\n- Additional services: commissioning and testing included\n- Price estimate: materials ~€8,000, labour ~€12,000`
+                    : `Kuvaile tarkasti mitä projekti sisältää. Esimerkiksi:\n\n- Materiaalit ja työvaiheet\n- Arvioitu työmäärä\n- Erityisvaatimukset\n- Lisäpalvelut\n- Hintataso-arvio`;
+                })()}
                 style={{ width: "100%", border: "1px solid #EDE8DE", padding: "0.8rem", fontSize: "0.88rem", outline: "none", fontFamily: "inherit", resize: "vertical", lineHeight: 1.6, boxSizing: "border-box" }} />
             </div>
 
@@ -480,29 +508,30 @@ export default function TarjouskoneePage() {
               <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 0.8rem" }}>{T.attachLabel} <span style={{ color: "#8A8070", fontWeight: 400, letterSpacing: 0 }}>({lang === "en" ? "optional" : "valinnainen"})</span></p>
               <p style={{ fontSize: "0.8rem", color: "#8A8070", margin: "0 0 1rem" }}>{T.attachDesc}</p>
 
-              {attachment ? (
-                <div style={{ display: "flex", alignItems: "center", gap: "1rem", background: "#F0FDF4", border: "1px solid #86EFAC", padding: "0.8rem 1rem" }}>
-                  <span style={{ fontSize: "1.4rem" }}>
-                    {attachment.mimeType.startsWith("image/") ? "🖼️" : (attachment.mimeType.includes("sheet") || attachment.mimeType.includes("excel") || attachment.name.match(/\.(xlsx|xls|csv)$/i)) ? "📊" : "📄"}
-                  </span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "#166534", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{attachment.name}</div>
-                    <div style={{ fontSize: "0.72rem", color: "#4ADE80" }}>
-                      {(attachment.size / 1024).toFixed(0)} {lang === "en" ? "KB" : "kt"} — {attachment.mimeType.startsWith("image/") ? (lang === "en" ? "Image (vision)" : "Kuva (vision)") : (attachment.mimeType.includes("sheet") || attachment.mimeType.includes("excel") || attachment.name.match(/\.(xlsx|xls|csv)$/i)) ? (lang === "en" ? "Excel/CSV → converted to text" : "Excel/CSV → muunnetaan tekstiksi") : "PDF"}
+              {attachments.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.8rem" }}>
+                  {attachments.map((att, idx) => (
+                    <div key={idx} style={{ display: "flex", alignItems: "center", gap: "1rem", background: "#F0FDF4", border: "1px solid #86EFAC", padding: "0.7rem 1rem" }}>
+                      <span style={{ fontSize: "1.3rem" }}>
+                        {att.mimeType.startsWith("image/") ? "🖼️" : (att.mimeType.includes("sheet") || att.mimeType.includes("excel") || att.name.match(/\.(xlsx|xls|csv)$/i)) ? "📊" : "📄"}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "0.83rem", fontWeight: 600, color: "#166534", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{att.name}</div>
+                        <div style={{ fontSize: "0.71rem", color: "#4ADE80" }}>
+                          {(att.size / 1024).toFixed(0)} {lang === "en" ? "KB" : "kt"} — {att.mimeType.startsWith("image/") ? (lang === "en" ? "Image (vision)" : "Kuva (vision)") : (att.mimeType.includes("sheet") || att.mimeType.includes("excel") || att.name.match(/\.(xlsx|xls|csv)$/i)) ? (lang === "en" ? "Excel/CSV → text" : "Excel/CSV → teksti") : "PDF"}
+                        </div>
+                      </div>
+                      <button onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
+                        style={{ background: "none", border: "none", color: "#9b2335", cursor: "pointer", fontSize: "1.1rem", padding: "0.2rem 0.4rem", lineHeight: 1 }}>✕</button>
                     </div>
-                  </div>
-                  <button onClick={() => setAttachment(null)}
-                    style={{ background: "none", border: "none", color: "#9b2335", cursor: "pointer", fontSize: "1.2rem", padding: "0.2rem 0.4rem", lineHeight: 1 }}>
-                    ✕
-                  </button>
+                  ))}
                 </div>
-              ) : (
-                <button onClick={() => attachRef.current?.click()}
-                  style={{ display: "flex", alignItems: "center", gap: "0.6rem", background: "transparent", border: "2px dashed #C8A44A", color: "#0F1F3D", padding: "0.8rem 1.4rem", fontSize: "0.83rem", fontWeight: 600, cursor: "pointer", width: "100%", justifyContent: "center" }}>
-                  <span style={{ fontSize: "1.1rem" }}>📎</span> {T.attachBtn}
-                </button>
               )}
-              <input ref={attachRef} type="file" accept="application/pdf,image/png,image/jpeg,image/jpg,image/webp,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,.xlsx,.xls,.csv" style={{ display: "none" }} onChange={handleAttachmentSelect} />
+              <button onClick={() => attachRef.current?.click()}
+                style={{ display: "flex", alignItems: "center", gap: "0.6rem", background: "transparent", border: "2px dashed #C8A44A", color: "#0F1F3D", padding: "0.8rem 1.4rem", fontSize: "0.83rem", fontWeight: 600, cursor: "pointer", width: "100%", justifyContent: "center" }}>
+                <span style={{ fontSize: "1.1rem" }}>📎</span> {attachments.length > 0 ? (lang === "en" ? "Add another file" : "Lisää toinen tiedosto") : T.attachBtn}
+              </button>
+              <input ref={attachRef} type="file" multiple accept="application/pdf,image/png,image/jpeg,image/jpg,image/webp,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,.xlsx,.xls,.csv" style={{ display: "none" }} onChange={handleAttachmentSelect} />
             </div>
 
             <div style={{ background: "rgba(200,164,74,.08)", border: "1px solid rgba(200,164,74,.3)", padding: "1rem 1.2rem", marginBottom: "1.5rem", fontSize: "0.82rem", color: "#4A4035" }}>
@@ -524,7 +553,7 @@ export default function TarjouskoneePage() {
           <div style={{ textAlign: "center", padding: "5rem 2rem" }}>
             <div style={{ width: "60px", height: "60px", border: "3px solid #EDE8DE", borderTopColor: "#C8A44A", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 2rem" }} />
             <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.8rem", color: "#0F1F3D", marginBottom: "0.5rem" }}>{T.generating}</h2>
-            <p style={{ color: "#8A8070", fontSize: "0.9rem" }}>{attachment ? (lang === "en" ? "Analyzing specs and attached document — this may take a moment longer." : "Analysoidaan speksit ja liitetty asiakirja — kestää hetken enemmän.") : T.generatingDesc}</p>
+            <p style={{ color: "#8A8070", fontSize: "0.9rem" }}>{attachments.length > 0 ? (lang === "en" ? `Analyzing specs and ${attachments.length} attached file${attachments.length > 1 ? "s" : ""} — this may take a moment longer.` : `Analysoidaan speksit ja ${attachments.length} liitetiedosto${attachments.length > 1 ? "a" : ""} — kestää hetken enemmän.`) : T.generatingDesc}</p>
           </div>
         )}
 

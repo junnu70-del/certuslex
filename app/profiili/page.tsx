@@ -13,13 +13,32 @@ interface CompanyProfile {
   name: string; businessId: string; address: string; city: string; zip: string;
   phone: string; email: string; invoiceEmail: string; iban: string; website: string;
   contact: string; hourlyRate: string; paymentTerms: string; logoUrl: string;
+  industry: string;
 }
 
 const empty: CompanyProfile = {
   name: "", businessId: "", address: "", city: "", zip: "",
   phone: "", email: "", invoiceEmail: "", iban: "", website: "",
   contact: "", hourlyRate: "", paymentTerms: "14 päivää netto", logoUrl: "",
+  industry: "",
 };
+
+const INDUSTRIES_FI = [
+  { value: "", label: "— Valitse toimiala —" },
+  { value: "lvi", label: "LVI / Putkiurakointi" },
+  { value: "rakenne", label: "Rakennusurakointi" },
+  { value: "sahko", label: "Sähköurakointi" },
+  { value: "it", label: "IT-konsultointi / Ohjelmistokehitys" },
+  { value: "markkinointi", label: "Markkinointi ja viestintä" },
+  { value: "kiinteisto", label: "Kiinteistöpalvelut / Isännöinti" },
+  { value: "taloushallinto", label: "Taloushallinto / Kirjanpito" },
+  { value: "juridiikka", label: "Lakipalvelut / Juridiikka" },
+  { value: "kuljetus", label: "Kuljetus ja logistiikka" },
+  { value: "teollisuus", label: "Teollisuus / Valmistus" },
+  { value: "siivous", label: "Siivous- ja puhdistuspalvelut" },
+  { value: "maisemointi", label: "Maisemointi / Pihatyöt" },
+  { value: "muu", label: "Muu toimiala" },
+];
 
 const INP: React.CSSProperties = {
   width: "100%", border: "1px solid #EDE8DE", padding: "0.7rem 0.9rem",
@@ -30,6 +49,42 @@ const LBL: React.CSSProperties = {
   display: "block", fontSize: "0.72rem", fontWeight: 700,
   letterSpacing: "0.08em", color: "#0F1F3D", marginBottom: "0.4rem",
 };
+
+function validateBusinessId(v: string): string {
+  if (!v) return "";
+  const m = v.match(/^(\d{7})-(\d)$/);
+  if (!m) return "Muoto: 1234567-8";
+  const weights = [7, 9, 10, 5, 8, 4, 2];
+  const sum = m[1].split("").reduce((acc, d, i) => acc + parseInt(d) * weights[i], 0);
+  const rem = sum % 11;
+  if (rem === 1) return "Virheellinen Y-tunnus";
+  const check = rem === 0 ? 0 : 11 - rem;
+  return check !== parseInt(m[2]) ? "Virheellinen tarkistenumero" : "";
+}
+
+function validateIban(v: string): string {
+  if (!v) return "";
+  const iban = v.replace(/\s/g, "").toUpperCase();
+  if (!/^FI\d{16}$/.test(iban)) return "Muoto: FI12 3456 7890 1234 56 (18 merkkiä)";
+  const rearranged = iban.slice(4) + iban.slice(0, 4);
+  const numeric = rearranged.split("").map(c => isNaN(Number(c)) ? (c.charCodeAt(0) - 55).toString() : c).join("");
+  let remainder = 0;
+  for (const chunk of numeric.match(/.{1,9}/g) ?? []) {
+    remainder = (parseInt(chunk) + (remainder * Math.pow(10, chunk.length - remainder.toString().length + 1))) % 97;
+    remainder = Number((BigInt(remainder) * BigInt(Math.pow(10, chunk.length)) + BigInt(chunk)) % BigInt(97));
+  }
+  // Yksinkertaisempi MOD97
+  let mod = BigInt(0);
+  for (const ch of numeric) mod = (mod * BigInt(10) + BigInt(ch)) % BigInt(97);
+  return mod !== BigInt(1) ? "Virheellinen IBAN-tarkiste" : "";
+}
+
+function validatePhone(v: string): string {
+  if (!v) return "";
+  const digits = v.replace(/[\s\-().]/g, "");
+  if (!/^(\+358|0)\d{6,12}$/.test(digits)) return "Muoto: +358 40 123 4567 tai 040 1234567";
+  return "";
+}
 
 export default function ProfiiliPage() {
   const router = useRouter();
@@ -43,6 +98,17 @@ export default function ProfiiliPage() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoError, setLogoError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  function validateField(field: string, value: string) {
+    let err = "";
+    if (field === "businessId") err = validateBusinessId(value);
+    if (field === "iban") err = validateIban(value);
+    if (field === "phone") err = validatePhone(value);
+    setFieldErrors(prev => ({ ...prev, [field]: err }));
+  }
+
+  const hasErrors = Object.values(fieldErrors).some(e => e);
 
   const T = t[lang].profiili;
 
@@ -211,7 +277,8 @@ export default function ProfiiliPage() {
           </div>
           <div style={{ marginBottom: "1.1rem" }}>
             <label style={LBL}>{T.businessId}</label>
-            <input value={profile.businessId} onChange={upd("businessId")} placeholder="1234567-8" style={INP} />
+            <input value={profile.businessId} onChange={upd("businessId")} onBlur={e => validateField("businessId", e.target.value)} placeholder="1234567-8" style={{ ...INP, borderColor: fieldErrors.businessId ? "#e53e3e" : undefined }} />
+            {fieldErrors.businessId && <div style={{ fontSize: "0.75rem", color: "#e53e3e", marginTop: "0.3rem" }}>⚠ {fieldErrors.businessId}</div>}
           </div>
           <div style={{ marginBottom: "1.1rem" }}>
             <label style={LBL}>{T.contact}</label>
@@ -220,7 +287,8 @@ export default function ProfiiliPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.1rem" }}>
             <div>
               <label style={LBL}>{T.phone}</label>
-              <input value={profile.phone} onChange={upd("phone")} placeholder="+358 40 123 4567" style={INP} />
+              <input value={profile.phone} onChange={upd("phone")} onBlur={e => validateField("phone", e.target.value)} placeholder="+358 40 123 4567" style={{ ...INP, borderColor: fieldErrors.phone ? "#e53e3e" : undefined }} />
+              {fieldErrors.phone && <div style={{ fontSize: "0.75rem", color: "#e53e3e", marginTop: "0.3rem" }}>⚠ {fieldErrors.phone}</div>}
             </div>
             <div>
               <label style={LBL}>{T.email}</label>
@@ -234,6 +302,18 @@ export default function ProfiiliPage() {
           <div style={{ marginBottom: "1.1rem" }}>
             <label style={LBL}>{T.website}</label>
             <input value={profile.website} onChange={upd("website")} placeholder="https://www.company.fi" style={INP} />
+          </div>
+          <div style={{ marginBottom: "0.2rem" }}>
+            <label style={LBL}>{T.industry}</label>
+            <select value={profile.industry} onChange={e => setProfile(p => ({ ...p, industry: e.target.value }))}
+              style={{ ...INP, cursor: "pointer" }}>
+              {INDUSTRIES_FI.map(ind => (
+                <option key={ind.value} value={ind.value}>{ind.label}</option>
+              ))}
+            </select>
+            {profile.industry && (
+              <div style={{ fontSize: "0.72rem", color: "#8A8070", marginTop: "0.3rem" }}>✓ {T.industryDesc}</div>
+            )}
           </div>
         </div>
 
@@ -261,7 +341,8 @@ export default function ProfiiliPage() {
           <p style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 1.5rem" }}>{T.payment}</p>
           <div style={{ marginBottom: "1.1rem" }}>
             <label style={LBL}>{T.iban}</label>
-            <input value={profile.iban} onChange={upd("iban")} placeholder="FI12 3456 7890 1234 56" style={INP} />
+            <input value={profile.iban} onChange={upd("iban")} onBlur={e => validateField("iban", e.target.value)} placeholder="FI12 3456 7890 1234 56" style={{ ...INP, borderColor: fieldErrors.iban ? "#e53e3e" : undefined }} />
+            {fieldErrors.iban && <div style={{ fontSize: "0.75rem", color: "#e53e3e", marginTop: "0.3rem" }}>⚠ {fieldErrors.iban}</div>}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
             <div>
@@ -281,8 +362,14 @@ export default function ProfiiliPage() {
           </div>
         )}
 
-        <button onClick={handleSave} disabled={saving}
-          style={{ width: "100%", background: saving ? "#EDE8DE" : saved ? "#166534" : "#C8A44A", color: saving ? "#8A8070" : "#0F1F3D", border: "none", padding: "1rem", fontSize: "1rem", fontWeight: 700, cursor: saving ? "not-allowed" : "pointer", letterSpacing: "0.05em", transition: "background 0.3s" }}>
+        {hasErrors && (
+          <div style={{ background: "#fff0f0", border: "1px solid #f5c6cb", padding: "0.8rem 1rem", marginBottom: "1rem", fontSize: "0.85rem", color: "#9b2335" }}>
+            ⚠ {lang === "en" ? "Fix validation errors before saving" : "Korjaa kentän virheet ennen tallennusta"}
+          </div>
+        )}
+
+        <button onClick={handleSave} disabled={saving || hasErrors}
+          style={{ width: "100%", background: saving || hasErrors ? "#EDE8DE" : saved ? "#166534" : "#C8A44A", color: saving || hasErrors ? "#8A8070" : "#0F1F3D", border: "none", padding: "1rem", fontSize: "1rem", fontWeight: 700, cursor: saving || hasErrors ? "not-allowed" : "pointer", letterSpacing: "0.05em", transition: "background 0.3s" }}>
           {saving ? T.saving : saved ? T.saved : T.save}
         </button>
 

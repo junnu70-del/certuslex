@@ -49,6 +49,8 @@ export async function GET(req: NextRequest) {
       project: data.project,
       clientName: data.clientName,
       status: data.status,
+      totalAmountExVat: data.totalAmountExVat ?? null,
+      totalAmountIncVat: data.totalAmountIncVat ?? null,
       signedName: data.signedName,
       signedAt: data.signedAt?.toDate?.()?.toLocaleString("fi-FI") ?? null,
       comments: (data.comments ?? []).map((c: { name: string; message: string; createdAt: { toDate?: () => Date } | string }) => ({

@@ -65,6 +65,8 @@ export const t = {
       email: "SÄHKÖPOSTI *",
       invoiceEmail: "LASKUTUSSÄHKÖPOSTI",
       website: "VERKKOSIVUSTO",
+      industry: "TOIMIALA",
+      industryDesc: "AI ottaa toimialan lainalaisuudet huomioon tarjouksessa",
       address: "OSOITETIEDOT",
       street: "KATUOSOITE",
       zip: "POSTINUMERO",
@@ -87,6 +89,19 @@ export const t = {
       cols: { project: "PROJEKTI", client: "ASIAKAS", sent: "LÄHETETTY", status: "TILA" },
       open: "Avaa →",
       newQuote: "+ Uusi tarjous",
+      createInvoice: "Luo lasku",
+    },
+    invoice: {
+      modalTitle: "Luo lasku",
+      invoiceNumber: "LASKUNUMERO",
+      invoiceNumberPlaceholder: "esim. 2026-001",
+      amountExVat: "SUMMA (ALV 0%)",
+      vatRate: "ALV %",
+      dueDate: "ERÄPÄIVÄ",
+      create: "Luo ja lähetä lasku →",
+      creating: "Luodaan...",
+      cancel: "Peruuta",
+      errorFields: "Täytä kaikki kentät",
     },
   },
   en: {
@@ -153,6 +168,8 @@ export const t = {
       email: "EMAIL *",
       invoiceEmail: "INVOICING EMAIL",
       website: "WEBSITE",
+      industry: "INDUSTRY",
+      industryDesc: "AI tailors quotes to your industry's standards and cost structure",
       address: "ADDRESS",
       street: "STREET ADDRESS",
       zip: "ZIP CODE",
@@ -175,11 +192,27 @@ export const t = {
       cols: { project: "PROJECT", client: "CLIENT", sent: "SENT", status: "STATUS" },
       open: "Open →",
       newQuote: "+ New Quote",
+      createInvoice: "Create invoice",
+    },
+    invoice: {
+      modalTitle: "Create Invoice",
+      invoiceNumber: "INVOICE NUMBER",
+      invoiceNumberPlaceholder: "e.g. 2026-001",
+      amountExVat: "AMOUNT (excl. VAT)",
+      vatRate: "VAT %",
+      dueDate: "DUE DATE",
+      create: "Create & send invoice →",
+      creating: "Creating...",
+      cancel: "Cancel",
+      errorFields: "Please fill in all fields",
     },
   },
 } as const;
 
-export const PROJECT_TYPES_FI = ["Rakennusurakka", "IT-projekti", "Konsultointi", "Suunnittelutyö", "Huolto & ylläpito", "Toimitus & asennus", "Muu"];
-export const PROJECT_TYPES_EN = ["Construction contract", "IT project", "Consulting", "Design work", "Maintenance & support", "Delivery & installation", "Other"];
+export const PROJECT_TYPES_FI = ["Rakennusurakka", "IT-projekti", "Konsultointi", "Suunnittelutyö", "Huolto & ylläpito", "Toimitus & asennus", "Tuotemyynti", "Muu"];
+export const PROJECT_TYPES_EN = ["Construction contract", "IT project", "Consulting", "Design work", "Maintenance & support", "Delivery & installation", "Product sale", "Other"];
+
+export const PRODUCT_SALE_TYPE_FI = "Tuotemyynti";
+export const PRODUCT_SALE_TYPE_EN = "Product sale";
 
 export type Translations = typeof t.fi;
