@@ -131,6 +131,12 @@ export default function HinnoitteluPage() {
         <p style={{ fontSize: "0.82rem", color: "#C8A44A", fontWeight: 600 }}>
           ✓ Rekisteröityminen vie alle minuutin
         </p>
+        <div style={{ marginTop: "1.2rem" }}>
+          <a href="/tarjouskone?demo=1"
+            style={{ display: "inline-block", background: "transparent", border: "2px solid #C8A44A", color: "#0F1F3D", padding: "0.7rem 1.8rem", fontSize: "0.88rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.04em" }}>
+            👀 Kokeile ensin ilman rekisteröitymistä →
+          </a>
+        </div>
       </div>
 
       {/* Pricing cards */}

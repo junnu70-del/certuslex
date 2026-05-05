@@ -96,7 +96,15 @@ export default function AdminClient() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const correctedFileRef = useRef<HTMLInputElement>(null);
   const [filter, setFilter] = useState<"all" | "pending_review" | "in_review" | "completed">("all");
-  const [tab, setTab] = useState<"jono" | "koodit" | "loki">("jono");
+  const [tab, setTab] = useState<"jono" | "koodit" | "loki" | "kampanja">("jono");
+
+  // Kampanja
+  const [csvText, setCsvText] = useState("");
+  const [campaignLabel, setCampaignLabel] = useState("");
+  const [campaignMessage, setCampaignMessage] = useState("");
+  const [campaignMaxUses, setCampaignMaxUses] = useState("3");
+  const [sending, setSending] = useState(false);
+  const [campaignResult, setCampaignResult] = useState<{ sent: number; failed: number; results: { email: string; ok: boolean; error?: string; code?: string }[] } | null>(null);
   // Koodit
   const [codes, setCodes] = useState<AccessCode[]>([]);
   const [consentLogs, setConsentLogs] = useState<ConsentLog[]>([]);
@@ -250,6 +258,43 @@ export default function AdminClient() {
     if (!confirm("Poistetaanko käyttökoodi pysyvästi?")) return;
     const db = getFirestore(getFirebaseApp());
     await deleteDoc(doc(db, "access_codes", id));
+  }
+
+  function parseCsv(text: string): { email: string; name?: string; company?: string }[] {
+    return text.split("\n")
+      .map(l => l.trim())
+      .filter(l => l && l.includes("@"))
+      .map(l => {
+        const [email, name, company] = l.split(/[,;	]/).map(s => s.trim());
+        return { email, name: name || "", company: company || "" };
+      });
+  }
+
+  async function sendCampaign() {
+    const recipients = parseCsv(csvText);
+    if (!recipients.length) return;
+    if (!confirm(`Lähetetään kutsu ${recipients.length} vastaanottajalle?`)) return;
+    setSending(true);
+    setCampaignResult(null);
+    try {
+      const res = await fetch("/api/bulk-invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminPassword: "certuslex2026",
+          recipients,
+          maxUses: Number(campaignMaxUses),
+          campaignLabel,
+          campaignMessage,
+        }),
+      });
+      const data = await res.json();
+      setCampaignResult(data);
+    } catch {
+      setCampaignResult({ sent: 0, failed: 0, results: [{ email: "—", ok: false, error: "Verkkovirhe" }] });
+    } finally {
+      setSending(false);
+    }
   }
 
   const filtered = filter === "all" ? docs : docs.filter(d => d.status === filter);
@@ -431,6 +476,7 @@ export default function AdminClient() {
           ["jono", `📄 Dokumenttijono${pendingCount > 0 ? ` (${pendingCount})` : ""}`],
           ["koodit", `🔑 Käyttökoodit (${codes.length})`],
           ["loki", `✅ Suostumusloki (${consentLogs.length})`],
+          ["kampanja", "📢 Kampanja"],
         ] as const).map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
             style={{ padding: "0.75rem 1.8rem", background: "none", border: "none", borderBottom: tab === id ? "2px solid #C8A44A" : "2px solid transparent", color: tab === id ? "#C8A44A" : "rgba(255,255,255,.5)", fontSize: "0.82rem", fontWeight: tab === id ? 700 : 400, cursor: "pointer", letterSpacing: "0.04em" }}>
@@ -623,6 +669,103 @@ export default function AdminClient() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── KAMPANJA-VÄLILEHTI ── */}
+        {tab === "kampanja" && (
+          <>
+            <h2 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.8rem", fontWeight: 700, color: "var(--navy)", marginBottom: "0.3rem" }}>Massalähetys</h2>
+            <p style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "1.8rem" }}>
+              Lähetä henkilökohtaiset käyttökoodit usealle yritykselle kerralla. Jokaiselle luodaan oma koodi automaattisesti.
+            </p>
+
+            {/* Vastaanottajalista */}
+            <div style={{ background: "#fff", border: "1px solid var(--cream2)", padding: "1.5rem 2rem", marginBottom: "1rem" }}>
+              <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "var(--navy)", marginBottom: "0.5rem" }}>
+                VASTAANOTTAJALISTA
+              </label>
+              <p style={{ fontSize: "0.78rem", color: "var(--muted)", margin: "0 0 0.8rem" }}>
+                Yksi rivi per henkilö. Muoto: <code style={{ background: "#F7F4EE", padding: "0.1rem 0.4rem" }}>sähköposti, Nimi, Yritys Oy</code> — nimi ja yritys vapaaehtoisia.
+              </p>
+              <textarea
+                value={csvText}
+                onChange={e => setCsvText(e.target.value)}
+                placeholder={"matti@rakennusoy.fi, Matti Meikäläinen, Rakennus Oy\ntiina@siivous.fi, Tiina Tompuri\ninfo@lvi-firma.fi"}
+                rows={8}
+                style={{ width: "100%", border: "1px solid var(--cream2)", padding: "0.8rem", fontSize: "0.83rem", fontFamily: "monospace", outline: "none", resize: "vertical", boxSizing: "border-box" as const }}
+              />
+              {csvText && (
+                <p style={{ fontSize: "0.75rem", color: "var(--navy)", fontWeight: 600, marginTop: "0.5rem" }}>
+                  ✓ {parseCsv(csvText).length} vastaanottajaa tunnistettu
+                </p>
+              )}
+            </div>
+
+            {/* Kampanja-asetukset */}
+            <div style={{ background: "#fff", border: "1px solid var(--cream2)", padding: "1.5rem 2rem", marginBottom: "1rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.2rem" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "var(--navy)", marginBottom: "0.4rem" }}>KAMPANJAN NIMI</label>
+                <input value={campaignLabel} onChange={e => setCampaignLabel(e.target.value)}
+                  placeholder="esim. Rakennusala toukokuu 2026"
+                  style={{ width: "100%", border: "1px solid var(--cream2)", padding: "0.7rem", fontSize: "0.88rem", outline: "none", boxSizing: "border-box" as const }} />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "var(--navy)", marginBottom: "0.4rem" }}>ILMAISIA TARJOUKSIA / KOODI</label>
+                <select value={campaignMaxUses} onChange={e => setCampaignMaxUses(e.target.value)}
+                  style={{ width: "100%", border: "1px solid var(--cream2)", padding: "0.7rem", fontSize: "0.88rem", outline: "none", background: "#fff", boxSizing: "border-box" as const }}>
+                  {[1, 2, 3, 5, 10].map(n => <option key={n} value={n}>{n} tarjousta</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Viesti */}
+            <div style={{ background: "#fff", border: "1px solid var(--cream2)", padding: "1.5rem 2rem", marginBottom: "1.5rem" }}>
+              <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", color: "var(--navy)", marginBottom: "0.4rem" }}>HENKILÖKOHTAINEN VIESTI (valinnainen)</label>
+              <textarea
+                value={campaignMessage}
+                onChange={e => setCampaignMessage(e.target.value)}
+                placeholder="Olemme valinneet yrityksenne testaamaan CertusLex-tarjouskoneettamme. Alla on henkilökohtainen käyttökoodi, jolla pääset luomaan ammattimaiset tarjousdokumentit tekoälyn avulla — alle minuutissa."
+                rows={3}
+                style={{ width: "100%", border: "1px solid var(--cream2)", padding: "0.8rem", fontSize: "0.83rem", fontFamily: "inherit", outline: "none", resize: "vertical", boxSizing: "border-box" as const, lineHeight: 1.6 }}
+              />
+            </div>
+
+            {/* Lähetä */}
+            <button
+              onClick={sendCampaign}
+              disabled={sending || parseCsv(csvText).length === 0}
+              style={{ background: sending || !csvText ? "#EDE8DE" : "#C8A44A", color: sending || !csvText ? "#8A8070" : "#0F1F3D", border: "none", padding: "0.9rem 2.5rem", fontSize: "0.9rem", fontWeight: 700, cursor: sending || !csvText ? "not-allowed" : "pointer", letterSpacing: "0.05em", marginBottom: "1.5rem" }}>
+              {sending ? `⏳ Lähetetään... (odota, n. ${parseCsv(csvText).length * 0.6 | 0}s)` : `📢 Lähetä ${parseCsv(csvText).length || 0} kutsua →`}
+            </button>
+
+            {/* Tulokset */}
+            {campaignResult && (
+              <div style={{ background: "#fff", border: "1px solid var(--cream2)", padding: "1.5rem 2rem" }}>
+                <div style={{ display: "flex", gap: "2rem", marginBottom: "1rem" }}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: "2rem", fontWeight: 700, color: "#166534" }}>{campaignResult.sent}</div>
+                    <div style={{ fontSize: "0.72rem", color: "var(--muted)", letterSpacing: "0.08em" }}>LÄHETETTY</div>
+                  </div>
+                  {campaignResult.failed > 0 && (
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "2rem", fontWeight: 700, color: "#9b2335" }}>{campaignResult.failed}</div>
+                      <div style={{ fontSize: "0.72rem", color: "var(--muted)", letterSpacing: "0.08em" }}>EPÄONNISTUI</div>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                  {campaignResult.results.map((r, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: "1rem", fontSize: "0.8rem", padding: "0.5rem 0.8rem", background: r.ok ? "#F0FDF4" : "#fff0f0", border: `1px solid ${r.ok ? "#86EFAC" : "#f5c6cb"}` }}>
+                      <span style={{ fontSize: "1rem" }}>{r.ok ? "✅" : "❌"}</span>
+                      <span style={{ flex: 1, color: "var(--navy)" }}>{r.email}</span>
+                      {r.ok && <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#C8A44A", letterSpacing: "0.1em" }}>{r.code}</span>}
+                      {!r.ok && <span style={{ color: "#9b2335" }}>{r.error}</span>}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </>

@@ -239,6 +239,23 @@ MATERIAALIMÄÄRÄT JA HINNOITTELU — KRIITTISTÄ:
       quote = quote.replace(/^```(?:html)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
     }
 
+    // Validointi: jos vastaus ei sisällä HTML-tageja, AI palautti plain textiä — retry kerran
+    if (!quote.includes("<") || !quote.includes(">")) {
+      const retryResponse = await anthropic.messages.create({
+        model,
+        max_tokens: 8000,
+        messages: [
+          { role: "user", content: messageContent as any },
+          { role: "assistant", content: quote },
+          { role: "user", content: "Vastauksesi oli plain text eikä HTML. Palauta SAMA sisältö mutta HTML-muodossa inline-tyyleillä kuten ohjeistettiin. Aloita suoraan <div-tagilla." },
+        ],
+      });
+      const retryQuote = retryResponse.content?.[0]?.type === "text" ? retryResponse.content[0].text.trim() : null;
+      if (retryQuote && retryQuote.includes("<")) {
+        quote = retryQuote.startsWith("```") ? retryQuote.replace(/^```(?:html)?\s*/i, "").replace(/\s*```\s*$/, "").trim() : retryQuote;
+      }
+    }
+
     return NextResponse.json({ quote });
   } catch (err) {
     console.error("Quote generation error:", err);

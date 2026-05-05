@@ -59,14 +59,34 @@ export default function TarjouskoneePage() {
   const [projectImageUrl, setProjectImageUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const projectImageRef = useRef<HTMLInputElement>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [checklistDone, setChecklistDone] = useState(false);
 
   const T = t[lang].tarjouskone;
   const PROJECT_TYPES = lang === "en" ? PROJECT_TYPES_EN : PROJECT_TYPES_FI;
 
-  // Lue kieli + access code localStoragesta
+  // Lue kieli + access code localStoragesta + demo-tila
   useEffect(() => {
     const savedLang = localStorage.getItem("certuslex_lang") as Lang | null;
     if (savedLang === "en" || savedLang === "fi") setLang(savedLang);
+
+    // Demo-moodi: ?demo=1 URL-parametrista
+    if (window.location.search.includes("demo=1")) {
+      setIsDemoMode(true);
+      setCompany({
+        name: "Oma Yritys Oy", businessId: "", address: "",
+        contact: "Etunimi Sukunimi", phone: "", email: "",
+        hourlyRate: "", paymentTerms: "14 päivää netto", industry: "",
+      });
+      setProject({ clientName: "Asiakas Oy", projectName: "", type: "", startDate: "", validUntil: "" });
+      setStep("specs");
+      return;
+    }
+
+    // Checklist: tarkista onko kaikki vaiheet tehty
+    const firstQuoteDone = !!localStorage.getItem("certuslex_first_quote");
+    const firstSendDone = !!localStorage.getItem("certuslex_first_send");
+    if (firstQuoteDone && firstSendDone) setChecklistDone(true);
 
     const savedCode = localStorage.getItem("certuslex_code");
     if (savedCode) {
@@ -182,6 +202,7 @@ export default function TarjouskoneePage() {
       }
       setQuote(logoHtml + fixDarkCells(data.quote));
       setStep("result");
+      if (!isDemoMode) localStorage.setItem("certuslex_first_quote", "1");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Tuntematon virhe");
       setStep("specs");
@@ -276,6 +297,8 @@ export default function TarjouskoneePage() {
       if (!res.ok) throw new Error(data.error || "Virhe");
       setSentQuoteUrl(`https://certuslex.fi/tarjous/${data.quoteId}?token=${data.token}`);
       setStep("send");
+      localStorage.setItem("certuslex_first_send", "1");
+      if (!checklistDone) setChecklistDone(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Virhe");
     } finally {
@@ -383,6 +406,30 @@ export default function TarjouskoneePage() {
           </button>
         </div>
       </nav>
+
+      {/* Aloitusopas-checklist uusille käyttäjille */}
+      {userEmail && !checklistDone && !isDemoMode && (
+        <div style={{ background: "#0F1F3D", borderBottom: "2px solid #C8A44A", padding: "0.7rem 3rem", display: "flex", alignItems: "center", gap: "2rem", flexWrap: "wrap" }}>
+          <span style={{ fontSize: "0.7rem", letterSpacing: "0.12em", color: "#C8A44A", fontWeight: 700, flexShrink: 0 }}>ALOITUSOPAS</span>
+          {[
+            { label: "Luo tili", done: true },
+            { label: "Täytä profiili", done: profileLoaded },
+            { label: "Tee tarjous", done: !!localStorage.getItem?.("certuslex_first_quote") },
+            { label: "Lähetä asiakkaalle", done: !!localStorage.getItem?.("certuslex_first_send") },
+          ].map((s, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <span style={{ width: "16px", height: "16px", borderRadius: "50%", background: s.done ? "#C8A44A" : "rgba(255,255,255,0.1)", border: s.done ? "none" : "1px solid rgba(200,164,74,0.4)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                {s.done && <span style={{ color: "#0F1F3D", fontSize: "9px", fontWeight: 900 }}>✓</span>}
+              </span>
+              <span style={{ fontSize: "0.75rem", color: s.done ? "#C8A44A" : "rgba(255,255,255,0.5)", fontWeight: s.done ? 600 : 400 }}>{s.label}</span>
+            </div>
+          ))}
+          <button onClick={() => { setChecklistDone(true); localStorage.setItem("certuslex_checklist_dismissed", "1"); }}
+            style={{ marginLeft: "auto", background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: "0.75rem", cursor: "pointer", padding: 0 }}>
+            ✕ piilota
+          </button>
+        </div>
+      )}
 
       {/* Profiili ladattu */}
       {profileLoaded && step === "company" && (
@@ -652,6 +699,25 @@ export default function TarjouskoneePage() {
         {/* ── RESULT ── */}
         {step === "result" && (
           <div>
+            {/* Demo-moodi CTA */}
+            {isDemoMode && (
+              <div style={{ background: "#0F1F3D", borderLeft: "4px solid #C8A44A", padding: "1.5rem 2rem", marginBottom: "2rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1.5rem", flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ fontSize: "0.72rem", letterSpacing: "0.12em", color: "#C8A44A", fontWeight: 700, marginBottom: "0.3rem" }}>ESIKATSELU — DEMO</div>
+                  <p style={{ color: "#fff", fontSize: "0.95rem", fontWeight: 600, margin: 0 }}>Luo ilmainen tili tallentaaksesi ja lähettääksesi tämän tarjouksen</p>
+                  <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.82rem", margin: "0.3rem 0 0" }}>Saat 3 ilmaista tarjousta — ei luottokorttia</p>
+                </div>
+                <div style={{ display: "flex", gap: "0.8rem", flexShrink: 0 }}>
+                  <a href="/kirjaudu?plan=starter&trial=1" style={{ display: "inline-block", background: "#C8A44A", color: "#0F1F3D", padding: "0.8rem 1.8rem", fontSize: "0.9rem", fontWeight: 700, textDecoration: "none", letterSpacing: "0.04em" }}>
+                    Luo tili ilmaiseksi →
+                  </a>
+                  <a href="/koodi" style={{ display: "inline-block", border: "1px solid rgba(200,164,74,0.5)", color: "#C8A44A", padding: "0.8rem 1.2rem", fontSize: "0.85rem", textDecoration: "none" }}>
+                    Minulla on koodi
+                  </a>
+                </div>
+              </div>
+            )}
+
             <div style={{ borderLeft: "4px solid #C8A44A", paddingLeft: "1.2rem", marginBottom: "2rem" }}>
               <div style={{ fontSize: "0.72rem", letterSpacing: "0.14em", color: "#C8A44A", marginBottom: "0.3rem" }}>{lang === "en" ? "DONE" : "VALMIS"}</div>
               <h1 style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "2rem", fontWeight: 700, color: "#0F1F3D" }}>{T.result}</h1>
@@ -670,7 +736,14 @@ export default function TarjouskoneePage() {
               </button>
             </div>
 
-            <div style={{ background: "#FAF7F2", border: "1px solid rgba(200,164,74,.4)", padding: "1.5rem 2rem", marginBottom: "1.5rem" }}>
+            {/* Piilotetaan lähetysosio demo-moodissa */}
+            {isDemoMode && (
+              <div style={{ background: "#FAF7F2", border: "1px solid rgba(200,164,74,.3)", padding: "1.2rem 2rem", marginBottom: "1.5rem", textAlign: "center" }}>
+                <p style={{ fontSize: "0.85rem", color: "#4A4035", margin: 0 }}>🔒 Tarjouksen lähettäminen asiakkaalle vaatii tilin — <a href="/kirjaudu?plan=starter&trial=1" style={{ color: "#C8A44A", fontWeight: 700 }}>luo tili ilmaiseksi</a></p>
+              </div>
+            )}
+
+            {!isDemoMode && <div style={{ background: "#FAF7F2", border: "1px solid rgba(200,164,74,.4)", padding: "1.5rem 2rem", marginBottom: "1.5rem" }}>
               <p style={{ fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.1em", color: "#0F1F3D", margin: "0 0 0.8rem" }}>{T.sendLabel}</p>
               <p style={{ fontSize: "0.82rem", color: "#4A4035", margin: "0 0 1rem" }}>{T.sendDesc}</p>
               <div style={{ display: "flex", gap: "0.8rem", alignItems: "flex-start" }}>
@@ -689,7 +762,7 @@ export default function TarjouskoneePage() {
                 </button>
               </div>
               {error && <p style={{ color: "#9b2335", fontSize: "0.82rem", margin: "0.5rem 0 0" }}>{error}</p>}
-            </div>
+            </div>}
 
             <div
               style={{ background: "#fff", padding: "2.5rem 2rem 8rem", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif", boxShadow: "0 8px 48px rgba(15,31,61,0.13), 0 2px 8px rgba(15,31,61,0.07)", borderTop: "4px solid #C8A44A" }}
