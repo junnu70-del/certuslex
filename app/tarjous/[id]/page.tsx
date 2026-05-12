@@ -42,6 +42,45 @@ export default function TarjousPage() {
   const [agreed, setAgreed] = useState(false);
   const [signedAt, setSignedAt] = useState("");
 
+  function downloadAsWord(quoteHtml: string) {
+    const clientName = (quote?.project?.clientName || quote?.clientName || "asiakas").replace(/[^a-zA-Z0-9äöåÄÖÅ]/g, "_");
+    const projectName = (quote?.project?.projectName || "tarjous").replace(/[^a-zA-Z0-9äöåÄÖÅ]/g, "_");
+    const fileName = `Tarjous_${clientName}_${projectName}.doc`;
+
+    const html = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="UTF-8">
+  <meta name=ProgId content=Word.Document>
+  <meta name=Generator content="Microsoft Word 15">
+  <!--[if gte mso 9]>
+  <xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml>
+  <![endif]-->
+  <style>
+    @page WordSection1 { size:21cm 29.7cm; margin:2cm 2.5cm 2cm 2.5cm; mso-page-orientation:portrait; }
+    body { font-family: Georgia, serif; }
+    div.WordSection1 { page: WordSection1; }
+  </style>
+</head>
+<body>
+  <div class="WordSection1">
+    ${quoteHtml}
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob(['﻿', html], { type: "application/msword;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  }
+
   function applyColorFix(html: string): string {
     return html
       .replace(/style="([^"]*)background(-color)?:\s*#0[Ff]1[Ff]3[Dd]([^"]*)"/g,
@@ -180,6 +219,13 @@ export default function TarjousPage() {
         {/* Tarjoussivu */}
         {view === "quote" && (
           <>
+            {/* Latausnappi */}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.8rem" }}>
+              <button onClick={() => downloadAsWord(quote.quoteHtml)}
+                style={{ background: "transparent", border: "1px solid #C8A44A", color: "#C8A44A", padding: "0.5rem 1.1rem", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", letterSpacing: "0.04em" }}>
+                ⬇ Word (.doc)
+              </button>
+            </div>
             {/* Tarjousdokumentti — extra paddingBottom jotta sticky-palkki ei peitä */}
             <div style={{ background: "#fff", padding: "2.5rem", paddingBottom: "7rem", fontSize: "0.88rem", lineHeight: 1.8, color: "#2C2416", fontFamily: "Georgia, serif" }}
               dangerouslySetInnerHTML={{ __html: quote.quoteHtml }} />
