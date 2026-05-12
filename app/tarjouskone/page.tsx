@@ -283,6 +283,46 @@ export default function TarjouskoneePage() {
     navigator.clipboard.writeText(tmp.innerText);
   }
 
+  function downloadAsWord() {
+    // Word hyväksyy HTML-tiedoston .doc-laajennuksella — täysin muokattavissa
+    const clientName = project.clientName?.replace(/[^a-zA-Z0-9äöåÄÖÅ]/g, "_") || "asiakas";
+    const projectName = project.projectName?.replace(/[^a-zA-Z0-9äöåÄÖÅ]/g, "_") || "tarjous";
+    const fileName = `Tarjous_${clientName}_${projectName}.doc`;
+
+    const html = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="UTF-8">
+  <meta name=ProgId content=Word.Document>
+  <meta name=Generator content="Microsoft Word 15">
+  <!--[if gte mso 9]>
+  <xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml>
+  <![endif]-->
+  <style>
+    @page WordSection1 { size:21cm 29.7cm; margin:2cm 2.5cm 2cm 2.5cm; mso-page-orientation:portrait; }
+    body { font-family: Georgia, serif; }
+    div.WordSection1 { page: WordSection1; }
+  </style>
+</head>
+<body>
+  <div class="WordSection1">
+    ${quote}
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob(['﻿', html], { type: "application/msword;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  }
+
   async function sendQuoteToClient() {
     if (!clientEmail) return;
     setSending(true);
@@ -730,6 +770,9 @@ export default function TarjouskoneePage() {
               </button>
               <button onClick={() => window.print()} style={{ background: "transparent", border: "1px solid #EDE8DE", color: "#0F1F3D", padding: "0.8rem 1.4rem", fontSize: "0.82rem", cursor: "pointer" }}>
                 {T.print}
+              </button>
+              <button onClick={downloadAsWord} style={{ background: "transparent", border: "1px solid #C8A44A", color: "#C8A44A", padding: "0.8rem 1.4rem", fontSize: "0.82rem", cursor: "pointer", fontWeight: 600 }}>
+                {lang === "en" ? "⬇ Word (.doc)" : "⬇ Word (.doc)"}
               </button>
               <button onClick={() => { setStep("specs"); setQuote(""); }} style={{ background: "transparent", border: "1px solid #EDE8DE", color: "#8A8070", padding: "0.8rem 1.4rem", fontSize: "0.82rem", cursor: "pointer" }}>
                 {T.regenerate}
