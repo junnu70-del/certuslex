@@ -77,14 +77,19 @@ export async function POST(req: NextRequest) {
     // Vaihe 1: Litterointi Whisperillä
     const openai = new OpenAI({ apiKey: openaiKey });
     const buffer = Buffer.from(arrayBuffer);
-    const ext = audioMimeType.includes("mp4") ? "mp4"
-      : audioMimeType.includes("ogg") ? "ogg"
+
+    // Normalisoi MIME — poistetaan "codecs=opus" ym. liitteet joita Whisper ei tue
+    const baseMime = audioMimeType.split(";")[0].trim();
+    const ext = baseMime.includes("mp4") ? "mp4"
+      : baseMime.includes("ogg") ? "ogg"
+      : baseMime.includes("mpeg") || baseMime.includes("mp3") ? "mp3"
+      : baseMime.includes("wav") ? "wav"
       : "webm";
 
     const audioFile = await toFile(
       buffer,
       `audio.${ext}`,
-      { type: audioMimeType }
+      { type: baseMime }
     );
 
     const transcription = await openai.audio.transcriptions.create({
