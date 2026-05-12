@@ -288,10 +288,12 @@ export default function TarjouskoneePage() {
     const projectName = project.projectName?.replace(/[^a-zA-Z0-9äöåÄÖÅ]/g, "_") || "tarjous";
     const fileName = `Tarjous_${clientName}_${projectName}.doc`;
 
-    // Poistetaan object-fit ja max-height — Word ei tue niitä, kuva venyy muuten
+    // Word ei lue <style>-CSS:ää — inline-tyylit img-tageille
     const cleanedQuote = quote
-      .replace(/object-fit\s*:\s*[^;'"]+[;]?/gi, "")
-      .replace(/max-height\s*:\s*[^;'"]+[;]?/gi, "");
+      .replace(/object-fit\s*:\s*[^;'"]+;?\s*/gi, "")
+      .replace(/max-height\s*:\s*[^;'"]+;?\s*/gi, "")
+      // Lisää width/height-rajoitus jokaiseen img-tagiin
+      .replace(/<img(\s)/gi, '<img style="max-width:580px;height:auto;display:block;"$1');
 
     const html = `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"

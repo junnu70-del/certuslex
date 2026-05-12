@@ -48,8 +48,9 @@ export default function TarjousPage() {
     const fileName = `Tarjous_${clientName}_${projectName}.doc`;
 
     const cleanedHtml = quoteHtml
-      .replace(/object-fit\s*:\s*[^;'"]+[;]?/gi, "")
-      .replace(/max-height\s*:\s*[^;'"]+[;]?/gi, "");
+      .replace(/object-fit\s*:\s*[^;'"]+;?\s*/gi, "")
+      .replace(/max-height\s*:\s*[^;'"]+;?\s*/gi, "")
+      .replace(/<img(\s)/gi, '<img style="max-width:580px;height:auto;display:block;"$1');
 
     const html = `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
