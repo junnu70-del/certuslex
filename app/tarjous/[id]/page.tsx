@@ -47,6 +47,10 @@ export default function TarjousPage() {
     const projectName = (quote?.project?.projectName || "tarjous").replace(/[^a-zA-Z0-9äöåÄÖÅ]/g, "_");
     const fileName = `Tarjous_${clientName}_${projectName}.doc`;
 
+    const cleanedHtml = quoteHtml
+      .replace(/object-fit\s*:\s*[^;'"]+[;]?/gi, "")
+      .replace(/max-height\s*:\s*[^;'"]+[;]?/gi, "");
+
     const html = `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
       xmlns:w="urn:schemas-microsoft-com:office:word"
@@ -62,11 +66,12 @@ export default function TarjousPage() {
     @page WordSection1 { size:21cm 29.7cm; margin:2cm 2.5cm 2cm 2.5cm; mso-page-orientation:portrait; }
     body { font-family: Georgia, serif; }
     div.WordSection1 { page: WordSection1; }
+    img { max-width: 16cm !important; max-height: 8cm !important; height: auto !important; width: auto !important; }
   </style>
 </head>
 <body>
   <div class="WordSection1">
-    ${quoteHtml}
+    ${cleanedHtml}
   </div>
 </body>
 </html>`;

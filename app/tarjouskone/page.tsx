@@ -284,10 +284,14 @@ export default function TarjouskoneePage() {
   }
 
   function downloadAsWord() {
-    // Word hyväksyy HTML-tiedoston .doc-laajennuksella — täysin muokattavissa
     const clientName = project.clientName?.replace(/[^a-zA-Z0-9äöåÄÖÅ]/g, "_") || "asiakas";
     const projectName = project.projectName?.replace(/[^a-zA-Z0-9äöåÄÖÅ]/g, "_") || "tarjous";
     const fileName = `Tarjous_${clientName}_${projectName}.doc`;
+
+    // Poistetaan object-fit ja max-height — Word ei tue niitä, kuva venyy muuten
+    const cleanedQuote = quote
+      .replace(/object-fit\s*:\s*[^;'"]+[;]?/gi, "")
+      .replace(/max-height\s*:\s*[^;'"]+[;]?/gi, "");
 
     const html = `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -304,11 +308,12 @@ export default function TarjouskoneePage() {
     @page WordSection1 { size:21cm 29.7cm; margin:2cm 2.5cm 2cm 2.5cm; mso-page-orientation:portrait; }
     body { font-family: Georgia, serif; }
     div.WordSection1 { page: WordSection1; }
+    img { max-width: 16cm !important; max-height: 8cm !important; height: auto !important; width: auto !important; }
   </style>
 </head>
 <body>
   <div class="WordSection1">
-    ${quote}
+    ${cleanedQuote}
   </div>
 </body>
 </html>`;

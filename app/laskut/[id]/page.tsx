@@ -21,6 +21,9 @@ interface InvoiceData {
 }
 
 function downloadAsWord(html: string, fileName: string) {
+  const cleanedHtml = html
+    .replace(/object-fit\s*:\s*[^;'"]+[;]?/gi, "")
+    .replace(/max-height\s*:\s*[^;'"]+[;]?/gi, "");
   const doc = `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
       xmlns:w="urn:schemas-microsoft-com:office:word"
@@ -36,9 +39,10 @@ function downloadAsWord(html: string, fileName: string) {
     @page WordSection1 { size:21cm 29.7cm; margin:2cm 2.5cm 2cm 2.5cm; mso-page-orientation:portrait; }
     body { font-family: Georgia, serif; }
     div.WordSection1 { page: WordSection1; }
+    img { max-width: 16cm !important; max-height: 8cm !important; height: auto !important; width: auto !important; }
   </style>
 </head>
-<body><div class="WordSection1">${html}</div></body>
+<body><div class="WordSection1">${cleanedHtml}</div></body>
 </html>`;
   const blob = new Blob(['﻿', doc], { type: "application/msword;charset=utf-8" });
   const url = URL.createObjectURL(blob);
