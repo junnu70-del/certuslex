@@ -41,17 +41,17 @@ function getAnthropicKey(): string {
 
 export async function POST(req: NextRequest) {
   try {
-    // FormData-lataus (ei JSON-kokorajaa)
-    const form = await req.formData();
-    const audioEntry = form.get("audio");
-    const audioMimeType = (form.get("audioMimeType") as string) || "audio/webm";
-    const sessionId = (form.get("sessionId") as string) || "—";
-    const meetingType = (form.get("meetingType") as string) || "Tapaaminen";
-    const duration = (form.get("duration") as string) || "—";
-    const name = (form.get("name") as string) || "—";
-    const notes = (form.get("notes") as string) || "";
+    // Metadata URL-parametreistä, ääni raakana octet-stream bodyna
+    const sp = req.nextUrl.searchParams;
+    const audioMimeType = sp.get("mimeType") || "audio/webm";
+    const sessionId = sp.get("sessionId") || "—";
+    const meetingType = sp.get("meetingType") || "Tapaaminen";
+    const duration = sp.get("duration") || "—";
+    const name = sp.get("name") || "—";
+    const notes = sp.get("notes") || "";
 
-    if (!audioEntry || !(audioEntry instanceof Blob)) {
+    const arrayBuffer = await req.arrayBuffer();
+    if (!arrayBuffer || arrayBuffer.byteLength < 100) {
       return NextResponse.json(
         { success: false, error: "Äänitiedosto puuttuu tai on tyhjä" },
         { status: 400 }
@@ -76,7 +76,6 @@ export async function POST(req: NextRequest) {
 
     // Vaihe 1: Litterointi Whisperillä
     const openai = new OpenAI({ apiKey: openaiKey });
-    const arrayBuffer = await audioEntry.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const ext = audioMimeType.includes("mp4") ? "mp4"
       : audioMimeType.includes("ogg") ? "ogg"

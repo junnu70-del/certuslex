@@ -1168,20 +1168,19 @@ async function callTranscribeFunction(audioBlob, mimeType) {
   if (!fnUrl) throw new Error('API URL puuttuu. Lisää se asetuksiin.');
 
   const s = state.currentSession || {};
-  const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+  const params = new URLSearchParams({
+    mimeType,
+    sessionId: s.id || '—',
+    meetingType: s.type || 'Tapaaminen',
+    duration: formatDuration(s.duration),
+    name: state.settings.name || '—',
+    notes: s.notes || ''
+  });
 
-  const form = new FormData();
-  form.append('audio', audioBlob, `audio.${ext}`);
-  form.append('audioMimeType', mimeType);
-  form.append('sessionId', s.id || '—');
-  form.append('meetingType', s.type || 'Tapaaminen');
-  form.append('duration', formatDuration(s.duration));
-  form.append('name', state.settings.name || '—');
-  form.append('notes', s.notes || '');
-
-  const res = await fetch(fnUrl, {
+  const res = await fetch(`${fnUrl}?${params}`, {
     method: 'POST',
-    body: form   // ei Content-Type headeria — selain asettaa multipart/form-data automaattisesti
+    headers: { 'Content-Type': 'application/octet-stream' },
+    body: audioBlob
   });
 
   const data = await res.json().catch(() => ({}));
