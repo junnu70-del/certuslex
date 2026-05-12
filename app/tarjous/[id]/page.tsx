@@ -5,17 +5,8 @@ import { useEffect, useState } from "react";
 function prepareForWord(html: string): string {
   return html
     .replace(/^```(?:html)?\s*/i, "").replace(/\s*```\s*$/, "")
-    .replace(/<img([^>]*)>/gi, (_match: string, attrs: string) => {
-      let a = attrs
-        .replace(/\s+width\s*=\s*["'][^"']*["']/gi, "")
-        .replace(/\s+height\s*=\s*["'][^"']*["']/gi, "")
-        .replace(/width\s*:\s*[^;'"]+;?\s*/gi, "")
-        .replace(/height\s*:\s*[^;'"]+;?\s*/gi, "")
-        .replace(/max-width\s*:\s*[^;'"]+;?\s*/gi, "")
-        .replace(/max-height\s*:\s*[^;'"]+;?\s*/gi, "")
-        .replace(/object-fit\s*:\s*[^;'"]+;?\s*/gi, "");
-      return `<img width="560"${a}>`;
-    });
+    .replace(/<img[^>]*\/?>/gi, "")
+    .replace(/<div[^>]*overflow\s*:\s*hidden[^>]*>\s*<\/div>/gi, "");
 }
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";

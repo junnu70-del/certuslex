@@ -11,20 +11,12 @@ import { t, PROJECT_TYPES_FI, PROJECT_TYPES_EN, type Lang } from "@/lib/translat
 // Valmistelee HTML:n Word-vientiä varten
 function prepareForWord(html: string): string {
   return html
-    // Poista mahdolliset markdown-koodiaidat (```html ... ```)
+    // Poista mahdolliset markdown-koodiaidat
     .replace(/^```(?:html)?\s*/i, "").replace(/\s*```\s*$/, "")
-    // Korvaa jokainen img-tagi — poista vanhat koko-tyylit, pakota width=560
-    .replace(/<img([^>]*)>/gi, (_match: string, attrs: string) => {
-      let a = attrs
-        .replace(/\s+width\s*=\s*["'][^"']*["']/gi, "")
-        .replace(/\s+height\s*=\s*["'][^"']*["']/gi, "")
-        .replace(/width\s*:\s*[^;'"]+;?\s*/gi, "")
-        .replace(/height\s*:\s*[^;'"]+;?\s*/gi, "")
-        .replace(/max-width\s*:\s*[^;'"]+;?\s*/gi, "")
-        .replace(/max-height\s*:\s*[^;'"]+;?\s*/gi, "")
-        .replace(/object-fit\s*:\s*[^;'"]+;?\s*/gi, "");
-      return `<img width="560"${a}>`;
-    });
+    // Poista kuvat kokonaan — Unsplash-URLit eivät tallennu Wordiin ja sotkevat layoutin
+    .replace(/<img[^>]*\/?>/gi, "")
+    // Poista kuva-wrapperi-divit jotka jäävät tyhjiksi
+    .replace(/<div[^>]*overflow\s*:\s*hidden[^>]*>\s*<\/div>/gi, "");
 }
 
 // Määritelty komponentin ULKOPUOLELLA — ei re-mounttaa joka renderillä
