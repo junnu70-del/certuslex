@@ -1137,7 +1137,7 @@ async function startProcessing() {
     if (!state.audioBlob || state.audioBlob.size < 100) {
       throw new Error('Äänitiedosto on tyhjä tai liian lyhyt. Äänity uudelleen.');
     }
-    const mime = state.audioMimeType || 'audio/webm';
+    const mime = mimeToGemini(state.audioMimeType || 'audio/webm');
     setStep('step-audio', 'done');
     document.getElementById('procProgress').style.width = '33%';
 

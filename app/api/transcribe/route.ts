@@ -51,9 +51,10 @@ export async function POST(req: NextRequest) {
     const notes = sp.get("notes") || "";
 
     const arrayBuffer = await req.arrayBuffer();
-    if (!arrayBuffer || arrayBuffer.byteLength < 100) {
+    const byteLen = arrayBuffer?.byteLength ?? 0;
+    if (byteLen < 100) {
       return NextResponse.json(
-        { success: false, error: "Äänitiedosto puuttuu tai on tyhjä" },
+        { success: false, error: `Äänitiedosto puuttuu tai on tyhjä (${byteLen} B, mime: ${audioMimeType})` },
         { status: 400 }
       );
     }
@@ -85,6 +86,8 @@ export async function POST(req: NextRequest) {
       : baseMime.includes("mpeg") || baseMime.includes("mp3") ? "mp3"
       : baseMime.includes("wav") ? "wav"
       : "webm";
+
+    console.log(`[transcribe] mime=${audioMimeType} → baseMime=${baseMime} ext=${ext} size=${byteLen}B`);
 
     const audioFile = await toFile(
       buffer,
