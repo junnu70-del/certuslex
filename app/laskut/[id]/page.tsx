@@ -20,6 +20,34 @@ interface InvoiceData {
   invoiceHtml?: string;
 }
 
+function downloadAsWord(html: string, fileName: string) {
+  const doc = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="UTF-8">
+  <meta name=ProgId content=Word.Document>
+  <meta name=Generator content="Microsoft Word 15">
+  <!--[if gte mso 9]>
+  <xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml>
+  <![endif]-->
+  <style>
+    @page WordSection1 { size:21cm 29.7cm; margin:2cm 2.5cm 2cm 2.5cm; mso-page-orientation:portrait; }
+    body { font-family: Georgia, serif; }
+    div.WordSection1 { page: WordSection1; }
+  </style>
+</head>
+<body><div class="WordSection1">${html}</div></body>
+</html>`;
+  const blob = new Blob(['﻿', doc], { type: "application/msword;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = fileName;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+}
+
 export default function LaskuPage() {
   const { id } = useParams<{ id: string }>();
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
@@ -62,12 +90,29 @@ export default function LaskuPage() {
   );
 
   if (invoice.invoiceHtml) {
+    const fname = `Lasku_${(invoice.client?.name || "asiakas").replace(/[^a-zA-Z0-9äöåÄÖÅ]/g,"_")}_${invoice.invoiceNumber || id.slice(0,8)}.doc`;
     return (
-      <iframe
-        srcDoc={invoice.invoiceHtml}
-        style={{ width: "100%", height: "100vh", border: "none", display: "block" }}
-        title="Lasku"
-      />
+      <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+        <div style={{ background: "#0F1F3D", borderBottom: "2px solid #C8A44A", padding: "0.5rem 1.2rem", display: "flex", gap: "0.6rem", alignItems: "center" }}>
+          <button onClick={() => window.print()}
+            style={{ background: "transparent", border: "1px solid rgba(200,164,74,.5)", color: "#C8A44A", padding: "0.4rem 1rem", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}>
+            🖨️ Tulosta / PDF
+          </button>
+          <button onClick={() => downloadAsWord(invoice.invoiceHtml!, fname)}
+            style={{ background: "transparent", border: "1px solid #C8A44A", color: "#C8A44A", padding: "0.4rem 1rem", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}>
+            ⬇ Word (.doc)
+          </button>
+          <button onClick={() => window.history.back()}
+            style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", padding: "0.4rem 0.8rem", fontSize: "0.78rem", cursor: "pointer" }}>
+            ← Takaisin
+          </button>
+        </div>
+        <iframe
+          srcDoc={invoice.invoiceHtml}
+          style={{ flex: 1, width: "100%", border: "none", display: "block" }}
+          title="Lasku"
+        />
+      </div>
     );
   }
 
@@ -82,15 +127,24 @@ export default function LaskuPage() {
       <div className="no-print" style={{ maxWidth: "780px", margin: "0 auto 1rem", display: "flex", gap: "0.6rem" }}>
         <button onClick={() => window.print()}
           style={{ background: "#0F1F3D", color: "#C8A44A", border: "none", padding: "0.6rem 1.4rem", fontSize: "0.85rem", fontWeight: 600, cursor: "pointer", letterSpacing: "0.05em" }}>
-          🖨️ Tulosta / Tallenna PDF
+          🖨️ Tulosta / PDF
+        </button>
+        <button onClick={() => {
+          const el = document.querySelector<HTMLElement>(".invoice-body");
+          const html = el ? el.innerHTML : document.body.innerHTML;
+          const fname = `Lasku_${(client.name || "asiakas").replace(/[^a-zA-Z0-9äöåÄÖÅ]/g,"_")}_${invoiceNumber}.doc`;
+          downloadAsWord(html, fname);
+        }}
+          style={{ background: "transparent", border: "1px solid #C8A44A", color: "#C8A44A", padding: "0.6rem 1.2rem", fontSize: "0.85rem", fontWeight: 600, cursor: "pointer" }}>
+          ⬇ Word (.doc)
         </button>
         <button onClick={() => window.history.back()}
-          style={{ background: "none", border: "1px solid #C8A44A", color: "#0F1F3D", padding: "0.6rem 1.2rem", fontSize: "0.85rem", cursor: "pointer" }}>
+          style={{ background: "none", border: "1px solid #EDE8DE", color: "#0F1F3D", padding: "0.6rem 1.2rem", fontSize: "0.85rem", cursor: "pointer" }}>
           ← Takaisin
         </button>
       </div>
 
-      <div style={{ maxWidth: "780px", margin: "0 auto", background: "#fff", border: "1px solid #E0D9CE" }}>
+      <div className="invoice-body" style={{ maxWidth: "780px", margin: "0 auto", background: "#fff", border: "1px solid #E0D9CE" }}>
         {/* Header */}
         <div style={{ background: "#0F1F3D", padding: "24px 36px", borderLeft: "4px solid #C8A44A", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "26px", fontWeight: 700, color: "#fff" }}>
