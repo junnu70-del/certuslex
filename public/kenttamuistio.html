@@ -1137,14 +1137,13 @@ async function startProcessing() {
     if (!state.audioBlob || state.audioBlob.size < 100) {
       throw new Error('Äänitiedosto on tyhjä tai liian lyhyt. Äänity uudelleen.');
     }
-    const base64 = await blobToBase64(state.audioBlob);
-    const mime = mimeToGemini(state.audioMimeType || 'audio/webm');
+    const mime = state.audioMimeType || 'audio/webm';
     setStep('step-audio', 'done');
     document.getElementById('procProgress').style.width = '33%';
 
     // Step 2: Whisper + Claude via /api/transcribe
     setStep('step-gemini', 'active');
-    const result = await callTranscribeFunction(base64, mime);
+    const result = await callTranscribeFunction(state.audioBlob, mime);
     setStep('step-gemini', 'done');
     document.getElementById('procProgress').style.width = '66%';
 
@@ -1164,25 +1163,25 @@ async function startProcessing() {
   }
 }
 
-async function callTranscribeFunction(audioBase64, mimeType) {
+async function callTranscribeFunction(audioBlob, mimeType) {
   const fnUrl = state.settings.fnurl;
   if (!fnUrl) throw new Error('API URL puuttuu. Lisää se asetuksiin.');
 
   const s = state.currentSession || {};
-  const payload = {
-    audioBase64,
-    audioMimeType: mimeType,
-    sessionId: s.id || '—',
-    meetingType: s.type || 'Tapaaminen',
-    duration: formatDuration(s.duration),
-    name: state.settings.name || '—',
-    notes: s.notes || ''
-  };
+  const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+
+  const form = new FormData();
+  form.append('audio', audioBlob, `audio.${ext}`);
+  form.append('audioMimeType', mimeType);
+  form.append('sessionId', s.id || '—');
+  form.append('meetingType', s.type || 'Tapaaminen');
+  form.append('duration', formatDuration(s.duration));
+  form.append('name', state.settings.name || '—');
+  form.append('notes', s.notes || '');
 
   const res = await fetch(fnUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body: form   // ei Content-Type headeria — selain asettaa multipart/form-data automaattisesti
   });
 
   const data = await res.json().catch(() => ({}));
