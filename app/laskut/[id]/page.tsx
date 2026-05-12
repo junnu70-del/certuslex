@@ -22,9 +22,18 @@ interface InvoiceData {
 
 function downloadAsWord(html: string, fileName: string) {
   const cleanedHtml = html
-    .replace(/object-fit\s*:\s*[^;'"]+;?\s*/gi, "")
-    .replace(/max-height\s*:\s*[^;'"]+;?\s*/gi, "")
-    .replace(/<img(\s)/gi, '<img style="max-width:580px;height:auto;display:block;"$1');
+    .replace(/^```(?:html)?\s*/i, "").replace(/\s*```\s*$/, "")
+    .replace(/<img([^>]*)>/gi, (_match: string, attrs: string) => {
+      let a = attrs
+        .replace(/\s+width\s*=\s*["'][^"']*["']/gi, "")
+        .replace(/\s+height\s*=\s*["'][^"']*["']/gi, "")
+        .replace(/width\s*:\s*[^;'"]+;?\s*/gi, "")
+        .replace(/height\s*:\s*[^;'"]+;?\s*/gi, "")
+        .replace(/max-width\s*:\s*[^;'"]+;?\s*/gi, "")
+        .replace(/max-height\s*:\s*[^;'"]+;?\s*/gi, "")
+        .replace(/object-fit\s*:\s*[^;'"]+;?\s*/gi, "");
+      return `<img width="560"${a}>`;
+    });
   const doc = `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
       xmlns:w="urn:schemas-microsoft-com:office:word"

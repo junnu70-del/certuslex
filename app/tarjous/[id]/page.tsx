@@ -1,6 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
+function prepareForWord(html: string): string {
+  return html
+    .replace(/^```(?:html)?\s*/i, "").replace(/\s*```\s*$/, "")
+    .replace(/<img([^>]*)>/gi, (_match: string, attrs: string) => {
+      let a = attrs
+        .replace(/\s+width\s*=\s*["'][^"']*["']/gi, "")
+        .replace(/\s+height\s*=\s*["'][^"']*["']/gi, "")
+        .replace(/width\s*:\s*[^;'"]+;?\s*/gi, "")
+        .replace(/height\s*:\s*[^;'"]+;?\s*/gi, "")
+        .replace(/max-width\s*:\s*[^;'"]+;?\s*/gi, "")
+        .replace(/max-height\s*:\s*[^;'"]+;?\s*/gi, "")
+        .replace(/object-fit\s*:\s*[^;'"]+;?\s*/gi, "");
+      return `<img width="560"${a}>`;
+    });
+}
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/firebase";
@@ -47,10 +63,7 @@ export default function TarjousPage() {
     const projectName = (quote?.project?.projectName || "tarjous").replace(/[^a-zA-Z0-9äöåÄÖÅ]/g, "_");
     const fileName = `Tarjous_${clientName}_${projectName}.doc`;
 
-    const cleanedHtml = quoteHtml
-      .replace(/object-fit\s*:\s*[^;'"]+;?\s*/gi, "")
-      .replace(/max-height\s*:\s*[^;'"]+;?\s*/gi, "")
-      .replace(/<img(\s)/gi, '<img style="max-width:580px;height:auto;display:block;"$1');
+    const cleanedHtml = prepareForWord(quoteHtml);
 
     const html = `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"

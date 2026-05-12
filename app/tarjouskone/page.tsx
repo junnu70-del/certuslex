@@ -8,6 +8,25 @@ import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { t, PROJECT_TYPES_FI, PROJECT_TYPES_EN, type Lang } from "@/lib/translations";
 
+// Valmistelee HTML:n Word-vientiä varten
+function prepareForWord(html: string): string {
+  return html
+    // Poista mahdolliset markdown-koodiaidat (```html ... ```)
+    .replace(/^```(?:html)?\s*/i, "").replace(/\s*```\s*$/, "")
+    // Korvaa jokainen img-tagi — poista vanhat koko-tyylit, pakota width=560
+    .replace(/<img([^>]*)>/gi, (_match: string, attrs: string) => {
+      let a = attrs
+        .replace(/\s+width\s*=\s*["'][^"']*["']/gi, "")
+        .replace(/\s+height\s*=\s*["'][^"']*["']/gi, "")
+        .replace(/width\s*:\s*[^;'"]+;?\s*/gi, "")
+        .replace(/height\s*:\s*[^;'"]+;?\s*/gi, "")
+        .replace(/max-width\s*:\s*[^;'"]+;?\s*/gi, "")
+        .replace(/max-height\s*:\s*[^;'"]+;?\s*/gi, "")
+        .replace(/object-fit\s*:\s*[^;'"]+;?\s*/gi, "");
+      return `<img width="560"${a}>`;
+    });
+}
+
 // Määritelty komponentin ULKOPUOLELLA — ei re-mounttaa joka renderillä
 function Input({ label, value, onChange, placeholder, type = "text" }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string;
@@ -288,12 +307,8 @@ export default function TarjouskoneePage() {
     const projectName = project.projectName?.replace(/[^a-zA-Z0-9äöåÄÖÅ]/g, "_") || "tarjous";
     const fileName = `Tarjous_${clientName}_${projectName}.doc`;
 
-    // Word ei lue <style>-CSS:ää — inline-tyylit img-tageille
-    const cleanedQuote = quote
-      .replace(/object-fit\s*:\s*[^;'"]+;?\s*/gi, "")
-      .replace(/max-height\s*:\s*[^;'"]+;?\s*/gi, "")
-      // Lisää width/height-rajoitus jokaiseen img-tagiin
-      .replace(/<img(\s)/gi, '<img style="max-width:580px;height:auto;display:block;"$1');
+    // Korjaa kaikki img-tagit: pakota width=560 Word-yhteensopivasti
+    const cleanedQuote = prepareForWord(quote);
 
     const html = `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
