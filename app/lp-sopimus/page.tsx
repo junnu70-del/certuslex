@@ -268,12 +268,12 @@ export default function SopimuskoneLanding() {
           </div>
           <h1 className="lp-h1">Sopimus valmiina<em>5 minuutissa.</em></h1>
           <p className="hero-sub">
-            <span className="slogan-wrap" style={{minWidth:"300px",verticalAlign:"bottom"}}>
-              <span className="slogan-word enter">Lopeta lakimiehen odottelu.</span>
-              <span className="slogan-word below">Lopeta sopimusten kopioilu.</span>
-              <span className="slogan-word below">Lopeta turha riski.</span>
+            <span className="slogan-wrap" style={{minWidth:"340px",verticalAlign:"bottom"}}>
+              <span className="slogan-word enter">Onko asiakirja kunnossa?</span>
+              <span className="slogan-word below">Osaanko laatia tämän oikein?</span>
+              <span className="slogan-word below">Joudunko tästä ongelmiin?</span>
             </span>
-            {" "}<b>AI kirjoittaa sopimuksen,</b> molemmat osapuolet allekirjoittavat selaimessa. Juridisesti pätevä.
+            {" "}Ei enää epävarmuutta. <b>AI kirjoittaa sopimuksen,</b> juristivarmistettuna.
           </p>
           <div className="btns">
             <a href="/kirjaudu?plan=pro&trial=1" className="btn-gold">Kokeile 30 päivää ilmaiseksi →</a>
@@ -303,13 +303,13 @@ export default function SopimuskoneLanding() {
       <section className="pain">
         <div className="pain-head">
           <div className="section-tag">TUNNISTUUKO TÄMÄ?</div>
-          <h2>Lopeta sopimusten säätäminen. <span>Aloita tänään.</span></h2>
+          <h2>Epävarmuus maksaa. <span>Varmuus ei.</span></h2>
         </div>
         <div className="pain-grid">
           {[
-            {b:"Kopioit vanhaa sopimusta Wordissa, muutat nimet käsin — ja toivot ettei mikään klausuuli ole vanhentunut", a:"Kerro sopimuksen tyyppi ja osapuolet → AI luo ajantasaisen sopimuksen sekunnissa"},
-            {b:"Lakimies veloittaa 300 € tunnilta NDA:sta joka on käytännössä vakiomuotoinen asiakirja", a:"Valmis NDA, alihankkijasopimus tai työsopimus alle 5 minuutissa — murto-osalla hinnasta"},
-            {b:"Sopimus lähetetään sähköpostilla, tulostetaan, allekirjoitetaan ja skannataan — tai se jää kokonaan tekemättä", a:"Molemmat osapuolet allekirjoittavat sähköisesti suoraan puhelimesta. Arkisto tallentaa kaiken."},
+            {b:"\"Onko tämä asiakirja nyt kunnossa?\" — Et tiedä, etkä uskalla kysyä lakimieheltä kun lasku tulee.", a:"Sopimuskone luo juristivarmistetun pohjan automaattisesti. Tiedät että se on oikein."},
+            {b:"\"Miten nämä vastuut oikein määräytyvät?\" — Googlet kaksi tuntia, saat viisi eri vastausta.", a:"AI selittää vastuukysymykset selkokielellä ja kirjoittaa ne sopimukseen täsmälleen oikein."},
+            {b:"\"Joudunko tästä sopimuksesta ongelmiin?\" — Käytät vanhaa pohjaa ja toivot parasta.", a:"Ajantasainen sopimus, sähköinen allekirjoitus, arkisto todisteena. Selkä suojattuna."},
           ].map((item,i)=>(
             <div className="pain-col" key={i}>
               <div className="tag-before">ENNEN</div>
