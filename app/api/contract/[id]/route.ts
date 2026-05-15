@@ -37,7 +37,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const decoded = await auth.verifyIdToken(idToken);
         uid = decoded.uid;
         const email = decoded.email ?? "";
-        isAdmin = decoded.admin === true || email.endsWith("@certuslex.fi") || email === "junnu70@gmail.com";
+        const adminEmails = ["junnu70@gmail.com", "risto@kurkilaw.com"];
+        isAdmin = decoded.admin === true || email.endsWith("@certuslex.fi") || adminEmails.includes(email);
       } catch {
         isPublic = true; // Treat invalid token as public
       }
