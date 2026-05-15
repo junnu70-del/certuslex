@@ -66,6 +66,53 @@ ${text.slice(0, 8000)}`,
   return block.type === "text" ? block.text : "";
 }
 
+async function generateMuutosuunnitelma(text: string): Promise<string> {
+  const msg = await anthropic.messages.create({
+    model: "claude-opus-4-5",
+    max_tokens: 3000,
+    messages: [
+      {
+        role: "user",
+        content: `Olet kokenut suomalainen juristi. Laadi seuraavaan asiakirjaan konkreettinen muutosuunnitelma, jonka toinen juristi voi hyväksyä tai hylätä sellaisenaan.
+
+Muoto (suomenkielinen HTML, ei markdown):
+
+<h3>Muutosuunnitelma</h3>
+<p>Lyhyt yhteenveto: mitä ja miksi muutetaan.</p>
+
+<h3>Ehdotetut muutokset</h3>
+
+Listaa jokainen muutos seuraavassa muodossa:
+<div class="muutos">
+  <div class="muutos-kohta">Kohta / otsikko johon muutos kohdistuu</div>
+  <div class="muutos-nykyinen"><strong>Nykyinen teksti:</strong> "..."</div>
+  <div class="muutos-ehdotus"><strong>Ehdotettu teksti:</strong> "..."</div>
+  <div class="muutos-perustelu"><strong>Perustelu:</strong> Miksi tämä muutos on tarpeen oikeudellisesti.</div>
+</div>
+
+Jos kohtaa ei ole olemassa lainkaan, merkitse:
+<div class="muutos">
+  <div class="muutos-kohta">LISÄTTÄVÄ KOHTA: [otsikko]</div>
+  <div class="muutos-nykyinen"><strong>Nykyinen teksti:</strong> (ei olemassa)</div>
+  <div class="muutos-ehdotus"><strong>Ehdotettu teksti:</strong> "..."</div>
+  <div class="muutos-perustelu"><strong>Perustelu:</strong> ...</div>
+</div>
+
+<h3>Muutosten vaikutus</h3>
+<p>Lyhyt arvio siitä, miten ehdotetut muutokset parantavat asiakirjan oikeudellista kestävyyttä.</p>
+
+Ole täsmällinen — kirjoita konkreettinen, valmis teksti joka voidaan lähettää asiakkaalle sellaisenaan juristin hyväksynnän jälkeen. ÄLÄ käytä epämääräisiä ilmaisuja kuten "tarkenna" tai "harkitse" — kirjoita valmis ehdotus.
+
+ASIAKIRJA:
+${text.slice(0, 8000)}`,
+      },
+    ],
+  });
+
+  const block = msg.content[0];
+  return block.type === "text" ? block.text : "";
+}
+
 async function sendJuristiNotification(contractId: string, fileName: string, customerEmail: string) {
   const transporter = nodemailer.createTransport({
     host: "smtp.zoho.eu",
@@ -163,13 +210,18 @@ export async function POST(req: NextRequest) {
       contractText = fileBuffer.toString("utf-8").replace(/[^\x20-\x7EäöåÄÖÅ\n\r\t]/g, " ");
     }
 
-    // Claude analysis
+    // Claude analysis + muutosuunnitelma (parallel)
     let analysis = "";
+    let muutosuunnitelma = "";
     try {
-      analysis = await analyzeContract(contractText);
+      [analysis, muutosuunnitelma] = await Promise.all([
+        analyzeContract(contractText),
+        generateMuutosuunnitelma(contractText),
+      ]);
     } catch (err) {
-      console.error("[contract/upload] Claude analysis error:", err);
+      console.error("[contract/upload] Claude error:", err);
       analysis = "<p>Esianalyysi ei onnistunut. Tarkista asiakirja manuaalisesti.</p>";
+      muutosuunnitelma = "<p>Muutosuunnitelma ei onnistunut.</p>";
     }
 
     // Save to Firestore
@@ -186,6 +238,7 @@ export async function POST(req: NextRequest) {
       customerUid: uid,
       notes: notes ?? "",
       claudeAnalysis: analysis,
+      claudeMuutosuunnitelma: muutosuunnitelma,
       status: "pending_review", // pending_review | approved | rejected | changes_requested
       juristiComment: "",
       createdAt: FieldValue.serverTimestamp(),

@@ -23,7 +23,8 @@ async function sendCustomerNotification(
   fileName: string,
   status: string,
   juristiComment: string,
-  contractId: string
+  contractId: string,
+  muutosuunnitelma?: string
 ) {
   const transporter = nodemailer.createTransport({
     host: "smtp.zoho.eu",
@@ -77,6 +78,12 @@ async function sendCustomerNotification(
         <div style="background: #fff; border-left: 3px solid #C8A44A; padding: 16px 20px; margin: 16px 0;">
           <div style="font-size: 13px; color: #8A8070; letter-spacing: 0.08em; margin-bottom: 8px;">JURISTIN KOMMENTTI</div>
           <div style="font-size: 14px; color: #2C2416; line-height: 1.7;">${juristiComment.replace(/\n/g, "<br>")}</div>
+        </div>
+        ` : ""}
+        ${isApproved && muutosuunnitelma ? `
+        <div style="background: #fff; border: 1px solid #EDE8DE; border-left: 3px solid #2a7a2a; padding: 20px 24px; margin: 16px 0;">
+          <div style="font-size: 12px; color: #8A8070; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 12px;">JURISTIN HYVÄKSYMÄ MUUTOSUUNNITELMA</div>
+          <div style="font-size: 13px; color: #2C2416; line-height: 1.8;">${muutosuunnitelma}</div>
         </div>
         ` : ""}
         <a href="${statusUrl}" style="display: inline-block; margin-top: 16px; background: #C8A44A; color: #0F1F3D; padding: 12px 28px; font-weight: 700; font-size: 14px; text-decoration: none; letter-spacing: 0.05em;">
@@ -147,7 +154,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           data.fileName ?? "asiakirja",
           status,
           juristiComment ?? "",
-          id
+          id,
+          data.claudeMuutosuunnitelma ?? ""
         );
       } catch (err) {
         console.error("[contract/approve] Email error:", err);

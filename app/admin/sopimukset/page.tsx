@@ -16,6 +16,7 @@ interface Contract {
   customerName: string;
   notes: string;
   claudeAnalysis: string;
+  claudeMuutosuunnitelma: string;
   status: "pending_review" | "approved" | "rejected" | "changes_requested";
   juristiComment: string;
   createdAt: { _seconds: number } | null;
@@ -37,6 +38,7 @@ export default function AdminSopimuksetPage() {
   const [saving, setSaving] = useState(false);
   const [idToken, setIdToken] = useState("");
   const [filter, setFilter] = useState<"all" | "pending_review">("pending_review");
+  const [activeTab, setActiveTab] = useState<"analyysi" | "muutos">("analyysi");
 
   useEffect(() => {
     if (!auth) { setError("Kirjautuminen vaaditaan"); setLoading(false); return; }
@@ -182,7 +184,7 @@ export default function AdminSopimuksetPage() {
               return (
                 <div
                   key={c.contractId}
-                  onClick={() => { setSelected(c); setJuristiComment(c.juristiComment ?? ""); }}
+                  onClick={() => { setSelected(c); setJuristiComment(c.juristiComment ?? ""); setActiveTab("analyysi"); }}
                   style={{
                     padding: "16px 20px",
                     borderBottom: `1px solid ${BORDER}`,
@@ -241,15 +243,43 @@ export default function AdminSopimuksetPage() {
               </div>
             )}
 
-            {/* Claude analysis */}
-            <div style={{ background: "#fff", border: `1px solid ${BORDER}`, borderLeft: `3px solid ${GOLD}`, padding: "16px 18px", marginBottom: "24px" }}>
-              <div style={{ fontSize: "11px", letterSpacing: "0.1em", fontWeight: 700, color: "#8A8070", marginBottom: "12px" }}>
-                ✦ CLAUDE-ESIANALYYSI
+            {/* Claude tabs */}
+            <div style={{ marginBottom: "24px" }}>
+              <div style={{ display: "flex", borderBottom: `2px solid ${BORDER}`, marginBottom: "0" }}>
+                {([["analyysi", "✦ Esianalyysi"], ["muutos", "✎ Muutosuunnitelma"]] as const).map(([tab, label]) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      borderBottom: activeTab === tab ? `2px solid ${GOLD}` : "2px solid transparent",
+                      marginBottom: "-2px",
+                      padding: "10px 16px",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      color: activeTab === tab ? NAVY : "#8A8070",
+                      cursor: "pointer",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
-              <div
-                style={{ fontSize: "13px", color: "#2C2416", lineHeight: "1.7" }}
-                dangerouslySetInnerHTML={{ __html: selected.claudeAnalysis }}
-              />
+              <div style={{ background: "#fff", border: `1px solid ${BORDER}`, borderTop: "none", borderLeft: `3px solid ${GOLD}`, padding: "16px 18px" }}>
+                {activeTab === "analyysi" ? (
+                  <div
+                    style={{ fontSize: "13px", color: "#2C2416", lineHeight: "1.7" }}
+                    dangerouslySetInnerHTML={{ __html: selected.claudeAnalysis || "<p style='color:#8A8070'>Ei esianalyysia</p>" }}
+                  />
+                ) : (
+                  <div
+                    style={{ fontSize: "13px", color: "#2C2416", lineHeight: "1.7" }}
+                    dangerouslySetInnerHTML={{ __html: selected.claudeMuutosuunnitelma || "<p style='color:#8A8070'>Ei muutosuunnitelmaa</p>" }}
+                  />
+                )}
+              </div>
             </div>
 
             {/* Juristi comment */}
