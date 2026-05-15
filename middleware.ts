@@ -8,6 +8,11 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect("https://www.certuslex.fi/lp", { status: 302 });
   }
 
+  // Ohjaa sopimuskone.com → certuslex.fi/lp-sopimus
+  if (host === "sopimuskone.com" || host === "www.sopimuskone.com") {
+    return NextResponse.redirect("https://www.certuslex.fi/lp-sopimus", { status: 302 });
+  }
+
   return NextResponse.next();
 }
 
