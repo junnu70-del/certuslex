@@ -273,7 +273,7 @@ export default function SopimuskoneLanding() {
               <span className="slogan-word below">Osaanko laatia tämän oikein?</span>
               <span className="slogan-word below">Joudunko tästä ongelmiin?</span>
             </span>
-            {" "}Ei enää epävarmuutta. <b>AI kirjoittaa sopimuksen,</b> juristivarmistettuna.
+            {" "}Ei enää epävarmuutta. <b>Tuo sopimuksesi — juristi varmistaa</b> että se on oikein.
           </p>
           <div className="btns">
             <a href="/kirjaudu?plan=pro&trial=1" className="btn-gold">Kokeile 30 päivää ilmaiseksi →</a>
@@ -292,8 +292,8 @@ export default function SopimuskoneLanding() {
       {/* TICKER */}
       <div className="ticker">
         <div className="ticker-track">
-          {["AI KIRJOITTAA","✦","SÄHKÖINEN ALLEKIRJOITUS","✦","5 MINUUTTIA","✦","eIDAS-PÄTEVÄ","✦","JURISTIVARMISTETTU","✦","SOPIMUSARKISTO","✦",
-            "AI KIRJOITTAA","✦","SÄHKÖINEN ALLEKIRJOITUS","✦","5 MINUUTTIA","✦","eIDAS-PÄTEVÄ","✦","JURISTIVARMISTETTU","✦","SOPIMUSARKISTO","✦"].map((t,i)=>(
+          {["JURISTI TARKISTAA","✦","SÄHKÖINEN ALLEKIRJOITUS","✦","NOPEA HYVÄKSYNTÄ","✦","eIDAS-PÄTEVÄ","✦","JURISTIVARMISTETTU","✦","SOPIMUSARKISTO","✦",
+            "JURISTI TARKISTAA","✦","SÄHKÖINEN ALLEKIRJOITUS","✦","NOPEA HYVÄKSYNTÄ","✦","eIDAS-PÄTEVÄ","✦","JURISTIVARMISTETTU","✦","SOPIMUSARKISTO","✦"].map((t,i)=>(
             <span className="ticker-item" key={i}>{t}</span>
           ))}
         </div>
@@ -307,9 +307,9 @@ export default function SopimuskoneLanding() {
         </div>
         <div className="pain-grid">
           {[
-            {b:"\"Onko tämä asiakirja nyt kunnossa?\" — Et tiedä, etkä uskalla kysyä lakimieheltä kun lasku tulee.", a:"Sopimuskone luo juristivarmistetun pohjan automaattisesti. Tiedät että se on oikein."},
-            {b:"\"Miten nämä vastuut oikein määräytyvät?\" — Googlet kaksi tuntia, saat viisi eri vastausta.", a:"AI selittää vastuukysymykset selkokielellä ja kirjoittaa ne sopimukseen täsmälleen oikein."},
-            {b:"\"Joudunko tästä sopimuksesta ongelmiin?\" — Käytät vanhaa pohjaa ja toivot parasta.", a:"Ajantasainen sopimus, sähköinen allekirjoitus, arkisto todisteena. Selkä suojattuna."},
+            {b:"\"Onko tämä asiakirja nyt kunnossa?\" — Et tiedä, etkä uskalla kysyä lakimieheltä kun lasku tulee.", a:"Lataa sopimuksesi palveluun — juristi tarkistaa ja vahvistaa oikeellisuuden. Tiedät että se pitää."},
+            {b:"\"Miten nämä vastuut oikein määräytyvät?\" — Googlet kaksi tuntia, saat viisi eri vastausta.", a:"Juristi katsoo läpi vastuukysymykset ja merkitsee selkokielellä mitä pitää korjata tai hyväksyä."},
+            {b:"\"Joudunko tästä sopimuksesta ongelmiin?\" — Käytät vanhaa pohjaa ja toivot parasta.", a:"Juristivarmistettu asiakirja, sähköinen allekirjoitus, arkisto todisteena. Selkä suojattuna."},
           ].map((item,i)=>(
             <div className="pain-col" key={i}>
               <div className="tag-before">ENNEN</div>
@@ -331,9 +331,9 @@ export default function SopimuskoneLanding() {
         </div>
         <div className="steps-row">
           {[
-            {n:"1", h:"Valitse sopimuksen tyyppi", p:"NDA, alihankkijasopimus, työsopimus, vuokrasopimus tai kauppasopimus. Kerro osapuolten tiedot ja sopimuksen keskeinen sisältö."},
-            {n:"2", h:"AI luo sopimuksen", p:"Ammattimainen, juridisesti ajantasainen sopimus syntyy sekunnissa. Voit muokata sitä ennen lähettämistä."},
-            {n:"3", h:"Molemmat allekirjoittavat", p:"Kumpikin osapuoli saa sähköpostiin henkilökohtaisen linkin ja allekirjoittaa selaimessa. eIDAS-pätevä, juridisesti sitova."},
+            {n:"1", h:"Lataa asiakirjasi palveluun", p:"Toit oman sopimuksen, käytit valmispohjaa tai laadit sen itse — ei väliä. Lataa se palveluun ja kerro mitä haluat tarkistettavan."},
+            {n:"2", h:"Juristi tarkistaa ja vahvistaa", p:"Pätevä juristi käy läpi asiakirjan, tarkistaa vastuut, ehdot ja laillisuuden — ja antaa hyväksynnän tai korjausehdotukset selkokielellä."},
+            {n:"3", h:"Molemmat allekirjoittavat", p:"Kun asiakirja on kunnossa, kumpikin osapuoli allekirjoittaa sähköisesti selaimessa. eIDAS-pätevä, juridisesti sitova, arkistoitu."},
           ].map((s,i)=>(
             <div className="step-item" key={i}>
               <div className="step-num">{s.n}</div>
@@ -365,12 +365,12 @@ export default function SopimuskoneLanding() {
           </div>
           <div className="demo-box">
             <div className="demo-badge">LIVE DEMO</div>
-            <div style={{fontSize:".62rem",fontWeight:700,letterSpacing:".1em",color:"rgba(255,255,255,.28)",marginBottom:".9rem"}}>AI GENEROI SOPIMUSTA...</div>
+            <div style={{fontSize:".62rem",fontWeight:700,letterSpacing:".1em",color:"rgba(255,255,255,.28)",marginBottom:".9rem"}}>JURISTI TARKISTAA...</div>
             <div className="demo-loading"><div className="demo-loading-fill"></div></div>
-            <div className="demo-line"><div className="demo-dot-gold"></div><div className="demo-line-t"><b>Tyyppi:</b> Alihankkijasopimus</div></div>
-            <div className="demo-line"><div className="demo-dot-gold"></div><div className="demo-line-t"><b>Osapuolet:</b> Rakennus Oy ↔ Sähköasennus Oy</div></div>
-            <div className="demo-line"><div className="demo-dot-gold"></div><div className="demo-line-t"><b>Kesto:</b> 12 kk, irtisanomisaika 30 pv</div></div>
-            <div className="demo-done">✓ Sopimus valmis — lähetä allekirjoitettavaksi</div>
+            <div className="demo-line"><div className="demo-dot-gold"></div><div className="demo-line-t"><b>Asiakirja:</b> Alihankkijasopimus</div></div>
+            <div className="demo-line"><div className="demo-dot-gold"></div><div className="demo-line-t"><b>Vastuut:</b> tarkistettu ✓</div></div>
+            <div className="demo-line"><div className="demo-dot-gold"></div><div className="demo-line-t"><b>Ehdot ja laillisuus:</b> vahvistettu ✓</div></div>
+            <div className="demo-done">✓ Juristivarmistettu — lähetä allekirjoitettavaksi</div>
           </div>
         </div>
       </section>
@@ -435,7 +435,7 @@ export default function SopimuskoneLanding() {
         <div className="final-ov"></div>
         <div className="final-glow"></div>
         <div className="final-inner">
-          <h2>Lopeta lakimiehen odottelu.<em>Aloita tänään.</em></h2>
+          <h2>Tuo sopimuksesi.<em>Juristi hoitaa loput.</em></h2>
           <p>30 päivää ilmaiseksi. Ei luottokorttia. Ei sitoutumista.</p>
           <a href="/kirjaudu?plan=pro&trial=1" className="btn-gold" style={{fontSize:"1.1rem",padding:"1.1rem 3rem"}}>Kokeile ilmaiseksi →</a>
         </div>
