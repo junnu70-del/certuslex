@@ -17,6 +17,26 @@ function getAdminDb() {
   return getFirestore();
 }
 
+function buildWordDoc(html: string): Buffer {
+  const clean = html
+    .replace(/^```(?:html)?\s*/i, "").replace(/\s*```\s*$/, "")
+    .replace(/<img[^>]*\/?>/gi, "");
+  const doc = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8">
+<meta name=ProgId content=Word.Document>
+<style>
+  @page WordSection1 { size:21cm 29.7cm; margin:2cm 2.5cm 2cm 2.5cm; }
+  body { font-family: Georgia, serif; }
+  div.WordSection1 { page: WordSection1; }
+</style>
+</head>
+<body><div class="WordSection1">${clean}</div></body></html>`;
+  return Buffer.from("﻿" + doc, "utf-8");
+}
+
 async function sendCustomerNotification(
   customerEmail: string,
   customerName: string,
@@ -24,7 +44,7 @@ async function sendCustomerNotification(
   status: string,
   juristiComment: string,
   contractId: string,
-  muutosuunnitelma?: string
+  korjattuAsiakirja?: string
 ) {
   const transporter = nodemailer.createTransport({
     host: "smtp.zoho.eu",
@@ -80,10 +100,10 @@ async function sendCustomerNotification(
           <div style="font-size: 14px; color: #2C2416; line-height: 1.7;">${juristiComment.replace(/\n/g, "<br>")}</div>
         </div>
         ` : ""}
-        ${isApproved && muutosuunnitelma ? `
-        <div style="background: #fff; border: 1px solid #EDE8DE; border-left: 3px solid #2a7a2a; padding: 20px 24px; margin: 16px 0;">
-          <div style="font-size: 12px; color: #8A8070; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 12px;">JURISTIN HYVÄKSYMÄ MUUTOSUUNNITELMA</div>
-          <div style="font-size: 13px; color: #2C2416; line-height: 1.8;">${muutosuunnitelma}</div>
+        ${isApproved && korjattuAsiakirja ? `
+        <div style="background: #f0f4ff; border-left: 3px solid #2a4a8a; padding: 14px 20px; margin: 16px 0;">
+          <div style="font-size: 13px; color: #2a4a8a; font-weight: 700;">📎 Korjattu asiakirja on liitetty tähän viestiin Word-tiedostona (.doc)</div>
+          <div style="font-size: 12px; color: #555; margin-top: 4px;">Juristivarmistettu versio — avaa ja tallenna Word-ohjelmalla</div>
         </div>
         ` : ""}
         <a href="${statusUrl}" style="display: inline-block; margin-top: 16px; background: #C8A44A; color: #0F1F3D; padding: 12px 28px; font-weight: 700; font-size: 14px; text-decoration: none; letter-spacing: 0.05em;">
@@ -95,6 +115,13 @@ async function sendCustomerNotification(
         <p style="margin-top: 16px; font-size: 11px; color: #8A8070;">© 2026 CertusLex — certuslex.fi</p>
       </div>
     `,
+    attachments: isApproved && korjattuAsiakirja ? [
+      {
+        filename: `Juristivarmistettu_${fileName.replace(/\.[^.]+$/, "")}.doc`,
+        content: buildWordDoc(korjattuAsiakirja),
+        contentType: "application/msword",
+      }
+    ] : [],
   });
 }
 
@@ -155,7 +182,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           status,
           juristiComment ?? "",
           id,
-          data.claudeMuutosuunnitelma ?? ""
+          data.claudeKorjattuAsiakirja ?? ""
         );
       } catch (err) {
         console.error("[contract/approve] Email error:", err);

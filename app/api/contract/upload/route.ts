@@ -67,45 +67,55 @@ ${text.slice(0, 8000)}`,
   return block.type === "text" ? block.text : "";
 }
 
-async function generateMuutosuunnitelma(text: string): Promise<string> {
+async function generateKorjattuAsiakirja(text: string, fileName: string): Promise<string> {
   const msg = await anthropic.messages.create({
     model: "claude-opus-4-5",
-    max_tokens: 3000,
+    max_tokens: 4000,
     messages: [
       {
         role: "user",
-        content: `Olet kokenut suomalainen juristi. Laadi seuraavaan asiakirjaan konkreettinen muutosuunnitelma, jonka toinen juristi voi hyväksyä tai hylätä sellaisenaan.
+        content: `Olet kokenut suomalainen juristi. Tehtäväsi on kirjoittaa oheinen asiakirja uudelleen oikeudellisesti päteväksi ja kattavaksi — ei listata muutoksia, vaan tuotetaan VALMIS KORJATTU ASIAKIRJA.
 
-Muoto (suomenkielinen HTML, ei markdown):
+Kirjoita koko asiakirja uudelleen HTML-muodossa, joka on painovalmis Word-dokumenttia varten. Noudata seuraavaa rakennetta:
 
-<h3>Muutosuunnitelma</h3>
-<p>Lyhyt yhteenveto: mitä ja miksi muutetaan.</p>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: Georgia, serif; font-size: 12pt; line-height: 1.6; color: #1a1a1a; max-width: 16cm; margin: 0 auto; }
+  h1 { font-size: 16pt; font-weight: bold; text-align: center; margin-bottom: 6pt; }
+  h2 { font-size: 13pt; font-weight: bold; margin-top: 18pt; margin-bottom: 6pt; border-bottom: 1px solid #ccc; padding-bottom: 3pt; }
+  h3 { font-size: 12pt; font-weight: bold; margin-top: 12pt; }
+  p { margin: 6pt 0; text-align: justify; }
+  .header-info { text-align: center; margin-bottom: 24pt; color: #444; font-size: 10pt; }
+  .osapuolet { background: #f9f9f9; border: 1px solid #ddd; padding: 12pt; margin: 12pt 0; }
+  .allekirjoitus { margin-top: 36pt; display: grid; grid-template-columns: 1fr 1fr; gap: 24pt; }
+  .allekirjoitus-block { border-top: 1px solid #333; padding-top: 6pt; font-size: 10pt; }
+  .juristivarmistettu { background: #f0f4ff; border-left: 3px solid #2a4a8a; padding: 8pt 12pt; margin: 12pt 0; font-size: 10pt; color: #2a4a8a; }
+</style>
+</head>
+<body>
 
-<h3>Ehdotetut muutokset</h3>
+[KIRJOITA TÄHÄN KOKO KORJATTU ASIAKIRJA]
 
-Listaa jokainen muutos seuraavassa muodossa:
-<div class="muutos">
-  <div class="muutos-kohta">Kohta / otsikko johon muutos kohdistuu</div>
-  <div class="muutos-nykyinen"><strong>Nykyinen teksti:</strong> "..."</div>
-  <div class="muutos-ehdotus"><strong>Ehdotettu teksti:</strong> "..."</div>
-  <div class="muutos-perustelu"><strong>Perustelu:</strong> Miksi tämä muutos on tarpeen oikeudellisesti.</div>
+<div class="juristivarmistettu">
+  ✓ Tämä asiakirja on tarkistettu ja hyväksytty CertusLex-juristin toimesta. Päivämäärä: ${new Date().toLocaleDateString("fi-FI")}
 </div>
 
-Jos kohtaa ei ole olemassa lainkaan, merkitse:
-<div class="muutos">
-  <div class="muutos-kohta">LISÄTTÄVÄ KOHTA: [otsikko]</div>
-  <div class="muutos-nykyinen"><strong>Nykyinen teksti:</strong> (ei olemassa)</div>
-  <div class="muutos-ehdotus"><strong>Ehdotettu teksti:</strong> "..."</div>
-  <div class="muutos-perustelu"><strong>Perustelu:</strong> ...</div>
-</div>
+</body>
+</html>
 
-<h3>Muutosten vaikutus</h3>
-<p>Lyhyt arvio siitä, miten ehdotetut muutokset parantavat asiakirjan oikeudellista kestävyyttä.</p>
+Ohjeet:
+- Säilytä asiakirjan alkuperäinen tarkoitus ja osapuolten tiedot
+- Korjaa kaikki oikeudelliset puutteet, epäselvyydet ja riskit
+- Lisää puuttuvat standardilausekkeet (vastuunrajoitus, salassapito, erimielisyyksien ratkaisu, irtisanomisehdot jne.) jos ne puuttuvat
+- Kirjoita täsmällisellä suomen oikeuskielellä
+- Tiedoston nimi: ${fileName}
+- ÄLÄ lisää selityksiä tai kommentteja — pelkkä valmis asiakirja
 
-Ole täsmällinen — kirjoita konkreettinen, valmis teksti joka voidaan lähettää asiakkaalle sellaisenaan juristin hyväksynnän jälkeen. ÄLÄ käytä epämääräisiä ilmaisuja kuten "tarkenna" tai "harkitse" — kirjoita valmis ehdotus.
-
-ASIAKIRJA:
-${text.slice(0, 8000)}`,
+ALKUPERÄINEN ASIAKIRJA:
+${text.slice(0, 7000)}`,
       },
     ],
   });
@@ -218,18 +228,18 @@ export async function POST(req: NextRequest) {
       contractText = fileBuffer.toString("utf-8").replace(/[^\x20-\x7EäöåÄÖÅ\n\r\t]/g, " ");
     }
 
-    // Claude analysis + muutosuunnitelma (parallel)
+    // Claude analysis + korjattu asiakirja (parallel)
     let analysis = "";
-    let muutosuunnitelma = "";
+    let korjattuAsiakirja = "";
     try {
-      [analysis, muutosuunnitelma] = await Promise.all([
+      [analysis, korjattuAsiakirja] = await Promise.all([
         analyzeContract(contractText),
-        generateMuutosuunnitelma(contractText),
+        generateKorjattuAsiakirja(contractText, fileName),
       ]);
     } catch (err) {
       console.error("[contract/upload] Claude error:", err);
       analysis = "<p>Esianalyysi ei onnistunut. Tarkista asiakirja manuaalisesti.</p>";
-      muutosuunnitelma = "<p>Muutosuunnitelma ei onnistunut.</p>";
+      korjattuAsiakirja = "";
     }
 
     // Save to Firestore
@@ -246,7 +256,7 @@ export async function POST(req: NextRequest) {
       customerUid: uid,
       notes: notes ?? "",
       claudeAnalysis: analysis,
-      claudeMuutosuunnitelma: muutosuunnitelma,
+      claudeKorjattuAsiakirja: korjattuAsiakirja,
       status: "pending_review", // pending_review | approved | rejected | changes_requested
       juristiComment: "",
       createdAt: FieldValue.serverTimestamp(),

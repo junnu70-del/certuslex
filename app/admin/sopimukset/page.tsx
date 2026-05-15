@@ -16,7 +16,7 @@ interface Contract {
   customerName: string;
   notes: string;
   claudeAnalysis: string;
-  claudeMuutosuunnitelma: string;
+  claudeKorjattuAsiakirja: string;
   status: "pending_review" | "approved" | "rejected" | "changes_requested";
   juristiComment: string;
   createdAt: { _seconds: number } | null;
@@ -38,7 +38,7 @@ export default function AdminSopimuksetPage() {
   const [saving, setSaving] = useState(false);
   const [idToken, setIdToken] = useState("");
   const [filter, setFilter] = useState<"all" | "pending_review">("pending_review");
-  const [activeTab, setActiveTab] = useState<"analyysi" | "muutos">("analyysi");
+  const [activeTab, setActiveTab] = useState<"analyysi" | "korjattu">("analyysi");
 
   useEffect(() => {
     if (!auth) { setError("Kirjautuminen vaaditaan"); setLoading(false); return; }
@@ -184,7 +184,7 @@ export default function AdminSopimuksetPage() {
               return (
                 <div
                   key={c.contractId}
-                  onClick={() => { setSelected(c); setJuristiComment(c.juristiComment ?? ""); setActiveTab("analyysi"); }}
+                  onClick={() => { setSelected(c); setJuristiComment(c.juristiComment ?? ""); setActiveTab("analyysi" as const); }}
                   style={{
                     padding: "16px 20px",
                     borderBottom: `1px solid ${BORDER}`,
@@ -246,7 +246,7 @@ export default function AdminSopimuksetPage() {
             {/* Claude tabs */}
             <div style={{ marginBottom: "24px" }}>
               <div style={{ display: "flex", borderBottom: `2px solid ${BORDER}`, marginBottom: "0" }}>
-                {([["analyysi", "✦ Esianalyysi"], ["muutos", "✎ Muutosuunnitelma"]] as const).map(([tab, label]) => (
+                {([["analyysi", "✦ Esianalyysi"], ["korjattu", "✎ Korjattu asiakirja"]] as const).map(([tab, label]) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -275,8 +275,8 @@ export default function AdminSopimuksetPage() {
                   />
                 ) : (
                   <div
-                    style={{ fontSize: "13px", color: "#2C2416", lineHeight: "1.7" }}
-                    dangerouslySetInnerHTML={{ __html: selected.claudeMuutosuunnitelma || "<p style='color:#8A8070'>Ei muutosuunnitelmaa</p>" }}
+                    style={{ fontSize: "12px", color: "#2C2416", lineHeight: "1.7", maxHeight: "420px", overflowY: "auto" }}
+                    dangerouslySetInnerHTML={{ __html: selected.claudeKorjattuAsiakirja || "<p style='color:#8A8070'>Ei korjattua asiakirjaa</p>" }}
                   />
                 )}
               </div>
