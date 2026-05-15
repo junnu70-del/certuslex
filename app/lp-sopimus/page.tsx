@@ -266,7 +266,7 @@ export default function SopimuskoneLanding() {
             <span className="eyebrow-dot"></span>
             <span id="eyebrow-text">ALIHANKKIJASOPIMUKSET</span>
           </div>
-          <h1 className="lp-h1">Sopimus valmiina<em>5 minuutissa.</em></h1>
+          <h1 className="lp-h1">Sopimus kuntoon.<em>Juristi varmistaa.</em></h1>
           <p className="hero-sub">
             <span className="slogan-wrap" style={{minWidth:"340px",verticalAlign:"bottom"}}>
               <span className="slogan-word enter">Onko asiakirja kunnossa?</span>
@@ -281,7 +281,7 @@ export default function SopimuskoneLanding() {
           </div>
           <div className="proof-row">
             <div className="proof-item"><span>✓</span> Ei luottokorttia</div>
-            <div className="proof-item"><span>✓</span> Valmis alle 5 minuutissa</div>
+            <div className="proof-item"><span>✓</span> Juristivastaus 24 tunnissa</div>
             <div className="proof-item"><span>✓</span> eIDAS-allekirjoitus</div>
             <div className="proof-item"><span>✓</span> Juristivarmistettu pohja</div>
           </div>
@@ -292,8 +292,8 @@ export default function SopimuskoneLanding() {
       {/* TICKER */}
       <div className="ticker">
         <div className="ticker-track">
-          {["JURISTI TARKISTAA","✦","SÄHKÖINEN ALLEKIRJOITUS","✦","NOPEA HYVÄKSYNTÄ","✦","eIDAS-PÄTEVÄ","✦","JURISTIVARMISTETTU","✦","SOPIMUSARKISTO","✦",
-            "JURISTI TARKISTAA","✦","SÄHKÖINEN ALLEKIRJOITUS","✦","NOPEA HYVÄKSYNTÄ","✦","eIDAS-PÄTEVÄ","✦","JURISTIVARMISTETTU","✦","SOPIMUSARKISTO","✦"].map((t,i)=>(
+          {["JURISTI TARKISTAA","✦","SÄHKÖINEN ALLEKIRJOITUS","✦","VASTAUS 24H","✦","eIDAS-PÄTEVÄ","✦","JURISTIVARMISTETTU","✦","SOPIMUSARKISTO","✦",
+            "JURISTI TARKISTAA","✦","SÄHKÖINEN ALLEKIRJOITUS","✦","VASTAUS 24H","✦","eIDAS-PÄTEVÄ","✦","JURISTIVARMISTETTU","✦","SOPIMUSARKISTO","✦"].map((t,i)=>(
             <span className="ticker-item" key={i}>{t}</span>
           ))}
         </div>
@@ -347,7 +347,7 @@ export default function SopimuskoneLanding() {
       {/* NUMBERS */}
       <section className="numbers">
         <div className="num-inner">
-          <div><div className="num-v">5 min</div><div className="num-l">SOPIMUKSEN TEKO</div></div>
+          <div><div className="num-v">24 h</div><div className="num-l">JURISTIVASTAUS</div></div>
           <div><div className="num-v">eIDAS</div><div className="num-l">JURIDISESTI PÄTEVÄ</div></div>
           <div><div className="num-v">100 %</div><div className="num-l">DIGITAALINEN</div></div>
           <div><div className="num-v">30 pv</div><div className="num-l">ILMAINEN KOKEILU</div></div>
