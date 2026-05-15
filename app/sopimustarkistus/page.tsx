@@ -46,30 +46,19 @@ export default function SopimustarkistusPage() {
     setErrorMsg("");
 
     try {
-      // Read file as base64
-      const base64Content = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          // Strip data URL prefix
-          const b64 = result.includes(",") ? result.split(",")[1] : result;
-          resolve(b64);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+      // Lähetä tiedosto suoraan binäärinä — vältetään base64-tuhlaus (Vercelin 4.5MB raja)
+      const params = new URLSearchParams({
+        fileName: file.name,
+        mimeType: file.type || "application/octet-stream",
+        customerEmail,
+        customerName,
+        notes,
       });
 
-      const res = await fetch("/api/contract/upload", {
+      const res = await fetch(`/api/contract/upload?${params}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileName: file.name,
-          mimeType: file.type,
-          base64Content,
-          customerEmail,
-          customerName,
-          notes,
-        }),
+        headers: { "Content-Type": "application/octet-stream" },
+        body: file,
       });
 
       const data = await res.json();

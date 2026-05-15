@@ -179,19 +179,32 @@ export async function POST(req: NextRequest) {
         uid = decoded.uid;
         email = decoded.email ?? "";
       } catch {
-        // Allow unauthenticated uploads (customer may not be logged in)
+        // Allow unauthenticated uploads
       }
     }
 
-    const body = await req.json();
-    const { fileName, mimeType, base64Content, customerEmail, customerName, notes } = body;
+    // Lue metadata query parameista, tiedosto binäärinä
+    const sp = req.nextUrl.searchParams;
+    const fileName = sp.get("fileName") ?? "";
+    const mimeType = sp.get("mimeType") ?? "application/octet-stream";
+    const customerEmail = sp.get("customerEmail") ?? email;
+    const customerName = sp.get("customerName") ?? "";
+    const notes = sp.get("notes") ?? "";
 
-    if (!base64Content || !fileName) {
+    if (!fileName) {
       return NextResponse.json({ error: "Tiedosto puuttuu" }, { status: 400 });
     }
 
-    // Decode base64 → Buffer
-    const fileBuffer = Buffer.from(base64Content, "base64");
+    // Lue tiedosto suoraan binäärinä
+    const arrayBuffer = await req.arrayBuffer();
+    const fileBuffer = Buffer.from(arrayBuffer);
+
+    if (fileBuffer.length === 0) {
+      return NextResponse.json({ error: "Tiedosto on tyhjä" }, { status: 400 });
+    }
+
+    // Tallennetaan base64 Firestoreen lataamista varten
+    const base64Content = fileBuffer.toString("base64");
 
     // Extract text based on file type
     let contractText = "";
