@@ -3,8 +3,6 @@ import nodemailer from "nodemailer";
 import Anthropic from "@anthropic-ai/sdk";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const mammoth = require("mammoth") as { extractRawText: (opts: { buffer: Buffer }) => Promise<{ value: string }> };
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require("pdf-parse") as (buf: Buffer) => Promise<{ text: string }>;
 
 export const maxDuration = 120; // 2 min — kaksi Claude-kutsua vie aikaa
 import { initializeApp, getApps, cert } from "firebase-admin/app";
@@ -192,9 +190,16 @@ export async function POST(req: NextRequest) {
 
     try {
       if (lowerMime.includes("pdf") || lowerName.endsWith(".pdf")) {
-        // PDF → extract text
-        const pdfData = await pdfParse(fileBuffer);
-        contractText = pdfData.text;
+        // PDF: yritä poimia tekstiä suoraan binääristä (toimii text-based PDF:ille)
+        const raw = fileBuffer.toString("latin1");
+        const matches = raw.match(/\(([^\)]{2,200})\)/g) ?? [];
+        const extracted = matches
+          .map((m) => m.slice(1, -1))
+          .filter((s) => /[a-zA-ZäöåÄÖÅ]{3,}/.test(s))
+          .join(" ");
+        contractText = extracted.length > 200
+          ? extracted
+          : "[PDF-tiedosto — teksti ei ole suoraan luettavissa. Juristi voi ladata alkuperäisen tiedoston.]";
       } else if (
         lowerMime.includes("wordprocessingml") ||
         lowerMime.includes("msword") ||
