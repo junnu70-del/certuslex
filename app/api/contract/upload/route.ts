@@ -237,8 +237,16 @@ export async function POST(req: NextRequest) {
       if (lowerMime.includes("pdf") || lowerName.endsWith(".pdf")) {
         // PDF → unpdf (serverless-compatible pdfjs-dist)
         const { text } = await extractText(new Uint8Array(fileBuffer), { mergePages: true });
-        contractText = text.trim().length > 100
-          ? text.trim()
+        // Siivoa PDF-purun tuottamat ylimääräiset välit
+        const cleaned = text
+          .replace(/([a-zA-ZäöåÄÖÅ]) ([a-zA-ZäöåÄÖÅ])/g, "$1$2") // "t e k s t i" → "teksti"
+          .replace(/([a-zA-ZäöåÄÖÅ]) ([a-zA-ZäöåÄÖÅ])/g, "$1$2") // toinen kierros
+          .replace(/([a-zA-ZäöåÄÖÅ]) ([a-zA-ZäöåÄÖÅ])/g, "$1$2") // kolmas kierros
+          .replace(/ {2,}/g, " ")   // monta väliä → yksi
+          .replace(/\n{3,}/g, "\n\n") // monta tyhjää riviä → kaksi
+          .trim();
+        contractText = cleaned.length > 100
+          ? cleaned
           : "[PDF-tiedosto — tekstin purku ei onnistunut. Juristi voi ladata alkuperäisen tiedoston.]";
       } else if (
         lowerMime.includes("wordprocessingml") ||
