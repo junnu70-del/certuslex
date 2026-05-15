@@ -7,9 +7,12 @@ const mammoth = require("mammoth") as { extractRawText: (opts: { buffer: Buffer 
 export const maxDuration = 120; // 2 min — kaksi Claude-kutsua vie aikaa
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import { getAuth } from "firebase-admin/auth";
 
-function getAdminDb() {
+const STORAGE_BUCKET = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? "verifylexfi.firebasestorage.app";
+
+function initAdmin() {
   if (!getApps().length) {
     initializeApp({
       credential: cert({
@@ -17,9 +20,29 @@ function getAdminDb() {
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
         privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
       }),
+      storageBucket: STORAGE_BUCKET,
     });
   }
+}
+
+function getAdminDb() {
+  initAdmin();
   return getFirestore();
+}
+
+async function uploadToStorage(fileBuffer: Buffer, contractId: string, fileName: string, mimeType: string): Promise<string> {
+  initAdmin();
+  const bucket = getStorage().bucket(STORAGE_BUCKET);
+  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const filePath = `contracts/${contractId}/${safeName}`;
+  const file = bucket.file(filePath);
+  await file.save(fileBuffer, { contentType: mimeType, resumable: false });
+  // Tee julkinen URL (signed, 10 vuotta)
+  const [url] = await file.getSignedUrl({
+    action: "read",
+    expires: "01-01-2035",
+  });
+  return url;
 }
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -203,8 +226,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Tiedosto on tyhjä" }, { status: 400 });
     }
 
-    // Tallennetaan base64 Firestoreen lataamista varten
-    const base64Content = fileBuffer.toString("base64");
 
     // Extract text based on file type
     let contractText = "";
@@ -255,22 +276,29 @@ export async function POST(req: NextRequest) {
       korjattuAsiakirja = "";
     }
 
-    // Save to Firestore
+    // Tallenna tiedosto Firebase Storageen
     const docRef = db.collection("contract_reviews").doc();
     const contractId = docRef.id;
+
+    let storageUrl = "";
+    try {
+      storageUrl = await uploadToStorage(fileBuffer, contractId, fileName, mimeType);
+    } catch (err) {
+      console.error("[contract/upload] Storage error:", err);
+    }
 
     await docRef.set({
       contractId,
       fileName,
       mimeType: mimeType ?? "application/octet-stream",
-      base64Content, // store for download by juristi
+      storageUrl, // Firebase Storage URL lataamista varten
       customerEmail: customerEmail ?? email,
       customerName: customerName ?? "",
       customerUid: uid,
       notes: notes ?? "",
       claudeAnalysis: analysis,
       claudeKorjattuAsiakirja: korjattuAsiakirja,
-      status: "pending_review", // pending_review | approved | rejected | changes_requested
+      status: "pending_review",
       juristiComment: "",
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),

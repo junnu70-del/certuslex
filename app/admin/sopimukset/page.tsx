@@ -17,6 +17,7 @@ interface Contract {
   notes: string;
   claudeAnalysis: string;
   claudeKorjattuAsiakirja: string;
+  storageUrl?: string;
   status: "pending_review" | "approved" | "rejected" | "changes_requested";
   juristiComment: string;
   createdAt: { _seconds: number } | null;
@@ -98,26 +99,14 @@ export default function AdminSopimuksetPage() {
   }
 
   function downloadDoc(contract: Contract) {
-    if (!contract) return;
-    // Decode base64 and trigger download — must fetch full data
-    fetch(`/api/contract/${contract.contractId}`, {
-      headers: { Authorization: `Bearer ${idToken}` },
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data.base64Content) return;
-        const binary = atob(data.base64Content);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        const blob = new Blob([bytes], { type: data.mimeType || "application/octet-stream" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = contract.fileName;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
-      });
+    if (!contract?.storageUrl) return;
+    const a = document.createElement("a");
+    a.href = contract.storageUrl;
+    a.download = contract.fileName;
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 1000);
   }
 
   const filtered = filter === "all" ? contracts : contracts.filter((c) => c.status === filter);

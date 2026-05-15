@@ -66,10 +66,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Ei käyttöoikeutta" }, { status: 403 });
     }
 
-    // Don't expose base64 content to customer (only admin needs it)
+    // Palauta data — admin näkee storageUrl:n, asiakas ei
     const response = { ...data };
     if (!isAdmin) {
-      delete response.base64Content;
+      delete response.storageUrl;
+      delete response.base64Content; // vanhat dokumentit
     }
 
     return NextResponse.json(response);
