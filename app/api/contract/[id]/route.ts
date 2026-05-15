@@ -1,0 +1,78 @@
+import { NextRequest, NextResponse } from "next/server";
+import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import { getAuth } from "firebase-admin/auth";
+
+function getAdminDb() {
+  if (!getApps().length) {
+    initializeApp({
+      credential: cert({
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      }),
+    });
+  }
+  return getFirestore();
+}
+
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const { id } = params;
+    const authHeader = req.headers.get("authorization") ?? "";
+    const idToken = authHeader.replace("Bearer ", "");
+
+    const db = getAdminDb();
+    const auth = getAuth();
+
+    // Verify token — allow "public" token for status-only view
+    let uid = "";
+    let isAdmin = false;
+    let isPublic = false;
+
+    if (idToken === "public" || !idToken) {
+      isPublic = true;
+    } else {
+      try {
+        const decoded = await auth.verifyIdToken(idToken);
+        uid = decoded.uid;
+        isAdmin = decoded.admin === true || (decoded.email ?? "").endsWith("@certuslex.fi");
+      } catch {
+        isPublic = true; // Treat invalid token as public
+      }
+    }
+
+    const snap = await db.collection("contract_reviews").doc(id).get();
+    if (!snap.exists) {
+      return NextResponse.json({ error: "Sopimusta ei löydy" }, { status: 404 });
+    }
+
+    const data = snap.data()!;
+
+    // Public: only return status + comment + fileName (no PII, no file)
+    if (isPublic) {
+      return NextResponse.json({
+        status: data.status,
+        fileName: data.fileName,
+        juristiComment: data.juristiComment ?? "",
+        createdAt: data.createdAt,
+      });
+    }
+
+    // Authenticated non-admin: only own contracts
+    if (!isAdmin && data.customerUid !== uid) {
+      return NextResponse.json({ error: "Ei käyttöoikeutta" }, { status: 403 });
+    }
+
+    // Don't expose base64 content to customer (only admin needs it)
+    const response = { ...data };
+    if (!isAdmin) {
+      delete response.base64Content;
+    }
+
+    return NextResponse.json(response);
+  } catch (err) {
+    console.error("[contract/id] Error:", err);
+    return NextResponse.json({ error: "Virhe" }, { status: 500 });
+  }
+}
