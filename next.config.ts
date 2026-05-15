@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
     "@firebase/firestore",
     "@firebase/storage",
     "mammoth",
+    "unpdf",
   ],
 };
 

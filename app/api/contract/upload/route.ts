@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 import Anthropic from "@anthropic-ai/sdk";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const mammoth = require("mammoth") as { extractRawText: (opts: { buffer: Buffer }) => Promise<{ value: string }> };
+import { extractText } from "unpdf";
 
 export const maxDuration = 120; // 2 min — kaksi Claude-kutsua vie aikaa
 import { initializeApp, getApps, cert } from "firebase-admin/app";
@@ -234,16 +235,11 @@ export async function POST(req: NextRequest) {
 
     try {
       if (lowerMime.includes("pdf") || lowerName.endsWith(".pdf")) {
-        // PDF: yritä poimia tekstiä suoraan binääristä (toimii text-based PDF:ille)
-        const raw = fileBuffer.toString("latin1");
-        const matches = raw.match(/\(([^\)]{2,200})\)/g) ?? [];
-        const extracted = matches
-          .map((m) => m.slice(1, -1))
-          .filter((s) => /[a-zA-ZäöåÄÖÅ]{3,}/.test(s))
-          .join(" ");
-        contractText = extracted.length > 200
-          ? extracted
-          : "[PDF-tiedosto — teksti ei ole suoraan luettavissa. Juristi voi ladata alkuperäisen tiedoston.]";
+        // PDF → unpdf (serverless-compatible pdfjs-dist)
+        const { text } = await extractText(new Uint8Array(fileBuffer), { mergePages: true });
+        contractText = text.trim().length > 100
+          ? text.trim()
+          : "[PDF-tiedosto — tekstin purku ei onnistunut. Juristi voi ladata alkuperäisen tiedoston.]";
       } else if (
         lowerMime.includes("wordprocessingml") ||
         lowerMime.includes("msword") ||
