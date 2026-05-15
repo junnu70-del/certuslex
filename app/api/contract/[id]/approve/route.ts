@@ -91,9 +91,9 @@ async function sendCustomerNotification(
   });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const authHeader = req.headers.get("authorization") ?? "";
     const idToken = authHeader.replace("Bearer ", "");
 
