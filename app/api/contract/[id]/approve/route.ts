@@ -18,22 +18,39 @@ function getAdminDb() {
 }
 
 function buildWordDoc(html: string): Buffer {
-  const clean = html
+  // Strip markdown fences
+  let clean = html
     .replace(/^```(?:html)?\s*/i, "").replace(/\s*```\s*$/, "")
     .replace(/<img[^>]*\/?>/gi, "");
+
+  // Jos on täysi HTML-dokumentti, poimii vain body-sisältö + head-tyylit
+  let headStyles = "";
+  const styleMatch = clean.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+  if (styleMatch) headStyles = `<style>${styleMatch[1]}</style>`;
+
+  const bodyMatch = clean.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  const bodyContent = bodyMatch ? bodyMatch[1] : clean;
+
   const doc = `<!DOCTYPE html>
 <html xmlns:o="urn:schemas-microsoft-com:office:office"
       xmlns:w="urn:schemas-microsoft-com:office:word"
       xmlns="http://www.w3.org/TR/REC-html40">
-<head><meta charset="UTF-8">
-<meta name=ProgId content=Word.Document>
-<style>
-  @page WordSection1 { size:21cm 29.7cm; margin:2cm 2.5cm 2cm 2.5cm; }
-  body { font-family: Georgia, serif; }
-  div.WordSection1 { page: WordSection1; }
-</style>
+<head>
+  <meta charset="UTF-8">
+  <meta name=ProgId content=Word.Document>
+  <meta name=Generator content="Microsoft Word 15">
+  <!--[if gte mso 9]>
+  <xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml>
+  <![endif]-->
+  ${headStyles}
+  <style>
+    @page WordSection1 { size:21cm 29.7cm; margin:2cm 2.5cm 2cm 2.5cm; mso-page-orientation:portrait; }
+    div.WordSection1 { page: WordSection1; }
+    body { font-family: Georgia, serif; font-size: 12pt; }
+  </style>
 </head>
-<body><div class="WordSection1">${clean}</div></body></html>`;
+<body><div class="WordSection1">${bodyContent}</div></body>
+</html>`;
   return Buffer.from("﻿" + doc, "utf-8");
 }
 
