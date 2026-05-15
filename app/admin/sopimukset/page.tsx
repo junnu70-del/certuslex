@@ -273,11 +273,14 @@ export default function AdminSopimuksetPage() {
                     style={{ fontSize: "13px", color: "#2C2416", lineHeight: "1.7" }}
                     dangerouslySetInnerHTML={{ __html: selected.claudeAnalysis || "<p style='color:#8A8070'>Ei esianalyysia</p>" }}
                   />
-                ) : (
-                  <div
-                    style={{ fontSize: "12px", color: "#2C2416", lineHeight: "1.7", maxHeight: "420px", overflowY: "auto" }}
-                    dangerouslySetInnerHTML={{ __html: selected.claudeKorjattuAsiakirja || "<p style='color:#8A8070'>Ei korjattua asiakirjaa</p>" }}
+                ) : selected.claudeKorjattuAsiakirja ? (
+                  <iframe
+                    srcDoc={selected.claudeKorjattuAsiakirja}
+                    style={{ width: "100%", height: "420px", border: "none", display: "block" }}
+                    title="Korjattu asiakirja"
                   />
+                ) : (
+                  <p style={{ color: "#8A8070", fontSize: "13px" }}>Ei korjattua asiakirjaa</p>
                 )}
               </div>
             </div>
