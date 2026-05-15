@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import Anthropic from "@anthropic-ai/sdk";
+import mammoth from "mammoth";
+import pdfParse from "pdf-parse";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
@@ -129,12 +131,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Tiedosto puuttuu" }, { status: 400 });
     }
 
-    // Decode base64 → text for analysis
+    // Decode base64 → Buffer
+    const fileBuffer = Buffer.from(base64Content, "base64");
+
+    // Extract text based on file type
     let contractText = "";
+    const lowerName = (fileName ?? "").toLowerCase();
+    const lowerMime = (mimeType ?? "").toLowerCase();
+
     try {
-      contractText = Buffer.from(base64Content, "base64").toString("utf-8");
-    } catch {
-      contractText = base64Content.slice(0, 5000); // fallback
+      if (lowerMime.includes("pdf") || lowerName.endsWith(".pdf")) {
+        // PDF → extract text
+        const pdfData = await pdfParse(fileBuffer);
+        contractText = pdfData.text;
+      } else if (
+        lowerMime.includes("wordprocessingml") ||
+        lowerMime.includes("msword") ||
+        lowerName.endsWith(".docx") ||
+        lowerName.endsWith(".doc")
+      ) {
+        // Word → extract text via mammoth
+        const result = await mammoth.extractRawText({ buffer: fileBuffer });
+        contractText = result.value;
+      } else {
+        // Plain text / fallback
+        contractText = fileBuffer.toString("utf-8");
+      }
+    } catch (parseErr) {
+      console.error("[contract/upload] Text extraction error:", parseErr);
+      contractText = fileBuffer.toString("utf-8").replace(/[^\x20-\x7EäöåÄÖÅ\n\r\t]/g, " ");
     }
 
     // Claude analysis
