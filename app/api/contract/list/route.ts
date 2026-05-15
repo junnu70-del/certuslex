@@ -31,7 +31,8 @@ export async function GET(req: NextRequest) {
     let isAdmin = false;
     try {
       const decoded = await auth.verifyIdToken(idToken);
-      isAdmin = decoded.admin === true || (decoded.email ?? "").endsWith("@certuslex.fi");
+      const email = decoded.email ?? "";
+      isAdmin = decoded.admin === true || email.endsWith("@certuslex.fi") || email === "junnu70@gmail.com";
     } catch {
       return NextResponse.json({ error: "Kirjautuminen vaaditaan" }, { status: 401 });
     }
