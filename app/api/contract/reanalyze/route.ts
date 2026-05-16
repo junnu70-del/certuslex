@@ -42,10 +42,13 @@ export async function POST(req: NextRequest) {
     try {
       if (lowerName.endsWith(".pdf")) {
         const { text } = await extractText(new Uint8Array(fileBuffer), { mergePages: true });
-        contractText = text
-          .replace(/([a-zA-ZäöåÄÖÅ]) ([a-zA-ZäöåÄÖÅ])/g, "$1$2")
-          .replace(/([a-zA-ZäöåÄÖÅ]) ([a-zA-ZäöåÄÖÅ])/g, "$1$2")
-          .replace(/([a-zA-ZäöåÄÖÅ]) ([a-zA-ZäöåÄÖÅ])/g, "$1$2")
+        let cleaned = text;
+        let prev = "";
+        while (prev !== cleaned) {
+          prev = cleaned;
+          cleaned = cleaned.replace(/([a-zA-ZäöåÄÖÅ]) ([a-zA-ZäöåÄÖÅ])/g, "$1$2");
+        }
+        contractText = cleaned
           .replace(/ {2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
       } else if (lowerName.endsWith(".docx") || lowerName.endsWith(".doc")) {
         const result = await mammoth.extractRawText({ buffer: fileBuffer });

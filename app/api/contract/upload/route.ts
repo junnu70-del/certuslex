@@ -703,13 +703,16 @@ export async function POST(req: NextRequest) {
       if (lowerMime.includes("pdf") || lowerName.endsWith(".pdf")) {
         // PDF → unpdf (serverless-compatible pdfjs-dist)
         const { text } = await extractText(new Uint8Array(fileBuffer), { mergePages: true });
-        // Siivoa PDF-purun tuottamat ylimääräiset välit
-        const cleaned = text
-          .replace(/([a-zA-ZäöåÄÖÅ]) ([a-zA-ZäöåÄÖÅ])/g, "$1$2") // "t e k s t i" → "teksti"
-          .replace(/([a-zA-ZäöåÄÖÅ]) ([a-zA-ZäöåÄÖÅ])/g, "$1$2") // toinen kierros
-          .replace(/([a-zA-ZäöåÄÖÅ]) ([a-zA-ZäöåÄÖÅ])/g, "$1$2") // kolmas kierros
-          .replace(/ {2,}/g, " ")   // monta väliä → yksi
-          .replace(/\n{3,}/g, "\n\n") // monta tyhjää riviä → kaksi
+        // Siivoa PDF-purun tuottamat ylimääräiset välit loopilla kunnes ei muutoksia
+        let cleaned = text;
+        let prev = "";
+        while (prev !== cleaned) {
+          prev = cleaned;
+          cleaned = cleaned.replace(/([a-zA-ZäöåÄÖÅ]) ([a-zA-ZäöåÄÖÅ])/g, "$1$2");
+        }
+        cleaned = cleaned
+          .replace(/ {2,}/g, " ")
+          .replace(/\n{3,}/g, "\n\n")
           .trim();
         contractText = cleaned.length > 100
           ? cleaned
