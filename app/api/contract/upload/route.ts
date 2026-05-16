@@ -209,6 +209,107 @@ KRIITTISET TARKISTUSPISTEET:
 9. Täytäntöönpanon keskeyttämispyyntö tarvittaessa
 10. Asiamiehen valtakirja ja yhteystiedot`,
 
+  "Rikosasia": `Kyseessä on rikosoikeudellinen asiakirja (rikosilmoitus, vastine syytteeseen, asianomistajan vaatimukset, syyttäjäkirjelmä tai muu rikosprosessuaalinen asiakirja). Analysoi se kattavasti seuraavien oikeuslähteiden valossa:
+
+SUOMEN RIKOSOIKEUDEN YDINSÄÄDÖKSET:
+- Rikoslaki (RL 39/1889) — koko rikosvastuun perusta:
+  • 3 luku: rikosvastuun edellytykset (tahallisuus, tuottamus, tietoisuus)
+  • 4 luku: vastuuvapausperusteet (hätävarjelu 4§, pakkotila 5§, erehdys 1-4§)
+  • 5 luku: osallisuus (tekijäkumppanuus 3§, yllytys 5§, avunanto 6§)
+  • 6 luku: rangaistuksen määrääminen, lieventämis- ja koventamisperusteet
+  • 7 luku: yhtenäisrangaistus, yhtyminen
+  • 8 luku: vanhentuminen (1§ yleinen, erityissäännökset)
+  Keskeisiä rikostyyppejä:
+  • 21 luku: henkeen ja terveyteen kohdistuvat rikokset (tappo, murha, pahoinpitely, vammantuottamus)
+  • 28 luku: varkaus, törkeä varkaus, kavallus, petos (36 luku)
+  • 29 luku: veropetos, avustuspetos
+  • 30 luku: elinkeinorikokset
+  • 35 luku: vahingonteko
+  • 36 luku: petos ja luottamusrikos
+  • 38 luku: tieto- ja viestintärikokset
+  • 40 luku: virkarikokset
+  • 47 luku: työrikokset
+  • 48 luku: ympäristörikokset
+  • 49 luku: arvopaperimarkkinoita koskevat rikokset
+
+RIKOSPROSESSIOIKEUS:
+- Laki oikeudenkäynnistä rikosasioissa (ROL 689/1997):
+  • Syyteoikeus ja syytteen nostaminen (1 luku)
+  • Haastehakemus ja syytteen sisältö (5 luku)
+  • Asianomistajan syyteoikeus ja rikosvaatimus (7 luku)
+  • Vastaajan oikeudet, puolustautuminen (8 luku)
+  • Tuomion sisältö, näyttökynnys (11 luku)
+  • Muutoksenhaku hovioikeuteen, KKO (25-30 luku)
+- Esitutkintalaki (ETL 805/2011):
+  • Ilmoittamisvelvollisuus (2:1§)
+  • Tutkinnanjohtaja, poliisi vs. syyttäjä
+  • Esitutkintaperiaatteet: tasapuolisuus (4:1§), suhteellisuus (4:4§), hienotunteisuus (4:6§)
+  • Epäillyn oikeudet: vaiti olo (7:5§), avustaja (4:10§)
+  • Rikoksesta ilmoittajan suoja
+- Pakkokeinolaki (PKL 806/2011):
+  • Pidättäminen (2 luku), vangitseminen (3 luku)
+  • Matkustuskielto (5 luku)
+  • Takavarikko (7 luku), etsintä (8 luku)
+  • Telekuuntelu (10 luku)
+- Laki syyttäjälaitoksesta (32/2019): syyttäjän rooli, syyttämättäjättämispäätös
+
+VAHINGONKORVAUS RIKOSASIASSA:
+- Vahingonkorvauslaki (VahL 412/1974): tuottamusvastuu (2:1§), ankara vastuu, yhteisvastuullisuus
+- Rikosperusteiset vahingonkorvaukset: esinevahinko, henkilövahinko, kärsimyskorvaus (5:6§)
+- Valtion korvausvastuu rikosvahingoista (Rikosvahinkolaki 1204/2005)
+- Korvauksen sovittelu (VahL 2:1§, 6:1§)
+
+KANSAINVÄLINEN RIKOSOIKEUS:
+- Euroopan ihmisoikeussopimus (EIS):
+  • 6 artikla: oikeus oikeudenmukaiseen oikeudenkäyntiin rikosasioissa
+    — Syyttömyysolettama (6:2)
+    — Puolustautumisen minimioikeudet (6:3): tiedonsaanti syytteestä, aika valmistautua, avustaja, todistajien kuuleminen, tulkki
+  • 7 artikla: nulla poena sine lege (ei rangaistusta ilman lakia)
+  • 8 artikla: yksityiselämän suoja (pakkokeinot)
+- EU-rikosoikeus:
+  • Direktiivi 2012/29/EU: rikoksen uhrin oikeudet
+  • Direktiivi 2013/48/EU: oikeus asianajajaan
+  • Direktiivi 2016/343/EU: syyttömyysolettama
+  • Eurooppalainen pidätysmääräys (puitepäätös 2002/584/YOS)
+  • Europol ja Eurojust: kansainvälinen rikostutkintatyö
+- Rooman perussääntö (ICC, 60/2002): sotarikokset, rikokset ihmisyyttä vastaan (kansainvälinen ulottuvuus)
+- Strasbourgin tuomioistuin (EIT): yksilövalitus Suomea vastaan rikosasioissa
+
+KRIITTISET TARKISTUSPISTEET:
+1. Rikoksen tunnusmerkistö — täyttyykö jokainen elementti (objektiivinen + subjektiivinen puoli)
+2. Tahallisuus vs. tuottamus — oikea rikosnimike
+3. Vanhentuminen (RL 8 luku) — onko syyte/ilmoitus tehty ajoissa
+4. Syyttömyysolettama — ei loukkauksia asiakirjassa
+5. Epäillyn/vastaajan oikeudet — itsekriminointisuoja, avustajan oikeus
+6. Asianomistajan asema ja oikeudet — oikeus olla läsnä, tutkintatoimet
+7. Vahingonkorvausvaatimukset — kaikki vahinkolajit katettu
+8. Prosessuaaliset määräajat — syyteoikeus, muutoksenhaku
+9. Todistelu — näyttökynnys rikosasiassa ("ei järkevää epäilystä")
+10. Kansainvälinen ulottuvuus — onko rikos tehty ulkomailla tai onko ulkomainen tekijä`,
+
+  "Rikosasia": `Kyseessä on rikosoikeudellinen asiakirja. Analysoi se kattavasti. Tunnista ensin onko kyse rikosilmoituksesta, vastineesta syytteeseen, asianomistajan vaatimuksista vai muutoksenhakukirjelmästä.
+
+SOVELLETTAVA LAINSÄÄDÄNTÖ:
+- Rikoslaki (RL 39/1889): tunnusmerkistöt, vastuuvapausperusteet (3-4 luku), vanhentuminen (8 luku), rangaistuksen määrääminen (6 luku)
+- Laki oikeudenkäynnistä rikosasioissa (ROL 689/1997): syyteoikeus, näyttökynnys, muutoksenhaku
+- Esitutkintalaki (ETL 805/2011): tutkintavelvollisuus, epäillyn oikeudet (7:5§ vaiti-oikeus, 4:10§ avustaja)
+- Pakkokeinolaki (PKL 806/2011): pidättäminen, vangitseminen, takavarikko
+- Vahingonkorvauslaki (VahL 412/1974): rikosperusteinen korvausvastuu, kärsimyskorvaus (5:6§)
+- Rikosvahinkolaki (1204/2005): valtion korvausvastuu
+- Euroopan ihmisoikeussopimus: 6 artikla (oikeudenmukainen oikeudenkäynti, syyttömyysolettama 6:2, puolustautumisoikeudet 6:3), 7 artikla (nulla poena sine lege)
+- EU-direktiivit: uhrin oikeudet (2012/29/EU), syyttömyysolettama (2016/343/EU), oikeus asianajajaan (2013/48/EU)
+
+KRIITTISET TARKISTUSPISTEET:
+1. Rikoksen tunnusmerkistön täyttyminen — objektiivinen ja subjektiivinen puoli
+2. Tahallisuus (dolus) vs. tuottamus (culpa) — oikea rikosnimike
+3. Vanhentuminen (RL 8 luku) — onko ilmoitus/syyte tehty ajoissa
+4. Vastuuvapausperusteet — hätävarjelu, pakkotila, erehdys
+5. Syyttömyysolettama ja itsekriminointisuoja
+6. Asianomistajan kaikki vahingonkorvausvaatimukset
+7. Todistelu ja näyttökynnys ("ei järkevää epäilystä")
+8. Prosessuaaliset määräajat ja muutoksenhakuoikeus
+9. Kansainvälinen ulottuvuus (Eurooppalainen pidätysmääräys, ICC)`,
+
   "Oikaisu": `Kyseessä on oikaisupyyntö tai oikaisuvaatimus. Analysoi se kattavasti seuraavien oikeuslähteiden valossa:
 
 SOVELLETTAVA SUOMEN LAINSÄÄDÄNTÖ:
@@ -406,6 +507,44 @@ RAKENNE (OK 5:10§ mukaan):
 7. Vanhentumisväite (VanhL 728/2003): onko saatava vanhentunut
 8. Sovintovalmiuden ilmaiseminen
 9. Allekirjoitus, päiväys`,
+
+  "Rikosasia": `Kirjoita rikosoikeudellinen asiakirja täydelliseen, juridisesti pätevään ja strategisesti vahvaan muotoon. Tunnista ensin asiakirjatyyppi (rikosilmoitus / vastine syytteeseen / asianomistajan vaatimukset / syyttäjäkirjelmä / muutoksenhaku) ja noudata sen erityisvaatimuksia.
+
+RIKOSILMOITUS (jos kyseessä):
+1. Otsikko: RIKOSILMOITUS, poliisilaitos, päivämäärä
+2. Ilmoittaja: täydellinen yksilöinti, yhteystiedot
+3. Epäilty: nimi ja muut tunnetut tiedot (ei pakollinen)
+4. TAPAHTUMAKUVAUS:
+   — Tarkka aika ja paikka
+   — Tapahtumakulku kronologisesti
+   — Todistajat ja muut asianosaiset
+5. RIKOSNIMIKE-EHDOTUS (lakipykälineen):
+   — Päärikosepäily (esim. "Petos, RL 36:1§")
+   — Mahdolliset lisärikokset
+6. VAHINGONKORVAUSVAATIMUKSET:
+   — Esinevahinko (dokumentoitu)
+   — Henkilövahinko
+   — Kärsimys (VahL 5:6§)
+   — Oikeudenkäyntikulut
+7. Todisteet: luettelo (dokumentit, kuitit, viestit, todistajat)
+8. Pyyntö: esitutkinnan toimittamisesta, takavarikosta tms.
+
+VASTINE SYYTTEESEEN / PUOLUSTAUTUMISKIRJELMÄ:
+1. KIISTÄMINEN: selkeä, täsmällinen — myönnetäänkö vai kiistetäänkö syyte
+2. VASTUUVAPAUSPERUSTEET: hätävarjelu (RL 4:4§), pakkotila (4:5§), erehdys (4:1-4§)
+3. TUNNUSMERKISTÖN PUUTTUMINEN: mikä elementti ei täyty
+4. TAHALLISUUDEN / TUOTTAMUKSEN PUUTTUMINEN
+5. VANHENTUMISVÄITE (RL 8 luku)
+6. TODISTELU: alibi, vastanäyttö, asiantuntijat
+7. RANGAISTUKSEN LIEVENTÄMISPERUSTEET (RL 6:6§): tunnustaminen, myötävaikutus, nuoruus
+8. VAHINGONKORVAUSVAATIMUKSEN KIISTÄMINEN
+9. Oikeudenkäyntikulujen korvausvaatimus
+
+STRATEGISET PERIAATTEET:
+- Syyttömyysolettama (EIS 6:2): vastaajan ei tarvitse todistaa innocence
+- Itsekriminointisuoja: ei velvollisuutta myötävaikuttaa oman syyllisyyden selvittämiseen
+- Näyttökynnys: syyttäjällä todistustaakka — "ei järkevää epäilystä jää"
+- In dubio pro reo: epäselvä tilanne tulkitaan syytetyn eduksi`,
 
   "Oikaisu": `Kirjoita oikaisupyyntö/-vaatimus muodollisesti oikeaan ja sisällöllisesti vahvaan muotoon:
 
