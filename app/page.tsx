@@ -23,71 +23,90 @@ function getFirebaseApp() {
 type View = "landing" | "upload" | "processing" | "result";
 
 const BG_IMAGES = [
-  "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1600&q=80", // asiakirjoja pöydällä
-  "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1600&q=80", // kädenpuristus
-  "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1600&q=80",   // sopimuspaperit
-  "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1600&q=80", // juristi työssä
+  { url: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1800&q=85&fit=crop", pos: "center 40%" }, // kynä sopimuksella
+  { url: "https://images.unsplash.com/photo-1593115057322-e94b77572f20?w=1800&q=85&fit=crop", pos: "center 30%" }, // lakikirjasto
+  { url: "https://images.unsplash.com/photo-1479920252409-6e3d8e8d4866?w=1800&q=85&fit=crop", pos: "center 50%" }, // oikeusistuin
+  { url: "https://images.unsplash.com/photo-1575505586569-646b2ca898fc?w=1800&q=85&fit=crop", pos: "center 40%" }, // vasara
 ];
 
 function BgCarousel() {
   const [current, setCurrent] = useState(0);
-  const [prev, setPrev] = useState<number | null>(null);
-  const [fading, setFading] = useState(false);
+  const [loaded, setLoaded] = useState<boolean[]>(BG_IMAGES.map((_, i) => i === 0));
+
+  // Esiladata kaikki kuvat heti
+  useEffect(() => {
+    BG_IMAGES.forEach((img, i) => {
+      if (i === 0) return;
+      const image = new window.Image();
+      image.src = img.url;
+      image.onload = () => setLoaded(prev => { const n = [...prev]; n[i] = true; return n; });
+    });
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setFading(true);
-      setTimeout(() => {
-        setPrev(current);
-        setCurrent(c => (c + 1) % BG_IMAGES.length);
-        setFading(false);
-      }, 800);
-    }, 5000);
+      setCurrent(c => (c + 1) % BG_IMAGES.length);
+    }, 6000);
     return () => clearInterval(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current]);
+  }, []);
 
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden" }}>
-      {/* Edellinen kuva (jää taustalle fade-outin ajaksi) */}
-      {prev !== null && (
-        <div style={{
-          position: "absolute", inset: 0,
-          backgroundImage: `url(${BG_IMAGES[prev]})`,
-          backgroundSize: "cover", backgroundPosition: "center",
-          opacity: 1,
-        }} />
-      )}
-      {/* Nykyinen kuva fade-in */}
+      <style>{`
+        @keyframes kenburns {
+          0%   { transform: scale(1.0) translate(0, 0); }
+          100% { transform: scale(1.08) translate(-1%, -1%); }
+        }
+      `}</style>
+
+      {/* Kaikki kuvat päällekkäin, vain aktiivinen näkyy */}
+      {BG_IMAGES.map((img, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute", inset: 0,
+            opacity: i === current ? 1 : 0,
+            transition: "opacity 1.2s ease-in-out",
+            willChange: "opacity",
+          }}
+        >
+          {loaded[i] && (
+            <div
+              style={{
+                position: "absolute", inset: "-5%",
+                backgroundImage: `url(${img.url})`,
+                backgroundSize: "cover",
+                backgroundPosition: img.pos,
+                animation: i === current ? "kenburns 12s ease-out forwards" : "none",
+              }}
+            />
+          )}
+        </div>
+      ))}
+
+      {/* Tumma overlay — vahvempi vasemmalla tekstin takana */}
       <div style={{
         position: "absolute", inset: 0,
-        backgroundImage: `url(${BG_IMAGES[current]})`,
-        backgroundSize: "cover", backgroundPosition: "center",
-        opacity: fading ? 0 : 1,
-        transition: "opacity 0.8s ease-in-out",
+        background: "linear-gradient(105deg, rgba(8,15,35,0.92) 0%, rgba(8,15,35,0.75) 55%, rgba(8,15,35,0.55) 100%)",
       }} />
-      {/* Tumma overlay jotta teksti pysyy luettavana */}
+      {/* Kultainen ambienttivalo */}
       <div style={{
         position: "absolute", inset: 0,
-        background: "linear-gradient(135deg, rgba(10,18,40,0.88) 0%, rgba(10,18,40,0.72) 50%, rgba(10,18,40,0.82) 100%)",
+        background: "radial-gradient(ellipse 50% 60% at 75% 30%, rgba(200,164,74,0.12) 0%, transparent 65%)",
       }} />
-      {/* Kultainen valo-efekti */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "radial-gradient(ellipse 60% 50% at 80% 20%, rgba(200,164,74,0.14) 0%, transparent 60%)",
-      }} />
+
       {/* Pisteindikaattorit */}
-      <div style={{ position: "absolute", bottom: "24px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "8px", zIndex: 10 }}>
+      <div style={{ position: "absolute", bottom: "20px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "8px", zIndex: 10 }}>
         {BG_IMAGES.map((_, i) => (
           <button
             key={i}
-            onClick={() => { setPrev(current); setCurrent(i); }}
+            onClick={() => setCurrent(i)}
             style={{
-              width: i === current ? "24px" : "8px", height: "8px",
+              width: i === current ? "28px" : "8px", height: "8px",
               borderRadius: "4px", border: "none",
-              background: i === current ? "#C8A44A" : "rgba(200,164,74,0.35)",
+              background: i === current ? "#C8A44A" : "rgba(200,164,74,0.30)",
               cursor: "pointer", padding: 0,
-              transition: "all 0.3s ease",
+              transition: "all 0.4s ease",
             }}
           />
         ))}
