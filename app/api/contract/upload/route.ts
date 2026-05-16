@@ -287,29 +287,6 @@ KRIITTISET TARKISTUSPISTEET:
 9. Todistelu — näyttökynnys rikosasiassa ("ei järkevää epäilystä")
 10. Kansainvälinen ulottuvuus — onko rikos tehty ulkomailla tai onko ulkomainen tekijä`,
 
-  "Rikosasia": `Kyseessä on rikosoikeudellinen asiakirja. Analysoi se kattavasti. Tunnista ensin onko kyse rikosilmoituksesta, vastineesta syytteeseen, asianomistajan vaatimuksista vai muutoksenhakukirjelmästä.
-
-SOVELLETTAVA LAINSÄÄDÄNTÖ:
-- Rikoslaki (RL 39/1889): tunnusmerkistöt, vastuuvapausperusteet (3-4 luku), vanhentuminen (8 luku), rangaistuksen määrääminen (6 luku)
-- Laki oikeudenkäynnistä rikosasioissa (ROL 689/1997): syyteoikeus, näyttökynnys, muutoksenhaku
-- Esitutkintalaki (ETL 805/2011): tutkintavelvollisuus, epäillyn oikeudet (7:5§ vaiti-oikeus, 4:10§ avustaja)
-- Pakkokeinolaki (PKL 806/2011): pidättäminen, vangitseminen, takavarikko
-- Vahingonkorvauslaki (VahL 412/1974): rikosperusteinen korvausvastuu, kärsimyskorvaus (5:6§)
-- Rikosvahinkolaki (1204/2005): valtion korvausvastuu
-- Euroopan ihmisoikeussopimus: 6 artikla (oikeudenmukainen oikeudenkäynti, syyttömyysolettama 6:2, puolustautumisoikeudet 6:3), 7 artikla (nulla poena sine lege)
-- EU-direktiivit: uhrin oikeudet (2012/29/EU), syyttömyysolettama (2016/343/EU), oikeus asianajajaan (2013/48/EU)
-
-KRIITTISET TARKISTUSPISTEET:
-1. Rikoksen tunnusmerkistön täyttyminen — objektiivinen ja subjektiivinen puoli
-2. Tahallisuus (dolus) vs. tuottamus (culpa) — oikea rikosnimike
-3. Vanhentuminen (RL 8 luku) — onko ilmoitus/syyte tehty ajoissa
-4. Vastuuvapausperusteet — hätävarjelu, pakkotila, erehdys
-5. Syyttömyysolettama ja itsekriminointisuoja
-6. Asianomistajan kaikki vahingonkorvausvaatimukset
-7. Todistelu ja näyttökynnys ("ei järkevää epäilystä")
-8. Prosessuaaliset määräajat ja muutoksenhakuoikeus
-9. Kansainvälinen ulottuvuus (Eurooppalainen pidätysmääräys, ICC)`,
-
   "Oikaisu": `Kyseessä on oikaisupyyntö tai oikaisuvaatimus. Analysoi se kattavasti seuraavien oikeuslähteiden valossa:
 
 SOVELLETTAVA SUOMEN LAINSÄÄDÄNTÖ:
