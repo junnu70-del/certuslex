@@ -564,7 +564,7 @@ export default function AdminClient() {
                   >{label}</button>
                 ))}
                 <div style={{ marginLeft: "auto", padding: "0.5rem 0.8rem", fontSize: "0.7rem", color: "var(--muted)", alignSelf: "center" }}>
-                  🤖 Claude AI
+                  ✦ CertusLex AI
                 </div>
               </div>
               <div style={{ padding: "1.2rem 1.4rem", borderLeft: "3px solid var(--gold)" }}>

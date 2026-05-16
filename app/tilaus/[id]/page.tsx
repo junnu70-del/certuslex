@@ -157,7 +157,7 @@ export default function TilausPage() {
               <div style={{ background: "#fff", border: "1px solid #EDE8DE", marginBottom: "1.5rem" }}>
                 <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid #EDE8DE", display: "flex", alignItems: "center", gap: "0.6rem" }}>
                   <span style={{ fontSize: "0.7rem", letterSpacing: "0.12em", fontWeight: 700, color: "#8A8070" }}>AI-ESIANALYYSI</span>
-                  <span style={{ fontSize: "0.68rem", background: "#F7F4EE", color: "#C8A44A", padding: "2px 8px", fontWeight: 600 }}>🤖 Claude AI</span>
+                  <span style={{ fontSize: "0.68rem", background: "#F7F4EE", color: "#C8A44A", padding: "2px 8px", fontWeight: 600 }}>✦ CertusLex AI</span>
                   <span style={{ fontSize: "0.7rem", color: "#8A8070", marginLeft: "auto" }}>Alustava — juristi vahvistaa lopullisen lausunnon</span>
                 </div>
                 <div style={{ padding: "1.2rem 1.5rem", borderLeft: "3px solid #C8A44A" }}>
