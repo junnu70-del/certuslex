@@ -70,7 +70,7 @@ function mdToHtml(text: string): string {
     .replace(/^[-|: ]+$/gm, "") // poista taulukon viivat
     // Bullet-listat
     .replace(/^[-*] (.+)$/gm, "<li>$1</li>")
-    .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
+    .replace(/((?:<li>.*<\/li>\s*)+)/g, "<ul>$1</ul>")
     // Vaakaviivat
     .replace(/^---+$/gm, "<hr>")
     // Kursivoi
