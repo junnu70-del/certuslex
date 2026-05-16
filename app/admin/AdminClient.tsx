@@ -101,6 +101,36 @@ export default function AdminClient() {
   const [filter, setFilter] = useState<"all" | "pending_review" | "in_review" | "completed">("all");
   const [tab, setTab] = useState<"jono" | "koodit" | "loki" | "kampanja">("jono");
   const [claudeTab, setClaudeTab] = useState<"analyysi" | "korjattu">("analyysi");
+  const [fetchingAnalysis, setFetchingAnalysis] = useState(false);
+
+  async function fetchAnalysis(d: Document) {
+    if (!d.storageUrl) return;
+    setFetchingAnalysis(true);
+    try {
+      const res = await fetch("/api/contract/reanalyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          docId: d.id,
+          storageUrl: d.storageUrl,
+          fileName: d.fileName,
+          docType: d.docType,
+          userEmail: d.userEmail,
+          plan: d.plan,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setSelected(prev => prev ? { ...prev, claudeAnalysis: "✓ Analyysi valmis — päivitä sivu nähdäksesi tulokset." } : null);
+      } else {
+        alert("Virhe: " + (data.error ?? "tuntematon"));
+      }
+    } catch {
+      alert("Analyysin haku epäonnistui");
+    } finally {
+      setFetchingAnalysis(false);
+    }
+  }
 
   // Kampanja
   const [csvText, setCsvText] = useState("");
@@ -363,9 +393,23 @@ export default function AdminClient() {
           </div>
 
           <div style={{ display: "flex", gap: "1rem", marginBottom: "1.2rem", flexWrap: "wrap", alignItems: "center" }}>
-            <a href={selected.storageUrl} target="_blank" rel="noopener noreferrer"
-              style={{ background: "var(--gold)", color: "var(--navy)", fontSize: "0.85rem", fontWeight: 500, padding: "0.7rem 1.5rem", textDecoration: "none", display: "inline-block" }}>
-              ⬇ Avaa asiakirja
+            {/* Word-tiedostot → Microsoft Office Online viewer, muut suoraan */}
+            {(selected.fileName.endsWith(".docx") || selected.fileName.endsWith(".doc")) ? (
+              <a
+                href={`https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(selected.storageUrl)}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{ background: "var(--gold)", color: "var(--navy)", fontSize: "0.85rem", fontWeight: 500, padding: "0.7rem 1.5rem", textDecoration: "none", display: "inline-block" }}>
+                📄 Avaa Word-katselussa
+              </a>
+            ) : (
+              <a href={selected.storageUrl} target="_blank" rel="noopener noreferrer"
+                style={{ background: "var(--gold)", color: "var(--navy)", fontSize: "0.85rem", fontWeight: 500, padding: "0.7rem 1.5rem", textDecoration: "none", display: "inline-block" }}>
+                📄 Avaa asiakirja
+              </a>
+            )}
+            <a href={selected.storageUrl} download={selected.fileName}
+              style={{ background: "transparent", border: "1px solid var(--cream2)", color: "var(--navy)", fontSize: "0.82rem", fontWeight: 500, padding: "0.65rem 1.2rem", textDecoration: "none", display: "inline-block" }}>
+              ⬇ Lataa
             </a>
             <div style={{ fontSize: "0.78rem", color: "var(--muted)" }}>
               Tilausnumero: <strong>{selected.id}</strong>
@@ -378,7 +422,22 @@ export default function AdminClient() {
             </div>
           )}
 
-          {/* Claude AI -esianalyysi */}
+          {/* Claude AI -esianalyysi — näytetään aina, myös vanhoille asiakirjoille */}
+          {(!selected.claudeAnalysis && !selected.claudeKorjattuAsiakirja) && (
+            <div style={{ marginBottom: "1.5rem", background: "#fff", border: "1px solid var(--cream2)", borderLeft: "3px solid var(--gold)", padding: "1rem 1.2rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+              <div>
+                <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--navy)", marginBottom: "0.2rem" }}>🤖 AI-esianalyysi puuttuu</div>
+                <div style={{ fontSize: "0.76rem", color: "var(--muted)" }}>Asiakirja ladattu ennen AI-ominaisuutta. Hae analyysi nyt (~30–60 sek).</div>
+              </div>
+              <button
+                onClick={() => fetchAnalysis(selected)}
+                disabled={fetchingAnalysis}
+                style={{ background: "var(--navy)", color: "var(--gold)", border: "none", padding: "0.6rem 1.2rem", fontSize: "0.8rem", fontWeight: 700, cursor: fetchingAnalysis ? "not-allowed" : "pointer", letterSpacing: "0.04em", whiteSpace: "nowrap", flexShrink: 0 }}
+              >
+                {fetchingAnalysis ? "⏳ Analysoidaan..." : "✦ Hae analyysi"}
+              </button>
+            </div>
+          )}
           {(selected.claudeAnalysis || selected.claudeKorjattuAsiakirja) && (
             <div style={{ marginBottom: "1.5rem", border: "1px solid var(--cream2)", background: "#fff" }}>
               {/* Tabs */}
