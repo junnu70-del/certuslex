@@ -22,6 +22,80 @@ function getFirebaseApp() {
 
 type View = "landing" | "upload" | "processing" | "result";
 
+const BG_IMAGES = [
+  "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=1600&q=80", // asiakirjoja pöydällä
+  "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1600&q=80", // kädenpuristus
+  "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1600&q=80",   // sopimuspaperit
+  "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1600&q=80", // juristi työssä
+];
+
+function BgCarousel() {
+  const [current, setCurrent] = useState(0);
+  const [prev, setPrev] = useState<number | null>(null);
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setFading(true);
+      setTimeout(() => {
+        setPrev(current);
+        setCurrent(c => (c + 1) % BG_IMAGES.length);
+        setFading(false);
+      }, 800);
+    }, 5000);
+    return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current]);
+
+  return (
+    <div style={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden" }}>
+      {/* Edellinen kuva (jää taustalle fade-outin ajaksi) */}
+      {prev !== null && (
+        <div style={{
+          position: "absolute", inset: 0,
+          backgroundImage: `url(${BG_IMAGES[prev]})`,
+          backgroundSize: "cover", backgroundPosition: "center",
+          opacity: 1,
+        }} />
+      )}
+      {/* Nykyinen kuva fade-in */}
+      <div style={{
+        position: "absolute", inset: 0,
+        backgroundImage: `url(${BG_IMAGES[current]})`,
+        backgroundSize: "cover", backgroundPosition: "center",
+        opacity: fading ? 0 : 1,
+        transition: "opacity 0.8s ease-in-out",
+      }} />
+      {/* Tumma overlay jotta teksti pysyy luettavana */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: "linear-gradient(135deg, rgba(10,18,40,0.88) 0%, rgba(10,18,40,0.72) 50%, rgba(10,18,40,0.82) 100%)",
+      }} />
+      {/* Kultainen valo-efekti */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: "radial-gradient(ellipse 60% 50% at 80% 20%, rgba(200,164,74,0.14) 0%, transparent 60%)",
+      }} />
+      {/* Pisteindikaattorit */}
+      <div style={{ position: "absolute", bottom: "24px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "8px", zIndex: 10 }}>
+        {BG_IMAGES.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => { setPrev(current); setCurrent(i); }}
+            style={{
+              width: i === current ? "24px" : "8px", height: "8px",
+              borderRadius: "4px", border: "none",
+              background: i === current ? "#C8A44A" : "rgba(200,164,74,0.35)",
+              cursor: "pointer", padding: 0,
+              transition: "all 0.3s ease",
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const planDetails: Record<string, { time: string; price: string }> = {
   Perus: { time: "48h", price: "49" },
   Standard: { time: "24h", price: "79" },
@@ -362,61 +436,21 @@ export default function Home() {
         </div>
       </nav>
 
-      <div className="hero" style={{ display: "flex", alignItems: "center", gap: "4rem", maxWidth: "1200px", margin: "0 auto", padding: "5rem 3rem 4rem" }}>
-        {/* Vasen: teksti */}
-        <div style={{ flex: "1 1 480px", minWidth: 0, position: "relative", zIndex: 10 }}>
-          <div className="hero-tag">JURISTIVARMISTETTU ASIAKIRJATARKASTUS</div>
-          <h1>Tiedätkö, onko asiakirjasi<br /><em>kunnossa?</em></h1>
-          <p className="hero-sub">CertusLex tarkistuttaa asiakirjasi OTM-juristilla. Saat varmuuden siitä, että lakisisältö, viittaukset ja pykälät ovat oikein — ennen kuin asiakirja aiheuttaa ongelmia.<br /><span style={{ fontSize: "0.9em", opacity: 0.8 }}>Erityisen hyödyllinen tekoälyllä laadittujen asiakirjojen tarkistamiseen.</span></p>
-          <div className="hero-btns">
-            <button className="btn-primary" onClick={() => goTo("upload")}>Lähetä asiakirja tarkastukseen</button>
-          </div>
-          <div className="hero-stats">
-            <div><div className="stat-n">✓</div><div className="stat-l">JURISTIN TARKASTAMA</div></div>
-            <div><div className="stat-n">✓</div><div className="stat-l">PYKÄLÄT OIKEIN</div></div>
-            <div><div className="stat-n">✓</div><div className="stat-l">MIELENRAUHA</div></div>
-          </div>
-        </div>
+      {/* Taustakuvakaruselli */}
+      <BgCarousel />
 
-        {/* Oikea: 4 kuvaa kollaasina */}
-        <div style={{ flex: "0 0 420px", position: "relative", height: "460px", display: "none" }} className="hero-imgs">
-          {[
-            { src: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=420&q=80", top: "0px", left: "0px", rotate: "-3deg", w: "240px", h: "160px", label: "Sopimus" },
-            { src: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=420&q=80", top: "20px", left: "210px", rotate: "2.5deg", w: "210px", h: "155px", label: "Asiakirjat" },
-            { src: "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=420&q=80", top: "185px", left: "30px", rotate: "2deg", w: "200px", h: "155px", label: "Neuvottelu" },
-            { src: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=420&q=80", top: "195px", left: "200px", rotate: "-2deg", w: "220px", h: "165px", label: "Juristi" },
-          ].map((img, i) => (
-            <div
-              key={i}
-              style={{
-                position: "absolute",
-                top: img.top, left: img.left,
-                width: img.w, height: img.h,
-                transform: `rotate(${img.rotate})`,
-                border: "3px solid rgba(200,164,74,0.6)",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-                overflow: "hidden",
-                borderRadius: "2px",
-                zIndex: i === 1 || i === 3 ? 5 : 4,
-              }}
-            >
-              <img
-                src={img.src}
-                alt={img.label}
-                style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.75) saturate(0.8)" }}
-              />
-              {/* Kultainen overlay-häly */}
-              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(200,164,74,0.15) 0%, transparent 60%)" }} />
-            </div>
-          ))}
-          {/* Koristeviivaelementti */}
-          <div style={{ position: "absolute", bottom: "60px", right: "-20px", width: "80px", height: "80px", border: "2px solid rgba(200,164,74,0.3)", borderRadius: "50%", zIndex: 2 }} />
-          <div style={{ position: "absolute", top: "30px", right: "-10px", width: "40px", height: "40px", border: "1px solid rgba(200,164,74,0.2)", borderRadius: "50%", zIndex: 2 }} />
+      <div className="hero" style={{ position: "relative", zIndex: 10 }}>
+        <div className="hero-tag">JURISTIVARMISTETTU ASIAKIRJATARKASTUS</div>
+        <h1>Tiedätkö, onko asiakirjasi<br /><em>kunnossa?</em></h1>
+        <p className="hero-sub">CertusLex tarkistuttaa asiakirjasi OTM-juristilla. Saat varmuuden siitä, että lakisisältö, viittaukset ja pykälät ovat oikein — ennen kuin asiakirja aiheuttaa ongelmia.<br /><span style={{ fontSize: "0.9em", opacity: 0.8 }}>Erityisen hyödyllinen tekoälyllä laadittujen asiakirjojen tarkistamiseen.</span></p>
+        <div className="hero-btns">
+          <button className="btn-primary" onClick={() => goTo("upload")}>Lähetä asiakirja tarkastukseen</button>
         </div>
-
-        <style>{`
-          @media (min-width: 900px) { .hero-imgs { display: block !important; } }
-        `}</style>
+        <div className="hero-stats">
+          <div><div className="stat-n">✓</div><div className="stat-l">JURISTIN TARKASTAMA</div></div>
+          <div><div className="stat-n">✓</div><div className="stat-l">PYKÄLÄT OIKEIN</div></div>
+          <div><div className="stat-n">✓</div><div className="stat-l">MIELENRAUHA</div></div>
+        </div>
       </div>
 
       {/* Kultainen erotinviiva hero/prosessi-rajalla */}
