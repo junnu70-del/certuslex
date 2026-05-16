@@ -67,7 +67,28 @@ export async function POST(req: NextRequest) {
         max_tokens: 4096,
         messages: [{
           role: "user",
-          content: `Olet kokenut suomalainen juristi. Analysoi seuraava asiakirja (tyyppi: ${docType || "Sopimus"}) ja anna kattava esianalyysi HTML-muodossa. Merkitse ongelmat <strong>-tagilla.\n\nASIAKIRJA:\n${contractText.slice(0, 8000)}`,
+          content: `Olet senior-tason suomalainen juristi. Analysoi asiakirja (tyyppi: ${docType || "Sopimus"}) ja laadi kattava esianalyysi juristia varten.
+
+TÄRKEÄÄ: Vastaa AINOASTAAN HTML-muodossa. Ei markdown-syntaksia (#, **, |, ---). Käytä vain HTML-tageja: h3, p, ul, li, strong, table, tr, td, th.
+
+Rakenne:
+<h3>Asiakirjatyyppi ja tarkoitus</h3>
+<p>Kuvaus asiakirjatyypistä ja oikeudellisesta luonteesta.</p>
+
+<h3>Havaitut riskit ja puutteet</h3>
+<ul><li><strong>VIRHE:</strong> Kuvaus + lakiviite (esim. OikTL 36§)</li></ul>
+
+<h3>Puuttuvat pakolliset elementit</h3>
+<ul><li>Mitä puuttuu oikeudellisen pätevyyden kannalta</li></ul>
+
+<h3>Vastuukysymykset ja seuraukset</h3>
+<p>Seuraukset jos ei korjata.</p>
+
+<h3>Suositukset juristille</h3>
+<ul><li><strong>1. Kriittinen:</strong> ...</li><li><strong>2. Tärkeä:</strong> ...</li></ul>
+
+ASIAKIRJA:
+${contractText.slice(0, 8000)}`,
         }],
       }),
       anthropic.messages.create({
@@ -75,7 +96,7 @@ export async function POST(req: NextRequest) {
         max_tokens: 8192,
         messages: [{
           role: "user",
-          content: `Olet kokenut suomalainen juristi. Kirjoita tästä asiakirjasta (tyyppi: ${docType || "Sopimus"}) juridisesti pätevä, korjattu versio täydellisessä HTML-muodossa (koko HTML-dokumentti DOCTYPE:sta alkaen). Säilytä rakenne mutta korjaa kaikki puutteet.\n\nASIAKIRJA:\n${contractText.slice(0, 8000)}`,
+          content: `Olet kokenut suomalainen juristi. Kirjoita tästä asiakirjasta (tyyppi: ${docType || "Sopimus"}) juridisesti pätevä, korjattu versio. Palauta TÄYDELLINEN HTML-dokumentti DOCTYPE:sta alkaen. Ei markdown-syntaksia.\n\nASIAKIRJA:\n${contractText.slice(0, 8000)}`,
         }],
       }),
     ]);

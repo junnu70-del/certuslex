@@ -5,6 +5,38 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
+// Muuntaa markdown → HTML (fallback jos Claude palauttaa markdownia)
+function mdToHtml(text: string): string {
+  if (!text) return "";
+  // Jos sisältää jo HTML-tageja, palauta sellaisenaan
+  if (/<(h[1-6]|p|ul|li|table|strong|em)\b/i.test(text)) return text;
+
+  return text
+    // Otsikot
+    .replace(/^### (.+)$/gm, "<h4>$1</h4>")
+    .replace(/^## (.+)$/gm, "<h3>$1</h3>")
+    .replace(/^# (.+)$/gm, "<h2>$1</h2>")
+    // Lihavointi
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    // Taulukot → yksinkertainen taulukko
+    .replace(/^\|(.+)\|$/gm, (_, row) => {
+      const cells = row.split("|").map((c: string) => c.trim());
+      return "<tr>" + cells.map((c: string) => `<td>${c}</td>`).join("") + "</tr>";
+    })
+    .replace(/^[-|: ]+$/gm, "") // poista taulukon viivat
+    // Bullet-listat
+    .replace(/^[-*] (.+)$/gm, "<li>$1</li>")
+    .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
+    // Vaakaviivat
+    .replace(/^---+$/gm, "<hr>")
+    // Kursivoi
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    // Kappaleet
+    .replace(/\n\n+/g, "</p><p>")
+    .replace(/^(?!<)/, "<p>")
+    .replace(/(?<!>)$/, "</p>");
+}
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? "",
@@ -470,20 +502,36 @@ export default function AdminClient() {
                   🤖 Claude AI
                 </div>
               </div>
-              <div style={{ padding: "1rem 1.2rem", borderLeft: "3px solid var(--gold)" }}>
+              <div style={{ padding: "1.2rem 1.4rem", borderLeft: "3px solid var(--gold)" }}>
                 {claudeTab === "analyysi" ? (
                   selected.claudeAnalysis ? (
-                    <div
-                      style={{ fontSize: "0.84rem", color: "var(--navy)", lineHeight: 1.7 }}
-                      dangerouslySetInnerHTML={{ __html: selected.claudeAnalysis }}
-                    />
+                    <>
+                      <style>{`
+                        .claude-analysis h2{font-size:1rem;font-weight:700;color:#0F1F3D;margin:1.2rem 0 0.4rem;font-family:Georgia,serif}
+                        .claude-analysis h3{font-size:0.9rem;font-weight:700;color:#0F1F3D;margin:1.1rem 0 0.35rem;padding-bottom:3px;border-bottom:1px solid #EDE8DE}
+                        .claude-analysis h4{font-size:0.85rem;font-weight:700;color:#0F1F3D;margin:0.9rem 0 0.3rem}
+                        .claude-analysis p{font-size:0.83rem;color:#2C2416;line-height:1.75;margin:0.3rem 0}
+                        .claude-analysis ul{margin:0.4rem 0 0.4rem 1.2rem;padding:0}
+                        .claude-analysis li{font-size:0.83rem;color:#2C2416;line-height:1.7;margin-bottom:0.25rem}
+                        .claude-analysis strong{color:#0F1F3D;font-weight:700}
+                        .claude-analysis table{width:100%;border-collapse:collapse;font-size:0.8rem;margin:0.6rem 0}
+                        .claude-analysis td,.claude-analysis th{border:1px solid #EDE8DE;padding:6px 10px;text-align:left;color:#2C2416}
+                        .claude-analysis th{background:#F7F4EE;font-weight:700;color:#0F1F3D}
+                        .claude-analysis hr{border:none;border-top:1px solid #EDE8DE;margin:1rem 0}
+                        .claude-analysis em{color:#8A8070;font-style:italic}
+                      `}</style>
+                      <div
+                        className="claude-analysis"
+                        dangerouslySetInnerHTML={{ __html: mdToHtml(selected.claudeAnalysis) }}
+                      />
+                    </>
                   ) : (
                     <p style={{ color: "var(--muted)", fontSize: "0.84rem" }}>Esianalyysi puuttuu — asiakirja ladattu ennen AI-ominaisuutta.</p>
                   )
                 ) : selected.claudeKorjattuAsiakirja ? (
                   <iframe
                     srcDoc={selected.claudeKorjattuAsiakirja}
-                    style={{ width: "100%", height: "400px", border: "none", display: "block" }}
+                    style={{ width: "100%", height: "480px", border: "none", display: "block" }}
                     title="Korjattu asiakirja"
                   />
                 ) : (
