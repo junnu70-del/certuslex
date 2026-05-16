@@ -48,38 +48,46 @@ async function uploadToStorage(fileBuffer: Buffer, contractId: string, fileName:
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-async function analyzeContract(text: string): Promise<string> {
+const DOC_TYPE_CONTEXT: Record<string, string> = {
+  "Sopimus": "Kyseessä on sopimusasiakirja. Kiinnitä erityistä huomiota vastuunrajoituksiin, irtisanomisehtoihin, salassapitoon, erimielisyyksien ratkaisuun ja osapuolten velvoitteisiin.",
+  "Valitus": "Kyseessä on valituskirjelmä hallinto-oikeudelle tai markkinaoikeudelle. Kiinnitä huomiota valitusperusteiden oikeudelliseen kestävyyteen, muotomääräysten täyttymiseen ja määräaikoihin.",
+  "Kirjelmä": "Kyseessä on oikeudelle osoitettu kirjelmä. Kiinnitä huomiota muotovaatimuksiin, prosessuaaliseen asianmukaisuuteen ja argumentaation loogiseen rakenteeseen.",
+  "Hakemus": "Kyseessä on viranomaishakemus. Kiinnitä huomiota muotomääräyksiin, liitteiden täydellisyyteen ja hakemuksen perustelujen riittävyyteen.",
+  "Vastine": "Kyseessä on vastine tai lausuma. Kiinnitä huomiota vastausperusteiden kattavuuteen, näyttöön viittaamiseen ja prosessuaaliseen asianmukaisuuteen.",
+  "Oikaisu": "Kyseessä on oikaisupyyntö. Kiinnitä huomiota oikaisuperusteisiin, määräaikoihin, toimivaltaiseen viranomaiseen ja perustelujen riittävyyteen.",
+};
+
+async function analyzeContract(text: string, docType = ""): Promise<string> {
+  const typeContext = DOC_TYPE_CONTEXT[docType] ?? "Analysoi asiakirja huolellisesti sen tyypistä riippumatta.";
+
   const msg = await anthropic.messages.create({
     model: "claude-opus-4-5",
     max_tokens: 2000,
     messages: [
       {
         role: "user",
-        content: `Olet kokenut suomalainen juristi. Analysoi seuraava asiakirja ja laadi lyhyt esianalyysi juristia varten.
+        content: `Olet kokenut suomalainen juristi. Analysoi seuraava asiakirja ja laadi esianalyysi juristia varten.
 
-Muoto (käytä suomenkielistä HTML:ää, ei markdown):
-<h3>Asiakirjatyyppi</h3>
-<p>Lyhyt kuvaus asiakirjasta ja sen pääasiallisesta tarkoituksesta.</p>
+Asiakirjatyyppi: ${docType || "Ei määritelty"}
+Ohje: ${typeContext}
+
+Muoto (suomenkielinen HTML, ei markdown):
+<h3>Asiakirjatyyppi ja tarkoitus</h3>
+<p>Lyhyt kuvaus.</p>
 
 <h3>Riskit ja huomiot</h3>
-<ul>
-  <li>...</li>
-</ul>
+<ul><li>...</li></ul>
 
 <h3>Puuttuvat tai epäselvät kohdat</h3>
-<ul>
-  <li>...</li>
-</ul>
+<ul><li>...</li></ul>
 
 <h3>Vastuukysymykset</h3>
 <p>...</p>
 
 <h3>Suositukset juristille</h3>
-<ul>
-  <li>...</li>
-</ul>
+<ul><li>...</li></ul>
 
-Ole täsmällinen ja käytä ammatillista oikeudellista kieltä. Keskity olennaisiin riskeihin. ÄLÄ kirjoita koko sopimusta uudelleen.
+Ole täsmällinen. Keskity ${docType ? `${docType}-asiakirjan` : "asiakirjan"} kannalta olennaisiin riskeihin.
 
 ASIAKIRJA:
 ${text.slice(0, 8000)}`,
@@ -91,7 +99,16 @@ ${text.slice(0, 8000)}`,
   return block.type === "text" ? block.text : "";
 }
 
-async function generateKorjattuAsiakirja(text: string, fileName: string): Promise<string> {
+const DOC_TYPE_KORJAUS: Record<string, string> = {
+  "Sopimus": "Kirjoita sopimus juridisesti täydelliseksi: lisää puuttuvat lausekkeet (vastuunrajoitus, salassapito, force majeure, erimielisyyksien ratkaisu, irtisanominen), selkeytä velvoitteet ja tee kielestä täsmällistä sopimusoikeudellista kieltä.",
+  "Valitus": "Kirjoita valitus prosessuaalisesti oikeaan muotoon: selkeytä valitusperusteet, järjestä argumentaatio loogisesti, varmista muotomääräysten täyttyminen ja lisää tarvittavat oikeusviitteet.",
+  "Kirjelmä": "Kirjoita kirjelmä oikeudellisesti asianmukaiseen muotoon: selkeytä vaatimukset ja perusteet, järjestä rakenne prosessuaalisesti oikein.",
+  "Hakemus": "Kirjoita hakemus viranomaiskäsittelyyn soveltuvaksi: täydennä puuttuvat tiedot, selkeytä hakemuksen perusteet ja varmista muotomääräysten täyttyminen.",
+  "Vastine": "Kirjoita vastine kattavaksi: käy läpi kaikki vastapuolen väitteet, lisää tarvittavat vastaperusteet ja varmista prosessuaalinen asianmukaisuus.",
+  "Oikaisu": "Kirjoita oikaisupyyntö asianmukaiseen muotoon: selkeytä oikaisuperusteet, varmista toimivaltakysymykset ja lisää tarvittavat perustelut.",
+};
+
+async function generateKorjattuAsiakirja(text: string, fileName: string, docType = ""): Promise<string> {
   const msg = await anthropic.messages.create({
     model: "claude-opus-4-5",
     max_tokens: 4000,
@@ -130,10 +147,11 @@ Kirjoita koko asiakirja uudelleen HTML-muodossa, joka on painovalmis Word-dokume
 </body>
 </html>
 
-Ohjeet:
-- Säilytä asiakirjan alkuperäinen tarkoitus ja osapuolten tiedot
-- Korjaa kaikki oikeudelliset puutteet, epäselvyydet ja riskit
-- Lisää puuttuvat standardilausekkeet (vastuunrajoitus, salassapito, erimielisyyksien ratkaisu, irtisanomisehdot jne.) jos ne puuttuvat
+Asiakirjatyyppi: ${docType || "Ei määritelty"}
+Erityisohjeet tyypin mukaan: ${DOC_TYPE_KORJAUS[docType] ?? "Korjaa asiakirja oikeudellisesti päteväksi ja kattavaksi."}
+
+Yleisohjeet:
+- Säilytä alkuperäinen tarkoitus ja osapuolten tiedot
 - Kirjoita täsmällisellä suomen oikeuskielellä
 - Tiedoston nimi: ${fileName}
 - ÄLÄ lisää selityksiä tai kommentteja — pelkkä valmis asiakirja
@@ -213,6 +231,7 @@ export async function POST(req: NextRequest) {
     const mimeType = sp.get("mimeType") ?? "application/octet-stream";
     const customerEmail = sp.get("customerEmail") ?? email;
     const customerName = sp.get("customerName") ?? "";
+    const docType = sp.get("docType") ?? "";
     const notes = sp.get("notes") ?? "";
 
     if (!fileName) {
@@ -271,8 +290,8 @@ export async function POST(req: NextRequest) {
     let korjattuAsiakirja = "";
     try {
       [analysis, korjattuAsiakirja] = await Promise.all([
-        analyzeContract(contractText),
-        generateKorjattuAsiakirja(contractText, fileName),
+        analyzeContract(contractText, docType),
+        generateKorjattuAsiakirja(contractText, fileName, docType),
       ]);
     } catch (err) {
       console.error("[contract/upload] Claude error:", err);
@@ -299,6 +318,7 @@ export async function POST(req: NextRequest) {
       customerEmail: customerEmail ?? email,
       customerName: customerName ?? "",
       customerUid: uid,
+      docType: docType,
       notes: notes ?? "",
       claudeAnalysis: analysis,
       claudeKorjattuAsiakirja: korjattuAsiakirja,

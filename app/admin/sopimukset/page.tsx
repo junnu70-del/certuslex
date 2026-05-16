@@ -18,6 +18,7 @@ interface Contract {
   claudeAnalysis: string;
   claudeKorjattuAsiakirja: string;
   storageUrl?: string;
+  docType?: string;
   status: "pending_review" | "approved" | "rejected" | "changes_requested";
   juristiComment: string;
   createdAt: { _seconds: number } | null;
@@ -189,8 +190,15 @@ export default function AdminSopimuksetPage() {
                       {st.label.toUpperCase()}
                     </div>
                   </div>
-                  <div style={{ fontSize: "12px", color: "#8A8070" }}>{c.customerEmail}</div>
-                  <div style={{ fontSize: "11px", color: "#AAAAAA", marginTop: "4px" }}>{date}</div>
+                  <div style={{ display: "flex", gap: "6px", alignItems: "center", marginBottom: "4px" }}>
+                    {c.docType && (
+                      <span style={{ background: NAVY, color: GOLD, fontSize: "10px", fontWeight: 700, padding: "2px 7px", letterSpacing: "0.06em" }}>
+                        {c.docType.toUpperCase()}
+                      </span>
+                    )}
+                    <span style={{ fontSize: "12px", color: "#8A8070" }}>{c.customerEmail}</span>
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#AAAAAA" }}>{date}</div>
                 </div>
               );
             })
@@ -202,7 +210,14 @@ export default function AdminSopimuksetPage() {
           <div style={{ padding: "28px 32px", overflowY: "auto", maxHeight: "calc(100vh - 64px)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
               <div>
-                <h2 style={{ color: NAVY, fontFamily: "Georgia, serif", fontSize: "20px", marginBottom: "4px" }}>{selected.fileName}</h2>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+                  <h2 style={{ color: NAVY, fontFamily: "Georgia, serif", fontSize: "20px", margin: 0 }}>{selected.fileName}</h2>
+                  {selected.docType && (
+                    <span style={{ background: NAVY, color: GOLD, fontSize: "11px", fontWeight: 700, padding: "3px 10px", letterSpacing: "0.08em", flexShrink: 0 }}>
+                      {selected.docType.toUpperCase()}
+                    </span>
+                  )}
+                </div>
                 <div style={{ fontSize: "13px", color: "#8A8070" }}>
                   {selected.customerName && <span style={{ marginRight: "12px", fontWeight: 600, color: NAVY }}>{selected.customerName}</span>}
                   {selected.customerEmail}

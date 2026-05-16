@@ -100,7 +100,8 @@ export default function Home() {
         mimeType: file.type || "application/octet-stream",
         customerEmail: userEmail,
         customerName: "",
-        notes: `Asiakirjatyyppi: ${docType} | Paketti: ${plan}`,
+        docType: docType,
+        notes: `Paketti: ${plan}`,
       })}`, {
         method: "POST",
         headers: { "Content-Type": "application/octet-stream" },
