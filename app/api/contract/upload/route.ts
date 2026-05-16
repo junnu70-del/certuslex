@@ -364,7 +364,9 @@ ${text.slice(0, 8000)}`,
   });
 
   const block = msg.content[0];
-  return block.type === "text" ? block.text : "";
+  const raw = block.type === "text" ? block.text : "";
+  // Poista markdown-koodiaidat jos Claude palauttaa ```html ... ```
+  return raw.replace(/^```(?:html|json|xml)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
 }
 
 const DOC_TYPE_KORJAUS: Record<string, string> = {
@@ -606,7 +608,8 @@ ${text.slice(0, 7000)}`,
   });
 
   const block = msg.content[0];
-  return block.type === "text" ? block.text : "";
+  const raw = block.type === "text" ? block.text : "";
+  return raw.replace(/^```(?:html|json|xml)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
 }
 
 async function sendJuristiNotification(contractId: string, fileName: string, customerEmail: string) {

@@ -121,7 +121,17 @@ export default function AdminClient() {
       });
       const data = await res.json();
       if (data.ok) {
-        setSelected(prev => prev ? { ...prev, claudeAnalysis: "✓ Analyysi valmis — päivitä sivu nähdäksesi tulokset." } : null);
+        // Hae päivitetty data suoraan Firestoresta
+        const app = getFirebaseApp();
+        const db = getFirestore(app);
+        const snap = await import("firebase/firestore").then(m =>
+          m.getDoc(m.doc(db, "documents", d.id))
+        );
+        if (snap.exists()) {
+          const updated = { id: snap.id, ...snap.data() } as Document;
+          setSelected(updated);
+          setDocs(prev => prev.map(x => x.id === d.id ? updated : x));
+        }
       } else {
         alert("Virhe: " + (data.error ?? "tuntematon"));
       }

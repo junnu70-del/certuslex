@@ -80,8 +80,20 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    const analysis = analysisMsg.content[0].type === "text" ? analysisMsg.content[0].text : "";
-    const korjattuAsiakirja = korjattuMsg.content[0].type === "text" ? korjattuMsg.content[0].text : "";
+    // Siivoa markdown-koodiaidat pois (Claude palauttaa joskus ```html ... ```)
+    function stripCodeFences(text: string): string {
+      return text
+        .replace(/^```(?:html|json|xml)?\s*/i, "")
+        .replace(/\s*```\s*$/, "")
+        .trim();
+    }
+
+    const analysis = stripCodeFences(
+      analysisMsg.content[0].type === "text" ? analysisMsg.content[0].text : ""
+    );
+    const korjattuAsiakirja = stripCodeFences(
+      korjattuMsg.content[0].type === "text" ? korjattuMsg.content[0].text : ""
+    );
 
     // Päivitä documents-kokoelma
     await db.collection("documents").doc(docId).update({
