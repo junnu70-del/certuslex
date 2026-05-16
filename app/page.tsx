@@ -94,6 +94,19 @@ export default function Home() {
 
       setDocId(docRef.id);
 
+      // Käynnistä Claude-analyysi taustalla (ei blokkaa)
+      fetch(`/api/contract/upload?${new URLSearchParams({
+        fileName: file.name,
+        mimeType: file.type || "application/octet-stream",
+        customerEmail: userEmail,
+        customerName: "",
+        notes: `Asiakirjatyyppi: ${docType} | Paketti: ${plan}`,
+      })}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/octet-stream" },
+        body: file,
+      }).catch(e => console.warn("Claude-analyysi ei onnistunut:", e));
+
       // Lähetä tilausvahvistus sähköpostitse
       await fetch("/api/send-confirmation", {
         method: "POST",
@@ -214,6 +227,7 @@ export default function Home() {
               { icon: "📋", name: "Kirjelmä", desc: "Oikeudelle osoitettu kirjelmä" },
               { icon: "📝", name: "Hakemus", desc: "Viranomaishakemus" },
               { icon: "🔄", name: "Vastine", desc: "Vastine tai lausuma" },
+              { icon: "🤝", name: "Sopimus", desc: "Sopimuksen tarkistus ja korjaus" },
             ].map((t) => (
               <div key={t.name} className={`dt${docType === t.name ? " sel" : ""}`} onClick={() => setDocType(t.name)}>
                 <div className="dt-icon">{t.icon}</div>
