@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -12,26 +10,27 @@ interface OrderDoc {
   plan: string;
   price: string;
   deliveryTime: string;
-  userEmail: string;
   status: string;
-  createdAt: { toDate: () => Date } | null;
-  inReviewAt?: { toDate: () => Date } | null;
-  reviewedAt?: { toDate: () => Date } | null;
+  createdAt: number | null;
+  inReviewAt?: number | null;
+  reviewedAt?: number | null;
   correctedUrl?: string;
-  correctedFileName?: string;
   review?: string;
   claudeAnalysis?: string;
 }
 
-function fmt(ts: { toDate: () => Date } | null | undefined) {
-  if (!ts) return null;
-  return ts.toDate().toLocaleString("fi-FI", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+function fmt(seconds: number | null | undefined) {
+  if (!seconds) return null;
+  return new Date(seconds * 1000).toLocaleString("fi-FI", {
+    day: "numeric", month: "numeric", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
 }
 
 const STATUS_STEPS = [
-  { key: "pending_review",  label: "Vastaanotettu",   sub: "Asiakirja on turvallisesti tallennettuna" },
-  { key: "in_review",       label: "Käsittelyssä",    sub: "OTM-juristi tarkastaa asiakirjaanne" },
-  { key: "done",            label: "Lausunto valmis", sub: "Lausunto on lähetetty sähköpostiinne" },
+  { key: "pending_review", label: "Vastaanotettu",   sub: "Asiakirja on turvallisesti tallennettuna" },
+  { key: "in_review",      label: "Käsittelyssä",    sub: "OTM-juristi tarkastaa asiakirjaanne" },
+  { key: "done",           label: "Lausunto valmis", sub: "Lausunto on lähetetty sähköpostiinne" },
 ];
 
 function getStepIndex(status: string) {
@@ -48,19 +47,20 @@ export default function TilausPage() {
 
   useEffect(() => {
     if (!id) return;
-    const unsub = onSnapshot(doc(db, "documents", id), (snap) => {
-      setLoading(false);
-      if (!snap.exists()) { setNotFound(true); return; }
-      setOrder(snap.data() as OrderDoc);
-    });
-    return () => unsub();
+    fetch(`/api/tilaus/${id}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) { setNotFound(true); }
+        else { setOrder(data); }
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
   }, [id]);
 
   const stepIdx = order ? getStepIndex(order.status) : 0;
 
   return (
     <div style={{ background: "#F7F4EE", minHeight: "100vh" }}>
-      {/* Nav */}
       <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.2rem 3rem", borderBottom: "1px solid #EDE8DE", background: "#fff" }}>
         <Link href="/" style={{ fontFamily: "var(--font-cormorant), Georgia, serif", fontSize: "1.8rem", fontWeight: 700, textDecoration: "none", color: "#0F1F3D", letterSpacing: "-0.02em" }}>
           Certus<span style={{ color: "#C8A44A" }}>Lex</span>
@@ -98,7 +98,6 @@ export default function TilausPage() {
             <div style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "2rem", marginBottom: "1.5rem" }}>
               <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", color: "#8A8070", marginBottom: "1.5rem" }}>KÄSITTELYVAIHE</p>
               <div style={{ position: "relative" }}>
-                {/* Progress line */}
                 <div style={{ position: "absolute", left: "13px", top: "14px", bottom: "14px", width: "2px", background: "#EDE8DE", zIndex: 0 }} />
                 <div style={{ position: "absolute", left: "13px", top: "14px", width: "2px", background: "#C8A44A", zIndex: 1, height: `${(stepIdx / 2) * 100}%`, transition: "height 0.6s ease" }} />
 
@@ -123,7 +122,6 @@ export default function TilausPage() {
                       <div style={{ paddingTop: "3px" }}>
                         <div style={{ fontSize: "0.9rem", fontWeight: done || active ? 600 : 400, color: done || active ? "#0F1F3D" : "#8A8070" }}>{step.label}</div>
                         <div style={{ fontSize: "0.78rem", color: "#8A8070", marginTop: "2px" }}>{step.sub}</div>
-                        {/* Timestamp */}
                         {i === 0 && fmt(order.createdAt) && (
                           <div style={{ fontSize: "0.72rem", color: "#C8A44A", marginTop: "4px" }}>{fmt(order.createdAt)}</div>
                         )}
@@ -140,26 +138,21 @@ export default function TilausPage() {
               </div>
             </div>
 
-            {/* Lausunto valmis */}
-            {(order.status === "done" || order.status === "completed") && (
-              <div style={{ marginBottom: "1.5rem" }}>
-                {/* Juristin lausunto */}
-                {order.review && (
-                  <div style={{ background: "#0F1F3D", padding: "1.8rem 2rem", marginBottom: "1rem", borderLeft: "4px solid #C8A44A" }}>
-                    <p style={{ fontSize: "0.7rem", letterSpacing: "0.14em", color: "#C8A44A", marginBottom: "0.8rem" }}>JURISTIN LAUSUNTO</p>
-                    <p style={{ fontSize: "0.88rem", color: "#D8D0C0", lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>{order.review}</p>
-                    {order.correctedUrl && (
-                      <a href={order.correctedUrl} target="_blank" rel="noopener noreferrer"
-                        style={{ display: "inline-block", marginTop: "1.2rem", background: "#C8A44A", color: "#0F1F3D", padding: "0.7rem 1.4rem", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.04em" }}>
-                        ⬇ Lataa korjattu asiakirja
-                      </a>
-                    )}
-                  </div>
+            {/* Juristin lausunto */}
+            {(order.status === "done" || order.status === "completed") && order.review && (
+              <div style={{ background: "#0F1F3D", padding: "1.8rem 2rem", marginBottom: "1.5rem", borderLeft: "4px solid #C8A44A" }}>
+                <p style={{ fontSize: "0.7rem", letterSpacing: "0.14em", color: "#C8A44A", marginBottom: "0.8rem" }}>JURISTIN LAUSUNTO</p>
+                <p style={{ fontSize: "0.88rem", color: "#D8D0C0", lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>{order.review}</p>
+                {order.correctedUrl && (
+                  <a href={order.correctedUrl} target="_blank" rel="noopener noreferrer"
+                    style={{ display: "inline-block", marginTop: "1.2rem", background: "#C8A44A", color: "#0F1F3D", padding: "0.7rem 1.4rem", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.04em" }}>
+                    ⬇ Lataa korjattu asiakirja
+                  </a>
                 )}
               </div>
             )}
 
-            {/* AI-esianalyysi asiakkaalle (aina näkyvissä jos olemassa) */}
+            {/* AI-esianalyysi */}
             {order.claudeAnalysis && (
               <div style={{ background: "#fff", border: "1px solid #EDE8DE", marginBottom: "1.5rem" }}>
                 <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid #EDE8DE", display: "flex", alignItems: "center", gap: "0.6rem" }}>
@@ -180,25 +173,22 @@ export default function TilausPage() {
                     .order-analysis th{background:#F7F4EE;font-weight:700;color:#0F1F3D}
                     .order-analysis hr{border:none;border-top:1px solid #EDE8DE;margin:0.8rem 0}
                   `}</style>
-                  <div
-                    className="order-analysis"
-                    dangerouslySetInnerHTML={{ __html: order.claudeAnalysis }}
-                  />
+                  <div className="order-analysis" dangerouslySetInnerHTML={{ __html: order.claudeAnalysis }} />
                 </div>
               </div>
             )}
 
-            {/* Order info */}
+            {/* Tilauksen tiedot */}
             <div style={{ background: "#fff", border: "1px solid #EDE8DE", padding: "1.5rem 2rem", marginBottom: "1.5rem" }}>
               <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", color: "#8A8070", marginBottom: "1rem" }}>TILAUKSEN TIEDOT</p>
-              {[
+              {([
                 ["Asiakirja", order.fileName],
                 ["Tyyppi", order.docType],
                 ["Paketti", order.plan],
                 ["Toimitusaika", order.deliveryTime],
                 ["Hinta", `${order.price} €`],
                 ["Tilausnumero", id],
-              ].map(([label, value]) => (
+              ] as [string, string][]).map(([label, value]) => (
                 <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "0.4rem 0", borderBottom: "1px solid #F5F2EC", fontSize: "0.83rem" }}>
                   <span style={{ color: "#8A8070" }}>{label}</span>
                   <span style={{ color: "#0F1F3D", fontWeight: label === "Tilausnumero" ? 400 : 500, fontFamily: label === "Tilausnumero" ? "monospace" : "inherit", fontSize: label === "Tilausnumero" ? "0.72rem" : "0.83rem" }}>{value}</span>
