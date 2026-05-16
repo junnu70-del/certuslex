@@ -19,6 +19,8 @@ interface OrderDoc {
   reviewedAt?: { toDate: () => Date } | null;
   correctedUrl?: string;
   correctedFileName?: string;
+  review?: string;
+  claudeAnalysis?: string;
 }
 
 function fmt(ts: { toDate: () => Date } | null | undefined) {
@@ -33,7 +35,7 @@ const STATUS_STEPS = [
 ];
 
 function getStepIndex(status: string) {
-  if (status === "done") return 2;
+  if (status === "done" || status === "completed") return 2;
   if (status === "in_review") return 1;
   return 0;
 }
@@ -138,15 +140,51 @@ export default function TilausPage() {
               </div>
             </div>
 
-            {/* Corrected doc download if done */}
-            {order.status === "done" && order.correctedUrl && (
-              <div style={{ background: "#0F1F3D", padding: "1.5rem 2rem", marginBottom: "1.5rem", borderLeft: "4px solid #C8A44A" }}>
-                <p style={{ fontSize: "0.72rem", letterSpacing: "0.12em", color: "#C8A44A", marginBottom: "0.6rem" }}>LAUSUNTO TOIMITETTU</p>
-                <p style={{ fontSize: "0.85rem", color: "#D8D0C0", marginBottom: "1rem" }}>Lausunto on lähetetty sähköpostiinne. Voit myös ladata korjatun asiakirjan alla.</p>
-                <a href={order.correctedUrl} target="_blank" rel="noopener noreferrer"
-                  style={{ display: "inline-block", background: "#C8A44A", color: "#0F1F3D", padding: "0.7rem 1.4rem", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.04em" }}>
-                  ⬇ Lataa korjattu asiakirja
-                </a>
+            {/* Lausunto valmis */}
+            {(order.status === "done" || order.status === "completed") && (
+              <div style={{ marginBottom: "1.5rem" }}>
+                {/* Juristin lausunto */}
+                {order.review && (
+                  <div style={{ background: "#0F1F3D", padding: "1.8rem 2rem", marginBottom: "1rem", borderLeft: "4px solid #C8A44A" }}>
+                    <p style={{ fontSize: "0.7rem", letterSpacing: "0.14em", color: "#C8A44A", marginBottom: "0.8rem" }}>JURISTIN LAUSUNTO</p>
+                    <p style={{ fontSize: "0.88rem", color: "#D8D0C0", lineHeight: 1.8, whiteSpace: "pre-wrap", margin: 0 }}>{order.review}</p>
+                    {order.correctedUrl && (
+                      <a href={order.correctedUrl} target="_blank" rel="noopener noreferrer"
+                        style={{ display: "inline-block", marginTop: "1.2rem", background: "#C8A44A", color: "#0F1F3D", padding: "0.7rem 1.4rem", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.04em" }}>
+                        ⬇ Lataa korjattu asiakirja
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* AI-esianalyysi asiakkaalle (aina näkyvissä jos olemassa) */}
+            {order.claudeAnalysis && (
+              <div style={{ background: "#fff", border: "1px solid #EDE8DE", marginBottom: "1.5rem" }}>
+                <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid #EDE8DE", display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                  <span style={{ fontSize: "0.7rem", letterSpacing: "0.12em", fontWeight: 700, color: "#8A8070" }}>AI-ESIANALYYSI</span>
+                  <span style={{ fontSize: "0.68rem", background: "#F7F4EE", color: "#C8A44A", padding: "2px 8px", fontWeight: 600 }}>🤖 Claude AI</span>
+                  <span style={{ fontSize: "0.7rem", color: "#8A8070", marginLeft: "auto" }}>Alustava — juristi vahvistaa lopullisen lausunnon</span>
+                </div>
+                <div style={{ padding: "1.2rem 1.5rem", borderLeft: "3px solid #C8A44A" }}>
+                  <style>{`
+                    .order-analysis h3{font-size:0.88rem;font-weight:700;color:#0F1F3D;margin:1rem 0 0.3rem;padding-bottom:3px;border-bottom:1px solid #EDE8DE}
+                    .order-analysis h4{font-size:0.82rem;font-weight:700;color:#0F1F3D;margin:0.8rem 0 0.25rem}
+                    .order-analysis p{font-size:0.82rem;color:#2C2416;line-height:1.75;margin:0.25rem 0}
+                    .order-analysis ul{margin:0.3rem 0 0.3rem 1.1rem;padding:0}
+                    .order-analysis li{font-size:0.82rem;color:#2C2416;line-height:1.7;margin-bottom:0.2rem}
+                    .order-analysis strong{color:#0F1F3D;font-weight:700}
+                    .order-analysis table{width:100%;border-collapse:collapse;font-size:0.78rem;margin:0.5rem 0}
+                    .order-analysis td,.order-analysis th{border:1px solid #EDE8DE;padding:5px 8px;color:#2C2416}
+                    .order-analysis th{background:#F7F4EE;font-weight:700;color:#0F1F3D}
+                    .order-analysis hr{border:none;border-top:1px solid #EDE8DE;margin:0.8rem 0}
+                  `}</style>
+                  <div
+                    className="order-analysis"
+                    dangerouslySetInnerHTML={{ __html: order.claudeAnalysis }}
+                  />
+                </div>
               </div>
             )}
 
