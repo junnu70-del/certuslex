@@ -38,6 +38,9 @@ interface Document {
   reviewedAt?: { seconds: number };
   correctedFileName?: string;
   correctedUrl?: string;
+  claudeAnalysis?: string;
+  claudeKorjattuAsiakirja?: string;
+  contractReviewId?: string;
 }
 
 const statusLabel: Record<string, { text: string; color: string }> = {
@@ -97,6 +100,7 @@ export default function AdminClient() {
   const correctedFileRef = useRef<HTMLInputElement>(null);
   const [filter, setFilter] = useState<"all" | "pending_review" | "in_review" | "completed">("all");
   const [tab, setTab] = useState<"jono" | "koodit" | "loki" | "kampanja">("jono");
+  const [claudeTab, setClaudeTab] = useState<"analyysi" | "korjattu">("analyysi");
 
   // Kampanja
   const [csvText, setCsvText] = useState("");
@@ -371,6 +375,52 @@ export default function AdminClient() {
           {selected.userEmail && (
             <div style={{ background: "#EEF2F8", padding: "0.6rem 1rem", marginBottom: "1.5rem", fontSize: "0.8rem", color: "var(--navy)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
               ✉️ Lausunto lähetetään: <strong>{selected.userEmail}</strong>
+            </div>
+          )}
+
+          {/* Claude AI -esianalyysi */}
+          {(selected.claudeAnalysis || selected.claudeKorjattuAsiakirja) && (
+            <div style={{ marginBottom: "1.5rem", border: "1px solid var(--cream2)", background: "#fff" }}>
+              {/* Tabs */}
+              <div style={{ display: "flex", borderBottom: "2px solid var(--cream2)" }}>
+                {([["analyysi", "✦ AI-esianalyysi"], ["korjattu", "✎ Korjattu versio"]] as const).map(([t, label]) => (
+                  <button
+                    key={t}
+                    onClick={() => setClaudeTab(t)}
+                    style={{
+                      background: "none", border: "none",
+                      borderBottom: claudeTab === t ? "2px solid var(--gold)" : "2px solid transparent",
+                      marginBottom: "-2px",
+                      padding: "0.6rem 1rem", fontSize: "0.78rem", fontWeight: 700,
+                      color: claudeTab === t ? "var(--navy)" : "var(--muted)",
+                      cursor: "pointer", letterSpacing: "0.05em",
+                    }}
+                  >{label}</button>
+                ))}
+                <div style={{ marginLeft: "auto", padding: "0.5rem 0.8rem", fontSize: "0.7rem", color: "var(--muted)", alignSelf: "center" }}>
+                  🤖 Claude AI
+                </div>
+              </div>
+              <div style={{ padding: "1rem 1.2rem", borderLeft: "3px solid var(--gold)" }}>
+                {claudeTab === "analyysi" ? (
+                  selected.claudeAnalysis ? (
+                    <div
+                      style={{ fontSize: "0.84rem", color: "var(--navy)", lineHeight: 1.7 }}
+                      dangerouslySetInnerHTML={{ __html: selected.claudeAnalysis }}
+                    />
+                  ) : (
+                    <p style={{ color: "var(--muted)", fontSize: "0.84rem" }}>Esianalyysi puuttuu — asiakirja ladattu ennen AI-ominaisuutta.</p>
+                  )
+                ) : selected.claudeKorjattuAsiakirja ? (
+                  <iframe
+                    srcDoc={selected.claudeKorjattuAsiakirja}
+                    style={{ width: "100%", height: "400px", border: "none", display: "block" }}
+                    title="Korjattu asiakirja"
+                  />
+                ) : (
+                  <p style={{ color: "var(--muted)", fontSize: "0.84rem" }}>Korjattu versio puuttuu.</p>
+                )}
+              </div>
             </div>
           )}
 

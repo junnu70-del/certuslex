@@ -102,6 +102,7 @@ export default function Home() {
         customerName: "",
         docType: docType,
         notes: `Paketti: ${plan}`,
+        docId: docRef.id,
       })}`, {
         method: "POST",
         headers: { "Content-Type": "application/octet-stream" },

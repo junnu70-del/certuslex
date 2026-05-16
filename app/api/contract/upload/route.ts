@@ -676,6 +676,7 @@ export async function POST(req: NextRequest) {
     const customerName = sp.get("customerName") ?? "";
     const docType = sp.get("docType") ?? "";
     const notes = sp.get("notes") ?? "";
+    const docId = sp.get("docId") ?? ""; // Firestore documents-kokoelman ID (pääsivulta)
 
     if (!fileName) {
       return NextResponse.json({ error: "Tiedosto puuttuu" }, { status: 400 });
@@ -770,6 +771,19 @@ export async function POST(req: NextRequest) {
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
+
+    // Jos pääsivu antoi docId → päivitä myös documents-kokoelma (AdminClient näkee analyysin)
+    if (docId) {
+      try {
+        await db.collection("documents").doc(docId).update({
+          claudeAnalysis: analysis,
+          claudeKorjattuAsiakirja: korjattuAsiakirja,
+          contractReviewId: contractId,
+        });
+      } catch (err) {
+        console.warn("[contract/upload] documents-päivitys epäonnistui:", err);
+      }
+    }
 
     // Notify juristi
     try {
