@@ -412,49 +412,48 @@ export default function Home() {
   };
 
   return (
-    <div id="landing" style={{ position: "relative", overflow: "hidden", background: "#0F1F3D", ...stripeStyle }}>
-      {/* Radiaaliset valon häilyt päälle */}
-      <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1,
-        background: "radial-gradient(ellipse 60% 50% at 80% 20%, rgba(200,164,74,.18) 0%, transparent 60%), radial-gradient(ellipse 40% 40% at 10% 80%, rgba(15,31,61,0.95) 0%, transparent 70%)"
-      }} />
+    <div id="landing" style={{ background: "#F7F4EE" }}>
 
-      {/* Paksu kultalinja vasemmalla */}
-      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "5px", background: "#C8A44A", zIndex: 20, pointerEvents: "none" }} />
-      {/* Ohut sisäraita vasemmalla */}
-      <div style={{ position: "absolute", left: "18px", top: 0, bottom: 0, width: "1px", background: "rgba(200,164,74,0.3)", zIndex: 20, pointerEvents: "none" }} />
+      {/* ── HERO-OSIO: karuselli taustaalla ── */}
+      <div style={{ position: "relative", overflow: "hidden", background: "#0F1F3D", ...stripeStyle }}>
 
-      <nav>
-        <div className="logo">Certus<span>Lex</span></div>
-        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-          <div className="nav-links" style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-            <a href="#hinnoittelu" style={{ color: "var(--light)", fontSize: "0.85rem", textDecoration: "none" }}>Hinnoittelu</a>
-            <a href="/tarjouskone" style={{ color: "var(--gold)", fontSize: "0.85rem", textDecoration: "none", fontWeight: 500 }}>Tarjouskone</a>
-            <a href="/kenttamuistio" style={{ color: "#60a5fa", fontSize: "0.85rem", textDecoration: "none", fontWeight: 500 }}>Kenttämuistio</a>
+        {/* Paksu kultalinja vasemmalla */}
+        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "5px", background: "#C8A44A", zIndex: 20, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", left: "18px", top: 0, bottom: 0, width: "1px", background: "rgba(200,164,74,0.3)", zIndex: 20, pointerEvents: "none" }} />
+
+        {/* Taustakuvakaruselli — rajoittuu tähän diviin */}
+        <BgCarousel />
+
+        <nav style={{ position: "relative", zIndex: 10 }}>
+          <div className="logo">Certus<span>Lex</span></div>
+          <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+            <div className="nav-links" style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+              <a href="#hinnoittelu" style={{ color: "var(--light)", fontSize: "0.85rem", textDecoration: "none" }}>Hinnoittelu</a>
+              <a href="/tarjouskone" style={{ color: "var(--gold)", fontSize: "0.85rem", textDecoration: "none", fontWeight: 500 }}>Tarjouskone</a>
+              <a href="/kenttamuistio" style={{ color: "#60a5fa", fontSize: "0.85rem", textDecoration: "none", fontWeight: 500 }}>Kenttämuistio</a>
+            </div>
+            <button className="nav-cta" onClick={() => goTo("upload")}>Lähetä asiakirja →</button>
           </div>
-          <button className="nav-cta" onClick={() => goTo("upload")}>Lähetä asiakirja →</button>
-        </div>
-      </nav>
+        </nav>
 
-      {/* Taustakuvakaruselli */}
-      <BgCarousel />
+        <div className="hero" style={{ position: "relative", zIndex: 10 }}>
+          <div className="hero-tag">JURISTIVARMISTETTU ASIAKIRJATARKASTUS</div>
+          <h1>Tiedätkö, onko asiakirjasi<br /><em>kunnossa?</em></h1>
+          <p className="hero-sub">CertusLex tarkistuttaa asiakirjasi OTM-juristilla. Saat varmuuden siitä, että lakisisältö, viittaukset ja pykälät ovat oikein — ennen kuin asiakirja aiheuttaa ongelmia.<br /><span style={{ fontSize: "0.9em", opacity: 0.8 }}>Erityisen hyödyllinen tekoälyllä laadittujen asiakirjojen tarkistamiseen.</span></p>
+          <div className="hero-btns">
+            <button className="btn-primary" onClick={() => goTo("upload")}>Lähetä asiakirja tarkastukseen</button>
+          </div>
+          <div className="hero-stats">
+            <div><div className="stat-n">✓</div><div className="stat-l">JURISTIN TARKASTAMA</div></div>
+            <div><div className="stat-n">✓</div><div className="stat-l">PYKÄLÄT OIKEIN</div></div>
+            <div><div className="stat-n">✓</div><div className="stat-l">MIELENRAUHA</div></div>
+          </div>
+        </div>
 
-      <div className="hero" style={{ position: "relative", zIndex: 10 }}>
-        <div className="hero-tag">JURISTIVARMISTETTU ASIAKIRJATARKASTUS</div>
-        <h1>Tiedätkö, onko asiakirjasi<br /><em>kunnossa?</em></h1>
-        <p className="hero-sub">CertusLex tarkistuttaa asiakirjasi OTM-juristilla. Saat varmuuden siitä, että lakisisältö, viittaukset ja pykälät ovat oikein — ennen kuin asiakirja aiheuttaa ongelmia.<br /><span style={{ fontSize: "0.9em", opacity: 0.8 }}>Erityisen hyödyllinen tekoälyllä laadittujen asiakirjojen tarkistamiseen.</span></p>
-        <div className="hero-btns">
-          <button className="btn-primary" onClick={() => goTo("upload")}>Lähetä asiakirja tarkastukseen</button>
-        </div>
-        <div className="hero-stats">
-          <div><div className="stat-n">✓</div><div className="stat-l">JURISTIN TARKASTAMA</div></div>
-          <div><div className="stat-n">✓</div><div className="stat-l">PYKÄLÄT OIKEIN</div></div>
-          <div><div className="stat-n">✓</div><div className="stat-l">MIELENRAUHA</div></div>
-        </div>
+        {/* Kultainen erotinviiva */}
+        <div style={{ height: "2px", background: "linear-gradient(90deg, #C8A44A 0%, #C8A44A 60%, transparent 100%)", position: "relative", zIndex: 10 }} />
       </div>
-
-      {/* Kultainen erotinviiva hero/prosessi-rajalla */}
-      <div style={{ height: "2px", background: "linear-gradient(90deg, #C8A44A 0%, #C8A44A 60%, transparent 100%)" }} />
+      {/* ── HERO LOPPUU TÄHÄN ── */}
 
       <div className="section" style={{ background: "var(--cream)" }}>
         <div className="section-label">PROSESSI</div>
