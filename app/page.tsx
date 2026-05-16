@@ -229,6 +229,7 @@ export default function Home() {
               { icon: "📝", name: "Hakemus", desc: "Viranomaishakemus" },
               { icon: "🔄", name: "Vastine", desc: "Vastine tai lausuma" },
               { icon: "🤝", name: "Sopimus", desc: "Sopimuksen tarkistus ja korjaus" },
+              { icon: "✏️", name: "Oikaisu", desc: "Oikaisupyyntö viranomaiselle" },
             ].map((t) => (
               <div key={t.name} className={`dt${docType === t.name ? " sel" : ""}`} onClick={() => setDocType(t.name)}>
                 <div className="dt-icon">{t.icon}</div>
