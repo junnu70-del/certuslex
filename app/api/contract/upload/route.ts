@@ -49,12 +49,196 @@ async function uploadToStorage(fileBuffer: Buffer, contractId: string, fileName:
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const DOC_TYPE_CONTEXT: Record<string, string> = {
-  "Sopimus": "Kyseessä on sopimusasiakirja. Kiinnitä erityistä huomiota vastuunrajoituksiin, irtisanomisehtoihin, salassapitoon, erimielisyyksien ratkaisuun ja osapuolten velvoitteisiin.",
-  "Valitus": "Kyseessä on valituskirjelmä hallinto-oikeudelle tai markkinaoikeudelle. Kiinnitä huomiota valitusperusteiden oikeudelliseen kestävyyteen, muotomääräysten täyttymiseen ja määräaikoihin.",
-  "Kirjelmä": "Kyseessä on oikeudelle osoitettu kirjelmä. Kiinnitä huomiota muotovaatimuksiin, prosessuaaliseen asianmukaisuuteen ja argumentaation loogiseen rakenteeseen.",
-  "Hakemus": "Kyseessä on viranomaishakemus. Kiinnitä huomiota muotomääräyksiin, liitteiden täydellisyyteen ja hakemuksen perustelujen riittävyyteen.",
-  "Vastine": "Kyseessä on vastine tai lausuma. Kiinnitä huomiota vastausperusteiden kattavuuteen, näyttöön viittaamiseen ja prosessuaaliseen asianmukaisuuteen.",
-  "Oikaisu": "Kyseessä on oikaisupyyntö. Kiinnitä huomiota oikaisuperusteisiin, määräaikoihin, toimivaltaiseen viranomaiseen ja perustelujen riittävyyteen.",
+
+  "Sopimus": `Kyseessä on sopimusasiakirja. Analysoi se kattavasti seuraavien oikeuslähteiden valossa:
+
+SOVELLETTAVA SUOMEN LAINSÄÄDÄNTÖ:
+- Laki varallisuusoikeudellisista oikeustoimista (OikTL 228/1929): pätemättömyysperusteet (26-33§), kohtuullistaminen (36§), kiskonta (31§), erehdys (32§)
+- Kauppalaki (KL 355/1987): tavaran virhe (17-21§), viivästys (22-28§), reklamaatiovelvollisuus (32§), vahingonkorvaus (40-43§)
+- Kuluttajansuojalaki (KSL 38/1978): kohtuuttomat sopimusehdot (4 luku), elinkeinonharjoittajan vastuu, peruuttamisoikeus
+- Vahingonkorvauslaki (VahL 412/1974): tuottamusvastuu, ankara vastuu, myötävaikutus (6:1§)
+- Laki elinkeinonharjoittajien välisten sopimusehtojen sääntelystä (1062/1993)
+- Henkilötietolaki / GDPR (EU 2016/679): tietojenkäsittelylausekkeet, rekisterinpitäjän vastuu, tietoturva
+- Tilaajavastuulaki (1233/2006): alihankkijasopimuksissa
+- Laki yhteistoiminnasta yrityksissä (334/2007): henkilöstöasiat
+- Korkolaki (633/1982): viivästyskorko, maksuehto
+
+EU-OIKEUS JA KANSAINVÄLINEN:
+- eIDAS-asetus (EU 910/2014): sähköiset allekirjoitukset ja niiden oikeudellinen sitovuus
+- Rooma I -asetus (593/2008): sovellettava laki kansainvälisissä sopimuksissa
+- CISG (YK:n kauppalaki): kansainvälisissä kauppasopimuksissa
+- Hankintadirektiivi (2014/24/EU): julkiset hankinnat
+
+TULKINTAPERIAATTEET:
+- Epäselvyyssääntö (contra proferentem): epäselvä ehto tulkitaan laatijaansa vastaan
+- Kohtuullistamisperiaate (OikTL 36§): kohtuuton ehto voidaan sovitella
+- Heikkoa sopijapuolta suojaava tulkinta
+- Lojaliteettiperiaate: osapuolten tiedonanto- ja myötävaikutusvelvollisuus
+- Pacta sunt servanda vs. clausula rebus sic stantibus
+
+KRIITTISET TARKISTUSPISTEET:
+1. Osapuolten yksilöinti (y-tunnus, henkilötunnus, edustusoikeus)
+2. Sopimuksen kohde ja laajuus — onko riittävän täsmällinen?
+3. Hinta, maksuehdot, indeksikorotukset
+4. Vastuunrajoituslausekkeet — ovatko kohtuulliset ja yksilöidyt?
+5. Salassapitolauseke — kesto, laajuus, sanktiot
+6. Immateriaalioikeudet — kuka omistaa sopimuksen aikana syntyvän?
+7. Force majeure — onko määritelty riittävän kattavasti?
+8. Sopimuksen irtisanominen ja purkaminen — erot ja seuraukset
+9. Erimielisyyksien ratkaisu — välimiesmenettely vai tuomioistuin, toimipaikka
+10. Sovellettava laki — erityisesti kansainvälisissä sopimuksissa
+11. GDPR-lauseke — jos käsitellään henkilötietoja`,
+
+  "Valitus": `Kyseessä on valituskirjelmä. Analysoi se kattavasti seuraavien oikeuslähteiden valossa:
+
+SOVELLETTAVA SUOMEN LAINSÄÄDÄNTÖ:
+- Hallintolainkäyttölaki (HLL 586/1996) / Laki oikeudenkäynnistä hallintoasioissa (808/2019, voimaan 1.1.2020): valitusoikeus (6-7§), valitusperusteet (107§), valitusaika (14§), muutoksenhakuohjeet
+- Hallintolaki (HL 434/2003): hallintopäätöksen perusteluvelvollisuus (45§), kuuleminen (34§), esteellisyys (27-30§), oikaisuvaatimus (49a-49g§)
+- Laki julkisista hankinnoista (1397/2016): markkinaoikeusvalitus, hankintaoikaisu, valitusaika (14 pv / 30 pv)
+- Oikeudenkäymiskaari (OK 4/1734): muutoksenhaku hovioikeuteen, kassaatiovalitus KKO:hon
+- Rikosasioiden oikeudenkäyntilaki (ROL 689/1997): muutoksenhaku rikosasioissa
+- Verotusmenettelylaki (VML 1558/1995): verotuksen oikaisulautakunta, hallinto-oikeus, KHO
+- Ulkomaalaislaki (301/2004): valitusoikeus maahanmuuttoasioissa
+- Perustuslaki (PL 731/1999): perusoikeuksien suoja, oikeus oikeudenmukaiseen oikeudenkäyntiin (21§)
+
+EU-OIKEUS:
+- Euroopan ihmisoikeussopimus (EIS): oikeudenmukainen oikeudenkäynti (6 artikla), tehokkaiden oikeussuojakeinojen periaate (13 artikla)
+- EU:n perusoikeuskirja: oikeus tehokkaaseen oikeussuojakeinoon (47 artikla)
+- EU-tuomioistuimen oikeuskäytäntö: suhteellisuusperiaate, yhdenvertaisuusperiaate
+
+KRIITTISET TARKISTUSPISTEET:
+1. Toimivaltainen tuomioistuin — oikea tuomioistuin valitukselle
+2. Valitusaika — onko noudatettu (yleensä 30 pv päätöksestä)
+3. Valitusoikeus — onko valittajalla asianosaisasema
+4. Valituskirjelmän muoto (HLL 23§ / VOHL 13§): vaatimukset, perusteet, todisteet
+5. Vaatimusten täsmällisyys — mitä vaaditaan, millä perusteella
+6. Oikeustosiasioiden ja oikeuskysymysten erottelu
+7. Näyttökynnys hallinto- vs. siviiliprosessissa
+8. Täytäntöönpanon keskeyttämispyyntö (HLL 32§)
+9. Oikeudenkäyntikulujen korvausvaatimus
+10. Euroopan ihmisoikeustuomioistuin — onko kotimainen muutoksenhakutie käytetty?`,
+
+  "Kirjelmä": `Kyseessä on oikeudelle osoitettu kirjelmä. Analysoi se kattavasti seuraavien oikeuslähteiden valossa:
+
+SOVELLETTAVA SUOMEN LAINSÄÄDÄNTÖ:
+- Oikeudenkäymiskaari (OK 4/1734): kirjelmien muoto (5:1-2§), kannekirjelmä (5:2§), vastauskirjelmä (5:10§), prekluusio (5:17§), oikeudenkäyntikulut (21 luku)
+- Laki riita-asioiden sovittelusta (663/2005): sovittelumahdollisuuden mainitseminen
+- Todistelulaki (1.) / OK 17 luku: todistustaakka, todisteiden esittäminen, asiantuntijatodistelu
+- Oikeusapulaki (257/2002): oikeusavun hakeminen
+- Rikosasioiden oikeudenkäyntilaki (ROL 689/1997): rikosoikeudelliset kirjelmät
+- Laki yksityishenkilön velkajärjestelystä (57/1993): maksukyvyttömyysasiat
+- Ulosottokaari (705/2007): täytäntöönpano ja sen estäminen
+- Konkurssilaki (120/2004): insolvenssioikeudelliset kirjelmät
+
+EU-OIKEUS:
+- Bryssel I bis -asetus (1215/2012): tuomioistuimen toimivalta, tuomion tunnustaminen
+- Eurooppa-ohjeet siviiliprosessissa: rajat ylittävät riidat
+- Euroopan maksamismääräysmenettely (861/2007)
+
+KRIITTISET TARKISTUSPISTEET:
+1. Asianosaisten yksilöinti täydellisesti (nimi, henkilö/y-tunnus, osoite, asiamies)
+2. Kirjelmän osoittaminen oikealle tuomioistuimelle (toimivalta)
+3. Vaatimusten täsmällisyys ja yksiselitteisyys — mitä tarkalleen vaaditaan
+4. Oikeustosiasioiden (faktat) ja oikeusnormien (laki) selkeä erottelu
+5. Todisteet ja niiden yksilöinti (OK 5:2.2§) — mitä näytetään toteen
+6. Oikeudenkäyntikulujen korvausvaatimus
+7. Prekluusion vaara — onko kaikki esitetty ajoissa
+8. Väliaikaistoimenpidepyyntö (turvaamistoimi OK 7 luku)
+9. Sovintoehdotuksen mahdollisuus / sovitteluhalukkuus
+10. Asiamiehen valtakirja liitteenä`,
+
+  "Hakemus": `Kyseessä on viranomaishakemus. Analysoi se kattavasti seuraavien oikeuslähteiden valossa:
+
+SOVELLETTAVA SUOMEN LAINSÄÄDÄNTÖ:
+- Hallintolaki (HL 434/2003): hakemuksen muoto (19§), täydentäminen (22§), kuuleminen (34§), perusteluvelvollisuus (45§), muutoksenhakuohjeet (47§)
+- Julkisuuslaki (621/1999): asiakirjajulkisuus, salassapito, tiedonsaantioikeus
+- Laki sähköisestä asioinnista viranomaistoiminnassa (13/2003): sähköinen hakemus
+- Kuntalaki (410/2015): kunnallishallinnon hakemukset
+- Maankäyttö- ja rakennuslaki (132/1999): rakennuslupa, poikkeuslupa
+- Ympäristönsuojelulaki (527/2014): ympäristölupa
+- Ulkomaalaislaki (301/2004): oleskelulupa, viisumihakemus
+- Laki julkisesta työvoima- ja yrityspalvelusta (916/2012): te-palvelut
+- Yritystukilaki: yritystuet, innovaatiorahoitus (Business Finland)
+- Laki sosiaalihuollon asiakkaan asemasta (812/2000): sosiaalipalveluhakemukset
+- Terveydenhuoltolaki (1326/2010): terveyspalveluhakemukset
+
+EU-OIKEUS:
+- GDPR (2016/679): hakemuksiin sisältyvä henkilötietojen käsittely
+- Valtiontukisäädökset (SEUT 107-109 artikla): yritystukihakemukset
+- EU:n rakennerahastot: tukihakemukset
+- Direktiivi 2006/123/EY (palveludirektiivi): elinkeinolupahakemukset
+
+KRIITTISET TARKISTUSPISTEET:
+1. Hakijan yksilöinti ja toimivalta tehdä hakemus
+2. Oikea viranomainen — onko hakemus osoitettu toimivaltaiselle viranomaiselle
+3. Hakemuksen perustelut — oikeusperuste ja tosiasialliset perusteet
+4. Liitteiden täydellisyys — vaaditut selvitykset ja todistukset
+5. Määräaikojen noudattaminen
+6. Lupa- ja maksukysymykset
+7. Kuulemisvelvollisuus kolmansille osapuolille
+8. Salassapitopyynnöt arkaluonteisissa tiedoissa
+9. Muutoksenhakuohjeiden edellyttäminen päätökseen
+10. Viranomaisyhteistyö — tarvitaanko lausuntoja muilta viranomaisilta`,
+
+  "Vastine": `Kyseessä on vastine tai lausuma. Analysoi se kattavasti seuraavien oikeuslähteiden valossa:
+
+SOVELLETTAVA SUOMEN LAINSÄÄDÄNTÖ:
+- Oikeudenkäymiskaari (OK 4/1734): vastauksen sisältö (5:10§), myöntäminen ja kiistäminen (5:11§), väitteiden prekluusio (5:17§), todistustaakka (17:2§)
+- Hallintolainkäyttölaki / VOAL (808/2019): lausuman antaminen (40-41§), selitys
+- Hallintolaki (HL 434/2003): kuuleminen (34§), selvitysten antaminen (31§)
+- Todistelulaki: OK 17 luku — todistustaakka, näyttökynnys (vahingonkorvaus: todennäköisyys, rikosasia: ei järkevää epäilystä)
+- Laki riita-asioiden sovittelusta: vastineessa sovitteluhalukkuuden ilmaiseminen
+- Rikosasioiden oikeudenkäyntilaki (ROL 689/1997): vastineet rikosasioissa, syyttäjän vastine
+- Laki yksityishenkilön velkajärjestelystä (57/1993): velkojien lausumat
+- Kuluttajariitalautakunta: lausumamenettely
+
+EU-OIKEUS:
+- Euroopan ihmisoikeussopimus (6 artikla): kontradiktorinen menettely, aseiden tasa-arvo
+- Bryssel I bis -asetus: toimivaltaväite kansainvälisissä riidoissa
+- EU-kilpailuoikeus (SEUT 101-102): vastineet kilpailuviranomaiselle
+
+KRIITTISET TARKISTUSPISTEET:
+1. Vaatimuksen yksiselitteinen myöntäminen TAI kiistäminen jokaiselta kohdalta
+2. Kiistämisen perusteet — jokainen kiistetty väite perusteltava
+3. Omat vaatimukset — vastaajan vaatimukset (esim. hylkääminen, oikeudenkäyntikulut)
+4. Kuittausvaatimus — onko esitettävissä vastasaatavia
+5. Prosessuaaliset väitteet: toimivalta, asianosaisasema, vanhentuminen, kanteen tutkittavuus
+6. Todisteet ja todistajat — yksilöitävä heti, prekluusion vaara
+7. Vanhentumisväite — onko saatava vanhentunut (VanhL 728/2003)
+8. Sovintoneuvotteluhalukkuus
+9. Täytäntöönpanon keskeyttämispyyntö tarvittaessa
+10. Asiamiehen valtakirja ja yhteystiedot`,
+
+  "Oikaisu": `Kyseessä on oikaisupyyntö tai oikaisuvaatimus. Analysoi se kattavasti seuraavien oikeuslähteiden valossa:
+
+SOVELLETTAVA SUOMEN LAINSÄÄDÄNTÖ:
+- Hallintolaki (HL 434/2003): oikaisuvaatimusmenettely (49a-49g§), oikaisuvaatimusaika (30 pv), oikaisuvaatimusviranomainen, päätöksen korjaaminen (50§, asiavirhe; 51§, kirjoitusvirhe)
+- Laki verotusmenettelystä (VML 1558/1995): verotuksen oikaisu verovelvollisen hyväksi (27§) ja vahingoksi (26§), oikaisulautakuntamenettely
+- Arvonlisäverolaki (AVL 1501/1993): ALV-oikaisu
+- Laki julkisista hankinnoista (1397/2016): hankintaoikaisu (132-135§) — 14 pv määräaika
+- Kuntalaki (410/2015): kunnallisvalitus vs. oikaisuvaatimus, oikaisuvaatimusaika (14 pv)
+- Sosiaalihuoltolaki (1301/2014): oikaisupyyntö sosiaalipalvelupäätöksestä
+- Koulutuslainsäädäntö: oikaisu arvosanaan (Yliopistolaki 558/2009, 44§; AMK-laki 932/2014, 57§)
+- Vakuutussopimuslaki (543/1994): muutoksenhaku vakuutusyhtiön päätökseen
+- Potilasvahinkolaki (585/1986): potilasvahinkolautakunta
+- Kuluttajansuojalaki (KSL): kuluttajariitalautakunta
+
+EU-OIKEUS:
+- GDPR (2016/679): oikeus saada virheelliset tiedot oikaistuksi (16 artikla), tietosuojavaltuutettu
+- EU:n valtiontukisäädökset: tukipäätöksen oikaisu
+- Euroopan oikeusasiamies: EU-toimielinten päätösten oikaisu
+
+KRIITTISET TARKISTUSPISTEET:
+1. Oikaisuvaatimusviranomainen — kenelle osoitetaan (sama vai ylempi viranomainen)
+2. Määräaika — yleensä 14-30 pv päätöksestä (tiedoksisaannista)
+3. Oikaisuvaatimuksen muoto: kirjallinen, asianosaisen allekirjoittama
+4. Yksilöity päätös johon haetaan oikaisua (päätösnumero, päivämäärä)
+5. Oikaisuvaatimuksen perusteet — oikeudellinen virhe vs. harkintavallan väärinkäyttö
+6. Vaadittava muutos — täsmällinen vaatimus
+7. Uudet selvitykset ja todisteet — voidaanko esittää oikaisuvaiheessa
+8. Oikaisun vaikutus mahdolliseen valitukseen — onko oikaisuvaatimus tehtävä ensin
+9. Täytäntöönpanon keskeyttämispyyntö oikaisun ajaksi
+10. Korvausvaatimus virheellisestä päätöksestä aiheutuneista kuluista`,
 };
 
 async function analyzeContract(text: string, docType = ""): Promise<string> {
@@ -66,28 +250,34 @@ async function analyzeContract(text: string, docType = ""): Promise<string> {
     messages: [
       {
         role: "user",
-        content: `Olet kokenut suomalainen juristi. Analysoi seuraava asiakirja ja laadi esianalyysi juristia varten.
+        content: `Olet senior-tason suomalainen juristi ja asianajaja, jolla on 20 vuoden kokemus. Analysoi seuraava asiakirja ja laadi kattava esianalyysi juristia varten. Viittaa konkreettisiin lakipykäliin ja oikeuskäytäntöön.
 
 Asiakirjatyyppi: ${docType || "Ei määritelty"}
-Ohje: ${typeContext}
 
-Muoto (suomenkielinen HTML, ei markdown):
+ANALYYSIKEHYS:
+${typeContext}
+
+Muoto (suomenkielinen HTML, ei markdown — käytä h3, p, ul, li tageja):
+
 <h3>Asiakirjatyyppi ja tarkoitus</h3>
-<p>Lyhyt kuvaus.</p>
+<p>Tarkka kuvaus asiakirjatyypistä, sen oikeudellisesta luonteesta ja tarkoituksesta.</p>
 
-<h3>Riskit ja huomiot</h3>
-<ul><li>...</li></ul>
+<h3>Oikeudelliset riskit ja puutteet</h3>
+<ul><li>Jokainen riski <strong>lakiviitteineen</strong> (esim. OikTL 36§, KL 17§)</li></ul>
 
-<h3>Puuttuvat tai epäselvät kohdat</h3>
-<ul><li>...</li></ul>
+<h3>Puuttuvat pakolliset elementit</h3>
+<ul><li>Mitä asiakirjasta puuttuu oikeudellisen pätevyyden kannalta</li></ul>
 
-<h3>Vastuukysymykset</h3>
-<p>...</p>
+<h3>Vastuukysymykset ja seuraukset</h3>
+<p>Konkreettiset seuraukset jos asiakirjaa ei korjata — vahingonkorvausvastuu, pätemättömyys, prosessuaaliset sanktiot.</p>
 
-<h3>Suositukset juristille</h3>
-<ul><li>...</li></ul>
+<h3>Relevantti oikeuskäytäntö</h3>
+<ul><li>KKO/KHO-ennakkopäätökset tai EUT-tuomiot jotka ovat relevantteja</li></ul>
 
-Ole täsmällinen. Keskity ${docType ? `${docType}-asiakirjan` : "asiakirjan"} kannalta olennaisiin riskeihin.
+<h3>Prioriteettijärjestyksessä: suositukset juristille</h3>
+<ul><li>1. Kriittinen (korjattava heti)...</li><li>2. Tärkeä...</li><li>3. Suositeltava...</li></ul>
+
+Ole täsmällinen, viittaa lakipykäliin ja käytä ammatillista oikeudellista kieltä.
 
 ASIAKIRJA:
 ${text.slice(0, 8000)}`,
@@ -100,12 +290,149 @@ ${text.slice(0, 8000)}`,
 }
 
 const DOC_TYPE_KORJAUS: Record<string, string> = {
-  "Sopimus": "Kirjoita sopimus juridisesti täydelliseksi: lisää puuttuvat lausekkeet (vastuunrajoitus, salassapito, force majeure, erimielisyyksien ratkaisu, irtisanominen), selkeytä velvoitteet ja tee kielestä täsmällistä sopimusoikeudellista kieltä.",
-  "Valitus": "Kirjoita valitus prosessuaalisesti oikeaan muotoon: selkeytä valitusperusteet, järjestä argumentaatio loogisesti, varmista muotomääräysten täyttyminen ja lisää tarvittavat oikeusviitteet.",
-  "Kirjelmä": "Kirjoita kirjelmä oikeudellisesti asianmukaiseen muotoon: selkeytä vaatimukset ja perusteet, järjestä rakenne prosessuaalisesti oikein.",
-  "Hakemus": "Kirjoita hakemus viranomaiskäsittelyyn soveltuvaksi: täydennä puuttuvat tiedot, selkeytä hakemuksen perusteet ja varmista muotomääräysten täyttyminen.",
-  "Vastine": "Kirjoita vastine kattavaksi: käy läpi kaikki vastapuolen väitteet, lisää tarvittavat vastaperusteet ja varmista prosessuaalinen asianmukaisuus.",
-  "Oikaisu": "Kirjoita oikaisupyyntö asianmukaiseen muotoon: selkeytä oikaisuperusteet, varmista toimivaltakysymykset ja lisää tarvittavat perustelut.",
+
+  "Sopimus": `Kirjoita sopimus oikeudellisesti täydelliseksi ja tasapainoiseksi. Varmista seuraavat:
+
+RAKENNE JA SISÄLTÖ:
+1. Johdanto: osapuolten täydellinen yksilöinti (nimi, y-tunnus/hetu, osoite, edustaja ja edustusoikeus)
+2. Sopimuksen kohde: täsmällinen, yksiselitteinen kuvaus toimitettavasta/suoritettavasta
+3. Hinta ja maksuehdot: maksutapa, eräpäivä, viivästyskorko (Korkolaki 633/1982 mukainen), laskutusmenettely
+4. Toimitusaika ja -tapa: täsmälliset päivämäärät, force majeure (ylivoimainen este)
+5. Vastuunrajoituslauseke: kohtuullinen, yksilöity, molemminpuolinen — ei OikTL 36§:n vastainen
+6. Salassapitolauseke: laajuus, kesto (min. 2 v sopimusajan jälkeen), poikkeukset, sanktiot
+7. Immateriaalioikeudet: omistus, käyttöoikeudet, luovutus
+8. Sopimuksen voimassaolo, irtisanominen (aika + muoto) ja purkaminen (perusteet)
+9. Force majeure: määritelmä, ilmoitusvelvollisuus, kesto ennen oikeutta purkaa
+10. Erimielisyyksien ratkaisu: neuvottelu → sovittelu → välimiesmenettely/käräjäoikeus, toimipaikka
+11. Sovellettava laki: Suomen laki (tai perusteltu muu valinta)
+12. Muutokset sopimukseen: kirjallinen muutosmenettely
+13. GDPR-lauseke jos käsitellään henkilötietoja: roolit, käsittelyn peruste, tietoturva
+14. Allekirjoitukset: paikka, päiväys, asema
+
+KIELELLINEN STANDARDI: Täsmällinen suomen sopimusoikeudellinen kieli. Vältä epämääräisiä ilmaisuja ("kohtuullinen aika", "tarpeen mukaan"). Käytä definitiivisiä termejä.`,
+
+  "Valitus": `Kirjoita valitus prosessuaalisesti täydelliseen ja vakuuttavaan muotoon:
+
+RAKENNE:
+1. Otsikko: VALITUS [tuomioistuin], Dnro/viite
+2. Asianosaiset: valittaja ja vastapuoli täydellisine yhteystietoineen, asiamies
+3. Valituksenalainen päätös: viranomainen, päätösnumero, päivämäärä
+4. VAATIMUKSET (täsmälliset, numeroidut):
+   — Päävaatimus: mitä päätökseltä vaaditaan (kumottavaksi/muutettavaksi)
+   — Toissijaiset vaatimukset
+   — Oikeudenkäyntikulujen korvausvaatimus
+   — Täytäntöönpanon keskeyttämispyyntö tarvittaessa
+5. PERUSTEET (juridisesti argumentoitu):
+   a) Menettelyvirheet (onko kuulemisvelvollisuus täytetty? HL 34§)
+   b) Lainvastaisuus (mikä säännös on rikottu, miten)
+   c) Harkintavallan väärinkäyttö tai ylitys
+   d) Suhteellisuusperiaatteen loukkaaminen
+   e) Perusoikeuksien loukkaaminen (PL 21§, EIS 6 artikla)
+6. TODISTEET: numeroitu luettelo, mitä kukin todistaa
+7. Oikeuslähteet: lakipykälät, KHO/KKO-ennakkopäätökset, EUT-tuomiot
+8. Allekirjoitus ja päiväys
+
+ARGUMENTAATIOTEKNIIKKA: IRAC-menetelmä (Issue → Rule → Application → Conclusion) jokaiselle perusteelle.`,
+
+  "Kirjelmä": `Kirjoita kirjelmä prosessuaalisesti täydelliseen ja vakuuttavaan muotoon:
+
+RAKENNE (OK 5:2§ mukaan):
+1. Otsikko: HAASTEHAKEMUS/VASTAUS/KIRJELMÄ, tuomioistuin, asia
+2. Asianosaiset: kantaja/hakija ja vastaaja/vastapuoli, asiamiehen tiedot, valtakirja
+3. VAATIMUKSET (täsmälliset, numeroituina):
+   — Päävaatimus euroineen ja korkoineen
+   — Turvaamistoimivaatimus tarvittaessa (OK 7 luku)
+   — Oikeudenkäyntikulujen korvausvaatimus
+4. TOSIASIAT (kronologisesti):
+   — Selkeä tapahtumakulku
+   — Jokainen oikeudellisesti relevantti fakta
+5. OIKEUDELLINEN ARVIOINTI:
+   — Sovellettavat oikeusnormit (pykälät ja momentit)
+   — Oikeuskäytäntö (KKO-ennakkopäätökset, hovioikeuspäätökset)
+   — Oikeuskirjallisuus
+   — Subsumptio: faktat + normi = johtopäätös
+6. TODISTELU (OK 5:2.2§ — on esitettävä heti):
+   — Kirjalliset todisteet numeroidusti (K1, K2...)
+   — Todistajat ja mitä todistavat
+   — Asiantuntijatodistelu
+7. Sovintovalmiuden ilmaiseminen (tarvittaessa)
+8. Allekirjoitus, päiväys, asiamiehen tiedot`,
+
+  "Hakemus": `Kirjoita hakemus viranomaisvaatimusten mukaiseen täydelliseen muotoon:
+
+RAKENNE:
+1. Otsikko: HAKEMUS + hakemuksen kohde
+2. Hakija: täydellinen yksilöinti, yhteystiedot, asiamies tarvittaessa
+3. Toimivaltainen viranomainen: oikea viranomainen (tarkista organisaatio)
+4. HAKEMUKSEN KOHDE: täsmällinen kuvaus mitä haetaan
+5. PERUSTELUT:
+   a) Oikeusperuste: mihin lakipykälään hakemus perustuu
+   b) Tosiasialliset perusteet: faktat jotka tukevat myöntämistä
+   c) Intressivertailu: haettavan luvan hyödyt vs. mahdolliset haitat
+   d) Vastaavat tapaukset / viranomaisohjeistus
+6. LIITTEET (yksilöitynä):
+   — Pakolliset liitteet lain mukaan
+   — Hakemusta tukevat selvitykset
+   — Lausunnot (naapurit, asiantuntijat tms.)
+7. Hakemuksen käsittely:
+   — Pyyntö kiireellisestä käsittelystä tarvittaessa
+   — Lupaukset tietojen oikeellisuudesta
+   — Salassapitopyyntö arkaluonteisille tiedoille (JulkL 621/1999)
+8. GDPR: suostumus henkilötietojen käsittelyyn viranomaisessa
+9. Päiväys, allekirjoitus, arvonimi/asema`,
+
+  "Vastine": `Kirjoita vastine kattavaksi, juridisesti täsmälliseksi ja strategisesti vahvaksi:
+
+RAKENNE (OK 5:10§ mukaan):
+1. Otsikko: VASTAUS/VASTINE, tuomioistuin, asia/dnro
+2. Asianosaiset: vastaaja täydellisine tietoineen, asiamies
+3. VAATIMUKSET (yksiselitteiset):
+   — Päävaatimus: kanteen/hakemuksen hylkääminen
+   — Prosessuaaliset väitteet: toimivalta, asianosaisasema, kanteen tutkittavuus, vanhentuminen
+   — Kuittausvaatimus jos soveltuu
+   — Oikeudenkäyntikulujen korvausvaatimus
+4. KANTAJAN VÄITTEIDEN KÄSITTELY (systemaattisesti):
+   — Jokainen väite MYÖNNETÄÄN tai KIISTETÄÄN (ei yleistä kiistämistä)
+   — Kiistämisen perusteet täsmällisesti
+   — Oma vaihtoehtoinen tosiasiakuvaus
+5. OIKEUDELLINEN ARVIOINTI:
+   — Todistustaakka: kenellä taakka, täyttyykö se
+   — Sovellettavat oikeusnormit
+   — KKO-ennakkopäätökset vastaajan tueksi
+   — Vahingon määrä / oikeudellinen seuraus
+6. TODISTEET (on esitettävä heti — OK 5:17§ prekluusio):
+   — Kirjalliset todisteet (V1, V2...)
+   — Todistajat ja mitä todistavat
+7. Vanhentumisväite (VanhL 728/2003): onko saatava vanhentunut
+8. Sovintovalmiuden ilmaiseminen
+9. Allekirjoitus, päiväys`,
+
+  "Oikaisu": `Kirjoita oikaisupyyntö/-vaatimus muodollisesti oikeaan ja sisällöllisesti vahvaan muotoon:
+
+RAKENNE:
+1. Otsikko: OIKAISUVAATIMUS / OIKAISUPYYNTÖ
+2. Oikaisuvaatimusviranomainen: oikea viranomainen (sama vai ylempi, tarkista laki)
+3. Oikaisun hakija: täydellinen yksilöinti, yhteystiedot, asiamies
+4. OIKAISTAVANA OLEVA PÄÄTÖS:
+   — Päätöksentekijä, päätösnumero, päivämäärä
+   — Päätöksen sisältö lyhyesti
+   — Tiedoksisaantipäivä (määräajan laskemiseksi)
+5. VAATIMUKSET (täsmälliset):
+   — Päävaatimus: mitä päätökselle vaaditaan
+   — Toissijaiset vaatimukset
+   — Täytäntöönpanon keskeyttämispyyntö
+   — Kulujen korvausvaatimus
+6. OIKAISUPERUSTEET:
+   a) Asiavirhe (HL 50§): virheellinen tosiseikaston arviointi, selvitysvelvollisuuden laiminlyönti
+   b) Kirjoitusvirhe (HL 51§): laskuvirhe, kirjoitusvirhe
+   c) Lainvastaisuus: mikä säännös rikottu
+   d) Harkintavallan väärinkäyttö tai tarkoitussidonnaisuuden periaatteen loukkaus
+   e) Yhdenvertaisuusperiaatteen loukkaus (PL 6§): erilainen kohtelu ilman hyväksyttävää syytä
+   f) Suhteellisuusperiaatteen loukkaus
+7. UUDET SELVITYKSET: voidaan esittää oikaisuvaiheessa
+8. Liitteet: alkuperäinen päätös, uudet todisteet
+9. Päiväys, allekirjoitus
+10. HUOM: Mainitse selvästi jos oikaisuvaatimus on tehtävä ennen valitusta (moniportainen muutoksenhaku)`,
 };
 
 async function generateKorjattuAsiakirja(text: string, fileName: string, docType = ""): Promise<string> {
