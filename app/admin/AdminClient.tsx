@@ -5,6 +5,50 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
+// Poimii lakiviitteet analyysin tekstistä
+function extractLawRefs(html: string): string[] {
+  const text = html.replace(/<[^>]+>/g, " ");
+  const patterns = [
+    // Suomalaiset lait lyhenteillä: OikTL 36§, KL 17§, RL 3 luku, ETL 4:10§
+    /\b(?:OikTL|KL|RL|ROL|ETL|PKL|VahL|HankL|HL|KSL|AVL|VML|VanhL|MK|AL|PK|OK|TyösopimusL|YTL|KirjanpitoL|OYL|AOYL|HE|VahL|PKL|KVL|TLL|TietosuojaL|GDPR)\s*\d*\s*(?:luku|§|artikla|:?\d*\s*§?)/g,
+    // Laki numeroviitteineen: 728/2003, 805/2011
+    /\b\d{1,4}\/(?:19|20)\d{2}\b/g,
+    // EU-direktiivit ja asetukset
+    /\b(?:direktiivi|asetus|päätös)\s+\d{4}\/\d+\/(?:EU|EY|ETA|YOS)\b/gi,
+    /\b\d{4}\/\d+\/(?:EU|EY|ETA|YOS)\b/g,
+    // EIS artiklat
+    /\bEIS\s+\d+\s*artikla\b/gi,
+    /\b(?:EIS|ECHR)\s+\d+[:\s]\d*§?\b/gi,
+    // JYSE, JIT, JHS viittaukset
+    /\b(?:JYSE|JIT|JHS)\s+\d{4}\b/gi,
+    // KKO/KHO ennakkopäätökset
+    /\bKKO\s+\d{4}[:\/]\d+\b/gi,
+    /\bKHO\s+\d{4}[:\/]\d+\b/gi,
+  ];
+
+  const found = new Set<string>();
+  for (const pattern of patterns) {
+    const matches = text.match(pattern) ?? [];
+    matches.forEach(m => found.add(m.trim()));
+  }
+  return Array.from(found).sort();
+}
+
+// Kategorisoi lakiviite väriksi
+function refColor(ref: string): { bg: string; color: string; label: string } {
+  if (/^\d{4}\/\d+\/(EU|EY|ETA|YOS)/i.test(ref) || /direktiivi|asetus/i.test(ref))
+    return { bg: "#EEF4FF", color: "#1A3A8F", label: "EU" };
+  if (/KKO|KHO/i.test(ref))
+    return { bg: "#FFF8E6", color: "#7A4800", label: "Oikeuskäytäntö" };
+  if (/JYSE|JIT|JHS/i.test(ref))
+    return { bg: "#F0FAF0", color: "#2a6a2a", label: "Sopimusehdot" };
+  if (/EIS|ECHR/i.test(ref))
+    return { bg: "#FFF0F5", color: "#8B0040", label: "EIS" };
+  if (/\/(?:19|20)\d{2}$/.test(ref))
+    return { bg: "#F5F0FF", color: "#4A1A8F", label: "Laki" };
+  return { bg: "#F7F4EE", color: "#0F1F3D", label: "Pykälä" };
+}
+
 // Muuntaa markdown → HTML (fallback jos Claude palauttaa markdownia)
 function mdToHtml(text: string): string {
   if (!text) return "";
@@ -524,6 +568,31 @@ export default function AdminClient() {
                         className="claude-analysis"
                         dangerouslySetInnerHTML={{ __html: mdToHtml(selected.claudeAnalysis) }}
                       />
+                      {/* Lakiviitteet-osio */}
+                      {(() => {
+                        const refs = extractLawRefs(selected.claudeAnalysis);
+                        if (refs.length === 0) return null;
+                        return (
+                          <div style={{ marginTop: "1.2rem", paddingTop: "1rem", borderTop: "1px solid #EDE8DE" }}>
+                            <div style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.1em", color: "#8A8070", marginBottom: "0.6rem" }}>
+                              SITEERATUT SÄÄDÖKSET ({refs.length})
+                            </div>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                              {refs.map((r) => {
+                                const { bg, color } = refColor(r);
+                                return (
+                                  <span key={r} style={{
+                                    background: bg, color, fontSize: "0.74rem", fontWeight: 600,
+                                    padding: "3px 9px", borderRadius: "3px", fontFamily: "monospace",
+                                    letterSpacing: "0.02em", cursor: "default",
+                                    border: `1px solid ${color}22`,
+                                  }} title={r}>{r}</span>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </>
                   ) : (
                     <p style={{ color: "var(--muted)", fontSize: "0.84rem" }}>Esianalyysi puuttuu — asiakirja ladattu ennen AI-ominaisuutta.</p>
