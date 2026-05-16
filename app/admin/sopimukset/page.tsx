@@ -9,6 +9,26 @@ const NAVY = "#0F1F3D";
 const CREAM = "#F7F4EE";
 const BORDER = "#EDE8DE";
 
+function injectDocStyle(html: string): string {
+  const css = `<style>
+    body,p,div,h1,h2,h3,h4,h5,h6,li,td,th,span {
+      text-align: left !important;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #1a1a1a;
+    }
+    body { margin: 2rem 2.5rem; max-width: 800px; }
+    h1,h2,h3 { margin-top: 1.4em; margin-bottom: 0.4em; }
+    p { margin: 0.5em 0; }
+    table { border-collapse: collapse; width: 100%; }
+    td, th { border: 1px solid #ccc; padding: 6px 10px; text-align: left !important; }
+  </style>`;
+  if (html.includes("</head>")) return html.replace("</head>", css + "</head>");
+  if (html.includes("<body")) return css + html;
+  return css + html;
+}
+
 interface Contract {
   contractId: string;
   fileName: string;
@@ -279,7 +299,7 @@ export default function AdminSopimuksetPage() {
                   />
                 ) : selected.claudeKorjattuAsiakirja ? (
                   <iframe
-                    srcDoc={selected.claudeKorjattuAsiakirja}
+                    srcDoc={injectDocStyle(selected.claudeKorjattuAsiakirja)}
                     style={{ width: "100%", height: "420px", border: "none", display: "block" }}
                     title="Korjattu asiakirja"
                   />
